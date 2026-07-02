@@ -1,7 +1,0 @@
-@import "std/arrays"
-
-var x = ["one", "two", "three"]
-assert $x.contains("two")
-assert $x.contains("four") == false
-$x.add("four")
-assert $x.contains("four")

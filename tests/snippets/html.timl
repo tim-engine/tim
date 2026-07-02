@@ -1,8 +1,0 @@
-const stream = json("./data/sample.json")
-
-echo $stream[0].payload.commits[0].distinct
-if $stream[0].payload.commits[0].distinct == true:
-  echo "?"
-
-if $this.asdassa:
-  echo "???"

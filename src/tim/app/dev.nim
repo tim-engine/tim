@@ -4,7 +4,7 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim
 
-import std/[os, osproc, strutils, sequtils, uri, httpclient]
+import std/[os, osproc, strutils, strformat, sequtils, uri, httpclient]
 
 import pkg/[semver, openparser/yaml]
 import pkg/kapsis/runtime
@@ -64,18 +64,29 @@ echo $hello"""
     createDir(currDirPath / pkgName / "src" / "templates" / "views")
     createDir(currDirPath / pkgName / "src" / "templates" / "partials")
 
-  var timConfig = PackageConfig(
-    name: pkgName,
-    `type`: parseEnum[ConfigType](pkgTypeOpts[pkgType]),
-    description: pkgDesc,
-    version: pkgVersion,
-    license: pkgLicense,
-    requires: @[
-      "tim >= 0.2.0"
-    ]
-  )
+  # TODO @ pkg/openparser/yaml advanced dump features to
+  # allow for adding extra spaces, exclude fields and more.
+  writeFile(currDirPath / pkgName / "tim.config.yml", fmt"""
+type: {pkgTypeEnum}
+description: "{pkgDesc}"
+version: "0.1.0"
+license: "{pkgLicense}"
 
-  writeFile(currDirPath / pkgName / "tim.config.yml", timConfig.generateYaml())
+compilation:
+  source: "./templates"
+  output: "./app/frontend"
+  release: false
+
+server:
+  port: 8000
+  threads: 1
+  routes:
+    "/": "index"
+
+browser_sync:
+  port: 3500
+  delay: 200
+  """)
 
 proc watchCommand*(v: Values) =
   ## Watches for file changes and rebuilds the project.
