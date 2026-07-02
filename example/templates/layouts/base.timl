@@ -211,8 +211,8 @@ body:before {
             em
           h1.h1: "This is ⚡️ Tim Engine"
           div
-            p align="center" dir="auto"
-              div.mb-2 > a.btn.btn-sm.btn-outline-info.border-2.py-0 href="https://openpeeps.github.io/tim/": "v0.2.3 API reference" //todo extract version from tim.nimble
+            div.mb-2 > a.btn.btn-sm.btn-outline-info.border-2.rounded-3.py-0 href="https://openpeeps.github.io/tim/": "v0.2.3 API reference" //todo extract version from tim.nimble
+            div.d-flex.gap-2.justify-content-center
               a target="_blank" href="https://github.com/openpeeps/tim/workflows/test/badge.svg"
                 img src="https://github.com/openpeeps/tim/workflows/test/badge.svg" alt="Github Actions" style="max-width: 100%;"
               a target="_blank" href="https://github.com/openpeeps/tim/workflows/docs/badge.svg"
