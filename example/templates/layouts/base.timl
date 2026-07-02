@@ -4,30 +4,32 @@ html data-bs-theme="dark"
     title: "Tim Engine is Awesome!"
     meta name="viewport" content="width=device-width, initial-scale=1"
     link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-    style: """
+    script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"
+    @css
 body {
   background-color: #18100f;
   color: whitesmoke
-}
-
-.bg-black {
-  background-color: rgba(18, 18, 18, 1) !important;
 }
 
 body:before {
   content: "";
   display: block;
   background-image: url("https://tim.openpeeps.dev/assets/image.png");
+  opacity: .30;
   background-repeat: repeat;
   background-size: 257px auto;
   position: fixed;
+  /* mix-blend-mode:screen; */
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   pointer-events: none;
-  z-index: 99999;
-  opacity: .30;
+  z-index: 99999998;
+}
+
+.bg-black {
+  background-color: rgba(18, 18, 18, 1) !important;
 }
 
 .navbar-brand img {
@@ -39,8 +41,8 @@ body:before {
   position: absolute;
   top: 10px;
   left: 0;
-  height: 50px;
-  width: 100px;
+  height: 42px;
+  width: 120px;
   overflow:hidden;
   border-radius: 48px;
   bottom: 0;
@@ -161,52 +163,101 @@ body:before {
   }
 }
 
-.masonry-columns {
-  column-count: 4;
-  column-gap: 1rem;
+.marquee {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0.25rem 0;
+  pointer-events: none;
 }
 
-.masonry-columns .card:hover {
-  transform: scale(1.05);
+.marquee:before {
+  content: "";
+  width: 50px;
 }
 
-@media (max-width: 992px) {
-  .masonry-columns { column-count: 2; }
-}
-@media (max-width: 576px) {
-  .masonry-columns { column-count: 1; }
-}
-
-.masonry-columns .card {
-  display: inline-block;
-  width: 100%;
-  margin-bottom: 1rem;
-  transition: scale 0.3s ease;
+.marquee-track { display: flex; width: max-content; will-change: transform; }
+.marquee-item {
+  font-size: 1rem; color: #fff; letter-spacing: 0.05em;
+  padding: 0 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  text-transform:lowercase;
+  gap: 0.3rem;
 }
 
-    """
+.marquee::before, .marquee::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 120px; z-index: 2; pointer-events: none;
+}
+.marquee::before { left: 0; background: linear-gradient(to right, #18100f, transparent); }
+.marquee::after { right: 0; background: linear-gradient(to left, #18100f, transparent); }
+.marquee-item .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent, #4eb5ff); display: inline-block; }
+    @end
 
   body
-    // The `view` block allows you to inject the content of the view into the layout
-    // The content of the view will be rendered here
-    @view
-
-    script: """
+    div.container-fluid.px-5 > div.row.vh-100
+      div.col-lg-6
+        @view
+      div.col-lg-6.align-content-center.text-center
+        div.align-self-center.w-100.mx-5.position-relative
+          a.navbar-brand.position-relative.mx-4.user-select-none href="#"
+            img.position-relative src="https://raw.githubusercontent.com/openpeeps/tim/main/.github/timV2.png"
+              width="120px" height="120px"
+            em
+          h1.h1: "This is ⚡️ Tim Engine"
+          div
+            p align="center" dir="auto"
+              div.mb-2 > a.btn.btn-sm.btn-outline-info.border-2.py-0 href="https://openpeeps.github.io/tim/": "v0.2.3 API reference" //todo extract version from tim.nimble
+              a target="_blank" href="https://github.com/openpeeps/tim/workflows/test/badge.svg"
+                img src="https://github.com/openpeeps/tim/workflows/test/badge.svg" alt="Github Actions" style="max-width: 100%;"
+              a target="_blank" href="https://github.com/openpeeps/tim/workflows/docs/badge.svg"
+                img src="https://github.com/openpeeps/tim/workflows/docs/badge.svg" alt="Github Actions" style="max-width: 100%;"
+      div.marquee.user-select-none > div.marquee-track#marqueeTrack
+    
+    @javascript
 {
-  let addr = "ws://127.0.0.1:9000"
-  function connectWatchoutServer() {      
-    const watchout = new WebSocket(addr);
-    watchout.addEventListener('message', (e) => {
+  const marquee = document.getElementById('marqueeTrack');
+  const items = [
+    '🎨 intuitive syntax',
+    '⚡ super fast compiled VM',
+    'source-to-source transpilation',
+    '🚀 JIT-Ready Backend',
+    'template engine',
+    'front-end framework',
+    'built-in webserver',
+    'domain-specific language',
+    'emmet-like syntax',
+    'extensive built-in libraries',
+    'package manager',
+  ];
+  marquee.innerHTML = items.map(t => `<span class="marquee-item"><span class="dot"></span>${t}</span>`).join('');
+
+  const maxX = -(marquee.scrollWidth - marquee.parentElement.clientWidth);
+  gsap.to(marquee, {
+    x: maxX,
+    duration: 7,
+    ease: 'easeIn',
+    yoyo: true,
+    repeat: -1
+  });
+
+  function connectLiveReload() {
+    const ws = new WebSocket("ws://" + location.hostname + ":3500");
+    ws.addEventListener('message', (e) => {
       if(e.data == '1') location.reload()
     });
-
-    watchout.addEventListener('close', () => {
+    ws.addEventListener('close', () => {
       setTimeout(() => {
-        console.log('Watchout WebSocket is closed. Try again...')
-        connectWatchoutServer()
+        console.log('Live-reload WebSocket closed. Reconnecting...')
+        connectLiveReload()
       }, 300)
     })
   }
-  connectWatchoutServer()
+  connectLiveReload()
 }
-    """
+    @end

@@ -1,21 +1,9 @@
-var features = ["Compiled & Lightweight", "Embeddable", "Clean & Intuitive Syntax", "Source-to-Source transpilation",
-      "VM Interpreter", "Hot Code Reload", "Browser Sync & Reload", "Extensible", "Built-in Standard Library",
-      "Package Manager", "Macros", "Partials", "Emmet-like syntax", "Built-in Minification", "For loops",
-      "Conditionals", "HTML Escaping", "Multi-Theme Support", "And much more..."]
-
-div.container > div.row > div.col-lg-12
-  div.row.vh-100.align-items-center.g-5
-    div.col-lg-5 
-      a.navbar-brand.position-relative.mx-4 href="#"
-        img.position-relative src="https://raw.githubusercontent.com/openpeeps/tim/main/.github/timV2.png"
-          width="100px" height="100px"
-        em
-      h1.display-3.fw-bold: "This is Tim Engine"
-      p.h3.fw-light.mb-4: "A high-performance template engine & markup language written in Nim with a focus on developer experience and productivity"
-      a href="/" class="btn fw-bold btn-outline-info border-2 rounded-3 px-4": "More about Tim"
-
-    div.col-lg-7 > div.row.g-3
-      div.container.masonry-columns
-        for $feature in $features:
-          div.card.bg-black.border-1.border-dark.rounded-4 > div.p-3.text-center
-            p.mb-0.small: $feature
+div.row.align-items-center.vh-100 > div.col-lg-10.mx-auto
+  h3.h6.text-uppercase href="/" class="text-decoration-none": "&mdash; The Lord of All Space-mud!"
+  h1.display-4.fw-bold: "A super fast front-end engine for cool kids!"
+  p.mb-3.fw-light.lead: "Tim is a high-performance DSL front-end engine designed to be fast, flexible, efficient, aaand... easy to use! It offers a clean and intuitive syntax for generating HTML, making it a great choice for web developers and enthusiasts."
+  div.d-grid.gap-4.d-md-flex.justify-content-md-start
+    a href="https://tim.openpeeps.dev" class="btn btn-lg rounded-4 btn-outline-light border-2 rounded-3 px-4"
+      "Check documentation"
+    a href="https://github.com/openpeeps/tim" class="btn btn-lg rounded-4 btn-danger border-2 rounded-3 px-4"
+      "Check Tim on GitHub"

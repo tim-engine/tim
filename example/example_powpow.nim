@@ -43,14 +43,6 @@ proc onRequest(req: HttpRequest, res: HttpResponse) =
                  "title": "Tim Engine is Awesome!"
                }
              }))
-        elif path == "/about":
-          res.status(Http200)
-             .header("Content-Type", "text/html; charset=utf-8")
-             .send(timEngine.render("about", "secondary", data = %*{
-               "meta": {
-                 "title": "About Tim Engine"
-               }
-             }))
         else:
           res.status(Http404)
              .header("Content-Type", "text/html; charset=utf-8")

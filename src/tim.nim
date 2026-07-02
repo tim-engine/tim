@@ -84,7 +84,7 @@ elif isMainModule:
       #
       -- "Server"
       serve path(config):
-        ## Start a local development server that serves rendered templates
+        ## Run a built-in server with VM capabilities
 else:
   # Importing Tim Engine as a Nimble library
   # so it can be used in other Nim projects

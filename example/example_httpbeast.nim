@@ -37,13 +37,6 @@ proc onRequest(req: Request): Future[void] =
               "title": "Tim Engine is Awesome!"
             }
           })
-      of "/about":
-        req.resp("about", "secondary",
-          data = %*{
-            "meta": {
-              "title": "About Tim Engine"
-            }
-          })
       else:
         req.resp("error", code = Http404, data = %*{
           "meta": {

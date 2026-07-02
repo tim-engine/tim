@@ -35,17 +35,6 @@ proc indexPageHandler(ctx: Context) {.async, gcsafe.} =
     let indexPage = timEngine.render(view = "index", data = localObjects)
     resp indexPage
 
-proc aboutPageHandler(ctx: Context) {.async, gcsafe.} =
-  {.gcsafe.}:
-    let localObjects = %*{
-      "meta": {
-          "title": "About Tim Engine"
-      },
-      "path": "/about"
-    }
-    let aboutPage = timEngine.render(view = "about", layout = "secondary", data = localObjects)
-    resp aboutPage
-
 proc e404(ctx: Context) {.async, gcsafe.} =
   {.gcsafe.}:
     let localObjects = %*{
@@ -60,7 +49,6 @@ proc e404(ctx: Context) {.async, gcsafe.} =
 
 #tell prologue how to handle routes
 app.addRoute("/", indexPageHandler)
-app.addRoute("/about", aboutPageHandler)
 app.registerErrorHandler(Http404, e404)
 
 app.run()
