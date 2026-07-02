@@ -14,12 +14,7 @@
 </p>
 
 ## About
-Tim Engine is a powerful development tool designed to boost developer productivity. It combines a high-performance templating engine with a versatile micro programming language, enabling developers to create dynamic web applications with ease.
-
-Additionally, Tim Engine supports source-to-source transpilation to multiple target languages: **Lua**, **Python**, **Ruby**, **JavaScript** and **PHP** and **Nim**. Note that all transpilation targets are currently in very early stages of development and may not yet be fully functional or stable.
-
-> [!NOTE]
-> The primary focus of the project is currently on the core templating engine and its features, with transpilation capabilities being developed incrementally over time.
+This is Tim &bullet; Red Hiney &bullet; The Great Pantzini! &bullet; A powerful front-end engine designed to boost developer productivity. It combines a high-performance templating engine with a versatile micro programming language, enabling developers to create dynamic web applications with ease.
 
 ## Key features
 - ⚡️ Fast, Compiled, Clean syntax
@@ -52,10 +47,31 @@ To get started with Tim Engine, you can install it using Nimble, or download the
 ## Documentation
 - [API Reference](https://openpeeps.github.io/tim/)
 - [Official Documentation](https://tim.openpeeps.dev/)
+- [Examples](https://github.com/openpeeps/tim/tree/main/examples)
+- [Unit Tests](https://github.com/openpeeps/tim/tree/main/tests)
+
+## CLI Application
+Tim comes with a command-line interface application that wraps the core engine and provides a way to compile and run templates directly from the terminal. Additionally, the CLI app can be used to generate AST representation of templates, manage Tim packages using the built-in package manager and also use Tim Engine at runtime to serve templates via the built-in HTTP server. Crazy!
+
+### Tim Runtime 
+Use the built-in HTTP server to compile and serve templates at runtime. Basically, you can use Tim Engine as a web server to serve dynamic content. The built-in HTTP server supports routing, middleware, and WebSocket connections.
+
+### Source to Source transpilation
+
+The CLI app supports source-to-source transpilation to multiple target languages: **Lua**, **Python**, **Ruby**, **JavaScript** and **PHP** and **Nim**. Note that all transpilation targets are currently in very early stages of development and may not yet be fully functional or stable.
+
+> [!NOTE]
+> The primary focus of the project is currently on the core templating engine and its features, with transpilation capabilities being developed incrementally over time.
+
+## Tim as a native extension
+Tim is written in Nim lang, this allows it to be compiled to a native extension for other programming languages. Currently, Tim Engine is available as a **Node.js NAPI module**, **PHP extension**, **Python module**, **Ruby gem**, and **Lua rock**. Check the [example directory](https://github.com/openpeeps/tim/tree/main/examples) for usage examples
+
+> [!NOTE]
+> The native extension support is still in early stages of development and may not yet be fully functional or stable. Publishing Tim via Package Registries for the supported languages is also a work in progress and may not yet be available for all target languages.
 
 ## Benchmarks
 
-Here are some benchmarks comparing the performance of Tim Engine's virtual machine (VM) when executing pre-compiled templates. The benchmarks include various scenarios such as rendering HTML, dynamic data, conditionals, loops, and more.
+Showcasing Tim's virtual machine (VM) when executing pre-compiled templates. The benchmarks include various scenarios such as rendering HTML, dynamic data, conditionals, loops, and more.
 ```
 Benchmark                           Iterations    Total (ms)    Mean (µs)       Ops/sec
 ─────────────────────────────────────────────────────────────────────────────────────
@@ -88,8 +104,37 @@ Deep nesting                             500       161.140       322.281        
 Mixed template                           500       205.136       410.272         2437.
 ```
 
+Now, let's run some HTTP server benchmarks to see how Tim performs when serving templates over HTTP. We'll use the `wrk` and `bombardier` tools to simulate concurrent requests and measure the throughput and latency of the server.
+
+1. wrk benchmark
+```
+Running 10s test @ http://localhost:8000
+  2 threads and 125 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.45ms  448.71us  23.88ms   99.22%
+    Req/Sec    18.08k   375.10    18.62k    96.00%
+  359749 requests in 10.00s, 2.27GB read
+Requests/sec:  35969.58
+Transfer/sec:    232.30MB
+```
+
+2. bombardier benchmark
+```
+Bombarding http://localhost:8000 for 10s using 125 connection(s)
+Statistics        Avg      Stdev        Max
+  Reqs/sec     36487.04    1624.69   38432.07
+  Latency        3.42ms   352.59us    28.41ms
+  HTTP codes:
+    1xx - 0, 2xx - 364958, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:   237.78MB/s
+```
+
+Amazing! The built-in webserver is powered by [Supranim](https://github.com/supranin/supranim) using the [PowPow](https://github.com/openpeeps/powpow) backend.
+
 ## Roadmap 
 - [ ] Update Tim Engine for Node.js runtime
+- [ ] Build and publish Tim extension package for PHP, Lua, Python and Ruby
 
 ## Awesome Projects using Tim Engine
 - [Sunday Publishing Platform](https://github.com/getsunday) - A modern, open-source publishing platform built with Tim Engine
