@@ -1,6 +1,6 @@
 nimTitle	dev	tim/app/dev.html	module tim/app/dev		0
 nim	initCommand	tim/app/dev.html#initCommand,Values	proc initCommand(v: Values)		18
-nim	watchCommand	tim/app/dev.html#watchCommand,Values	proc watchCommand(v: Values)		80
-nim	installCommand	tim/app/dev.html#installCommand,Values	proc installCommand(v: Values)		93
-nim	removeCommand	tim/app/dev.html#removeCommand,Values	proc removeCommand(v: Values)		127
-nim	developCommand	tim/app/dev.html#developCommand,Values	proc developCommand(v: Values)		149
+nim	watchCommand	tim/app/dev.html#watchCommand,Values	proc watchCommand(v: Values)		91
+nim	installCommand	tim/app/dev.html#installCommand,Values	proc installCommand(v: Values)		104
+nim	removeCommand	tim/app/dev.html#removeCommand,Values	proc removeCommand(v: Values)		138
+nim	developCommand	tim/app/dev.html#developCommand,Values	proc developCommand(v: Values)		160
