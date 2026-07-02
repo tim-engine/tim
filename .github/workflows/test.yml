@@ -27,13 +27,14 @@ jobs:
           nim-version: ${{ matrix.nim-version }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Install s2s runtime dependencies"
+      - name: "Install language runtime dependencies"
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libluajit-5.1-dev luajit \
-            php-cli \
-            ruby
+            php-cli php-dev \
+            ruby ruby-dev \
+            python3 python3-dev python3-pip
 
       - name: Install cmake-js for building node bindings"
         run: "npm install cmake-js -g"
@@ -41,13 +42,34 @@ jobs:
       - name: "Install Denim for building node bindings"
         run: "nimble install -y denim@#head"
 
+      - name: "Install Clue for building native extensions"
+        run: "nimble install -y clue@#head"
+
       - name: "Install & test via Nimble"
         run: |
           nimble install -Y
           nimble test
 
-      - name: "Build a Node addon via Denim"
+      - name: "Build Node addon via Denim"
         run: denim build src/${{ github.event.repository.name }}.nim -r -y --cmake
+
+      - name: "Build PHP extension"
+        run: nimble php
+
+      - name: "Build Ruby extension"
+        run: nimble ruby
+
+      - name: "Build Python extension"
+        run: nimble python
+
+      - name: "Build Lua extension"
+        run: nimble lua
+
+      - name: "Test PHP showcase"
+        run: php -d extension=build/tim_php.so -r 'echo extension_loaded("tim") ? "PHP OK\n" : "PHP FAIL\n";'
+
+      - name: "Test Python showcase"
+        run: python3 -c "import sys; sys.path.insert(0,'build'); import tim; print('Python OK')"
 
       - name: "Update Tim addon for Node.js"
         run: |

@@ -25,14 +25,29 @@ requires "semver >= 1.2.3"
 
 requires "supranim >= 0.1.1"
 requires "powpow >= 0.1.0"
-requires "clue >= 0.1.0"
+requires "clue#head"
 requires "bag >= 0.1.0"
+
+let arch = staticExec("uname -m").strip()
+let plat = arch & "-darwin"
 
 task napi, "build a dev version":
   exec "denim build src/tim.nim --cmake -y"
 
 task devlog, "build a dev version":
   exec "nimble build --mm:arc -d:hayaVmWriteStackOps -d:hayaVmWritePcFlow -d:timLogCodeGen -d:useMalloc"
+
+task php, "build PHP extension":
+  exec "nimble build -d:php_build -d:release && cp bin/tim build/tim_php.so && cp build/tim_php.so packages/php/tim_php-" & plat & ".so"
+
+task ruby, "build Ruby extension":
+  exec "nimble build -d:ruby_build -d:release && cp bin/tim build/Tim.bundle && cp build/Tim.bundle packages/ruby/lib/tim_engine-" & plat & ".bundle"
+
+task python, "build Python extension":
+  exec "nimble build -d:python_build -d:release && cp bin/tim build/tim.so && cp build/tim.so packages/python/tim/_tim-" & plat & ".so"
+
+task lua, "build Lua extension":
+  exec "nimble build -d:lua_build -d:release && cp bin/tim build/tim.so && cp build/tim.so packages/lua/src/tim-" & plat & ".so && cp build/tim.so packages/lua/src/tim.so"
 
 import std/os
 task build_examples, "build examples":

@@ -37,6 +37,96 @@ when defined napi_build:
       let ret = compileCode(view, layout, nil, nil)
       return nodeapi.`%*`(ret.stringVal[])
 
+elif defined php_build:
+  import pkg/openparser/json
+  import pkg/clue/kits/phpkit
+  import ./tim/meta/initializer
+
+  var timEngine: TimEngine
+  phpModule do:
+    name = "tim"
+    version = "0.2.3"
+
+    proc init(src: string, output: string, basepath: string) =
+      timEngine = newTim($src, $output, $basepath)
+      timEngine.precompile()
+
+    proc render(view: string, data: string) =
+      let d = parseJson($data)
+      toPhpString(retTy, $interpret(timEngine.getView($view), timEngine.getLayout("base"), d, timEngine.globalData))
+
+    proc renderView(view: string, data: string) =
+      let d = parseJson($data)
+      toPhpString(retTy, $interpret(timEngine.getView($view), d, timEngine.globalData))
+
+elif defined ruby_build:
+  import pkg/openparser/json
+  import pkg/clue/kits/rubykit
+  import ./tim/meta/initializer
+
+  var timEngine: TimEngine
+  rubyModule do:
+    name: "Tim"
+    version: "0.2.3"
+
+    proc init(src: string, output: string, basepath: string) =
+      timEngine = newTim(src, output, basepath)
+      timEngine.precompile()
+
+    proc render(view: string, data: string) =
+      let d = parseJson(data)
+      result = toRbString($interpret(timEngine.getView(view), timEngine.getLayout("base"), d, timEngine.globalData))
+
+    proc renderView(view: string, data: string) =
+      let d = parseJson(data)
+      result = toRbString($interpret(timEngine.getView(view), d, timEngine.globalData))
+
+elif defined python_build:
+  import pkg/openparser/json
+  import pkg/clue/kits/pykit
+  import ./tim/meta/initializer
+
+  var timEngine: TimEngine
+  pythonModule do:
+    name: "tim"
+    doc: "Tim Engine - a fast template engine for cool kids"
+
+    proc init(src: string, output: string, basepath: string) =
+      timEngine = newTim($src, $output, $basepath)
+      timEngine.precompile()
+      Py_RETURN_NONE
+
+    proc render(view: string, data: string) =
+      let d = parseJson($data)
+      result = toPyString($interpret(timEngine.getView($view), timEngine.getLayout("base"), d, timEngine.globalData))
+
+    proc renderView(view: string, data: string) =
+      let d = parseJson($data)
+      result = toPyString($interpret(timEngine.getView($view), d, timEngine.globalData))
+
+elif defined lua_build:
+  import pkg/openparser/json
+  import pkg/clue/kits/luakit
+  import ./tim/meta/initializer
+
+  var timEngine: TimEngine
+  luaModule do:
+    name: "tim"
+
+    proc init(src: string, output: string, basepath: string) =
+      timEngine = newTim($src, $output, $basepath)
+      timEngine.precompile()
+
+    proc render(view: string, data: string) =
+      let d = parseJson($data)
+      toLuaString(L, $interpret(timEngine.getView($view), timEngine.getLayout("base"), d, timEngine.globalData))
+      return 1
+
+    proc renderView(view: string, data: string) =
+      let d = parseJson($data)
+      toLuaString(L, $interpret(timEngine.getView($view), d, timEngine.globalData))
+      return 1
+
 elif isMainModule:
   # Building Tim Engine as a CLI application
   import pkg/kapsis

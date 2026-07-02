@@ -1,11 +1,12 @@
 name: release
 on:
+  workflow_dispatch:
   push:
     tags:
       - '*.*.*'
 env:
   APP_NAME: 'tim'
-  NIM_VERSION: '2.0.0'
+  NIM_VERSION: '2.2.0'
   MAINTAINER: 'OpenPeeps'
 jobs:
   build-artifact:
@@ -22,14 +23,72 @@ jobs:
         with:
           nim-version: ${{ env.NIM_VERSION }}
       - run: choosenim show path -y
-      - run: nimble build -Y -d:release
-      - name: Create artifact
+
+      - name: "Install language runtime dependencies"
+        if: runner.os != 'Windows'
+        run: |
+          if [[ "${{ runner.os }}" == Linux ]]; then
+            sudo apt-get update
+            sudo apt-get install -y \
+              libluajit-5.1-dev luajit \
+              php-cli php-dev \
+              ruby ruby-dev \
+              python3 python3-dev python3-pip
+          elif [[ "${{ runner.os }}" == macOS ]]; then
+            brew install \
+              luajit \
+              php \
+              ruby \
+              python3
+          fi
+
+      - name: "Install cmake-js for building node bindings"
+        run: "npm install cmake-js -g"
+
+      - name: "Install Denim + Clue"
+        run: |
+          nimble install -y denim@#head
+          nimble install -y clue@#head
+
+      - name: "Build tim CLI"
+        run: nimble build -Y -d:release
+
+      - name: "Build Node.js addon"
+        run: denim build src/tim.nim -r -y --cmake
+
+      - name: "Build PHP extension"
+        if: runner.os != 'Windows'
+        run: nimble php
+
+      - name: "Build Ruby extension"
+        if: runner.os != 'Windows'
+        run: nimble ruby
+
+      - name: "Build Python extension"
+        if: runner.os != 'Windows'
+        run: nimble python
+
+      - name: "Build Lua extension"
+        if: runner.os != 'Windows'
+        run: nimble lua
+
+      - name: "Create artifact"
         run: |
           os="${{ runner.os }}"
           assets="${{ env.APP_NAME }}_$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')"
           echo "$assets"
           mkdir -p "dist/$assets"
           cp -r bin LICENSE README.* "dist/$assets/"
+          mkdir -p "dist/$assets/extensions"
+          if [[ "${{ runner.os }}" != Windows ]]; then
+            cp build/tim_php.so "dist/$assets/extensions/" 2>/dev/null || true
+            cp build/Tim.bundle "dist/$assets/extensions/" 2>/dev/null || true
+            cp build/tim.so "dist/$assets/extensions/tim_python.so" 2>/dev/null || true
+            cp build/tim.so "dist/$assets/extensions/tim_lua.so" 2>/dev/null || true
+          fi
+          if test -f bin/tim.node; then
+            cp bin/tim.node "dist/$assets/extensions/" 2>/dev/null || true
+          fi
           (
             cd dist
             if [[ "${{ runner.os }}" == Windows ]]; then
@@ -40,13 +99,14 @@ jobs:
             ls -lah *.*
           )
         shell: bash
+
       - uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ matrix.os }}
           path: |
             dist/*.tar.gz
             dist/*.zip
-  
+
   create-release:
     runs-on: ubuntu-latest
     needs:
@@ -64,15 +124,15 @@ jobs:
           body: Release
           draft: false
           prerelease: false
-      
+
       - name: Write upload_url to file
         run: echo '${{ steps.create-release.outputs.upload_url }}' > upload_url.txt
-      
+
       - uses: actions/upload-artifact@v4
         with:
           name: create-release
           path: upload_url.txt
-  
+
   upload-release:
     runs-on: ubuntu-latest
     needs: create-release
@@ -92,15 +152,15 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: artifact-${{ matrix.os }}
-      
+
       - uses: actions/download-artifact@v3
         with:
           name: create-release
-      
+
       - id: vars
         run: |
           echo "::set-output name=upload_url::$(cat upload_url.txt)"
-      
+
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

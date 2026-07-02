@@ -8,8 +8,8 @@ tests/*
 !tests/*.nim
 /pkginfo.json
 /tests/app/storage/*
-/example/storage/ast/*
-/example/storage/html/*
+/examples/storage/ast/*
+/examples/storage/html/*
 /bindings/tim/src/bin/*
 /init.sh
 /CMakeLists.txt
@@ -19,4 +19,4 @@ src/tim/loaders/
 tests/snippets
 src/tim/experiments
 bindings
-!example/templates
+!examples/templates
