@@ -1,23 +1,15 @@
 const path = require('path')
 const http = require('http')
-const tim = require('../bin/tim.node')
 
-// Tim Engine - Initialize the filesystem
-tim.init(
-  "templates",
-  "storage",
-  path.resolve(__dirname), false, 2
-)
+const tim = require('@openpeeps/tim/uni')
 
-// Tim Engine - Precompile available templates
-// exposing some basic data to the global storage
 let now = new Date()
 let watchoutOpts = {
   enable: true,
   port: 6502,
   delay: 300,
 }
-tim.precompile({
+tim.initGlobals({
   data: {
     watchout: watchoutOpts,
     year: now.getFullYear(),
@@ -43,19 +35,26 @@ tim.precompile({
   watchout: watchoutOpts
 })
 
+// tim.render("index", "base", {
+//   meta: {
+//     title: "Tim Engine is Awesome!"
+//   },
+//   path: "/"
+// }).then((res) => console.log(res))
+
 // Let's create a simple server using `std/http` module
 const
   host = 'localhost'
   port = '3000'
 
 http.createServer(
-  function(req, res) {
+  async function(req, res) {
     res.setHeader('Content-Type', 'text/html')
     res.setHeader('charset', 'utf-8')
     if(req.url == '/') {
       res.writeHead(200)
       res.end(
-        tim.render("index", "base", {
+        await tim.render("index", "base", {
           meta: {
             title: "Tim Engine is Awesome!"
           },
@@ -65,7 +64,7 @@ http.createServer(
     } else if(req.url == '/about') {
       res.writeHead(200)
       res.end(
-        tim.render("about", "secondary", {
+        await tim.render("about", "secondary", {
           meta: {
             title: "Tim Engine is Awesome!"
           },
@@ -75,7 +74,7 @@ http.createServer(
     } else {
       res.writeHead(404)
       res.end(
-        tim.render("error", "base", {
+        await tim.render("error", "base", {
           meta: {
             title: "Oh, you're a genius!",
             msg: "Oh yes, yes. It's got action, it's got drama, it's got dance! Oh, it's going to be a hit hit hit!"
@@ -84,6 +83,6 @@ http.createServer(
         })
       )
     }
-  }).listen(port, host, () => {
-    console.log(`Server is running on http://${host}:${port}`)
-  })
+}).listen(port, host, () => {
+  console.log(`Server is running on http://${host}:${port}`)
+})

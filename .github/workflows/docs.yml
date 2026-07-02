@@ -3,6 +3,15 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - LICENSE
+      - README.*
+      - examples
+  pull_request:
+    paths-ignore:
+      - LICENSE
+      - README.*
+      - examples
 env:
   nim-version: 'stable'
   nim-src: src/${{ github.event.repository.name }}.nim

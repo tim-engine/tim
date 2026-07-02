@@ -32,7 +32,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libluajit-5.1-dev luajit \
-            libpcre3-dev \
             php-cli \
             ruby
 

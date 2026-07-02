@@ -40,7 +40,7 @@ jobs:
             ls -lah *.*
           )
         shell: bash
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: artifact-${{ matrix.os }}
           path: |
@@ -68,7 +68,7 @@ jobs:
       - name: Write upload_url to file
         run: echo '${{ steps.create-release.outputs.upload_url }}' > upload_url.txt
       
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: create-release
           path: upload_url.txt
@@ -89,11 +89,11 @@ jobs:
             asset_name_suffix: macos.tar.gz
             asset_content_type: application/gzip
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: artifact-${{ matrix.os }}
       
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: create-release
       

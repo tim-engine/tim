@@ -1,0 +1,20 @@
+type: project
+description: "A simple Tim Engine front-end application"
+version: "0.1.0"
+license: "MIT"
+
+compilation:
+  source: "./templates"
+  output: "./app/frontend"
+  release: false
+
+server:
+  port: 8000
+  threads: 1
+  routes:
+    "/": "index"
+    "/error": "error"
+
+browser_sync:
+  port: 3500
+  delay: 200
