@@ -11,6 +11,7 @@ import pkg/watchout
 import pkg/vancode/manager/packager
 
 import supranim/network/webserver
+from supranim/core/request import getUrl, getAgent
 
 import ../meta/[initializer, config, websocket]
 
@@ -34,7 +35,8 @@ proc serveTemplate(req: var Request, viewName: string) =
   let layoutTpl = webapp.engine.getLayout("base")
   if viewTpl != nil and layoutTpl != nil:
     try:
-      let html = "<!DOCTYPE html>" & $interpret(viewTpl, layoutTpl, newJObject(), webapp.engine.globalData)
+      let localData = %*{"__req_id": cast[int](addr(req))}
+      let html = "<!DOCTYPE html>" & $interpret(viewTpl, layoutTpl, localData, webapp.engine.globalData)
       release(templateLock)
       req.send(200, html)
       return
@@ -78,13 +80,64 @@ proc serveCommand*(v: Values) =
   let yamlFile = readFile(configPath)
   let config: TimConfig = parseYaml(yamlFile, TimConfig)
   let baseDir = absolutePath(configPath.parentDir())
-  discard existsOrCreateDir(baseDir / "storage")
+  discard existsOrCreateDir(baseDir / config.compilation.output)
 
   let timEngine = newTim(
-    src = "templates",
-    output = "storage",
+    src = config.compilation.source,
+    output = config.compilation.output,
     basepath = baseDir
   )
+
+  timEngine.userScript.addProc("getPath", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue(req.path)
+    )
+  timEngine.userScript.addProc("getMethod", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue($req[].getMethod())
+    )
+  timEngine.userScript.addProc("getQuery", @[paramDef("obj", ttyJson), paramDef("key", ttyString)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      let key = args[1].stringVal[]
+      let q = req[].getQuery()
+      return initValue(q.getOrDefault(key, ""))
+    )
+  timEngine.userScript.addProc("getHeader", @[paramDef("obj", ttyJson), paramDef("key", ttyString)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      let key = args[1].stringVal[]
+      return initValue(req[].getHeader(key).get(""))
+    )
+  timEngine.userScript.addProc("getBody", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue(req[].getBody().get(""))
+    )
+  timEngine.userScript.addProc("getIp", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue(req[].getIp())
+    )
+  timEngine.userScript.addProc("getUrl", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue(req[].getUrl())
+    )
+  timEngine.userScript.addProc("getAgent", @[paramDef("obj", ttyJson)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      return initValue(req[].getAgent().get(""))
+    )
+  timEngine.userScript.addProc("getParam", @[paramDef("obj", ttyJson), paramDef("key", ttyString)], ttyString,
+    proc (args: StackView; argc: int): value.Value =
+      let req = cast[ptr Request](args[0].jsonVal["__req_id"].getInt())
+      let key = args[1].stringVal[]
+      return initValue(req.routeParams.getOrDefault(key, ""))
+    )
+
   timEngine.precompile()
 
   webapp = WebApp(
@@ -101,9 +154,9 @@ proc serveCommand*(v: Values) =
   pkgr.loadPackages()
 
   webapp.watcher = newWatchout(@[
-    baseDir / "templates" / "layouts",
-    baseDir / "templates" / "views",
-    baseDir / "templates" / "partials"
+    timEngine.config.compilation.layoutsPath,
+    timEngine.config.compilation.viewsPath,
+    timEngine.config.compilation.partialsPath
   ], some("*.timl"))
 
   webapp.watcher.onFound = proc(file: watchout.File) =
