@@ -83,26 +83,31 @@ proc initObjects*(script: Script, systemModule: Module): Module =
 
   script.addProc(result, "len", @[paramDef("obj", ttyObject)], ttyInt,
     proc (args: StackView, argc: int): Value =
-      result = initvalue(args[0].objectVal.fields.len))
+      result = initvalue(args[0].objectVal.fields.len)
+    )
 
   script.addProc(result, "isEmpty", @[paramDef("obj", ttyObject)], ttyBool,
     proc (args: StackView, argc: int): Value =
-      initvalue(args[0].objectVal.fields.len == 0))
+      result = initvalue(args[0].objectVal.fields.len == 0)
+    )
 
   script.addProc(result, "clear", @[paramDef("obj", ttyObject, mut=true)], ttyVoid,
     proc (args: StackView, argc: int): Value =
-      args[0].objectVal.fields.setLen(0))
+      args[0].objectVal.fields.setLen(0)
+    )
 
   script.addProc(result, "keys", @[paramDef("obj", ttyObject)], ttyArray,
     proc (args: StackView, argc: int): Value =
       let n = args[0].objectVal.keys.len
       result = initArray(n)
       for i, k in args[0].objectVal.keys:
-        result.objectVal.fields[i] = initValue(k))
+        result.objectVal.fields[i] = initValue(k)
+    )
 
   script.addProc(result, "values", @[paramDef("obj", ttyObject)], ttyArray,
     proc (args: StackView, argc: int): Value =
       let n = args[0].objectVal.fields.len
       result = initArray(n)
       for i, v in args[0].objectVal.fields:
-        result.objectVal.fields[i] = v)
+        result.objectVal.fields[i] = v
+    )

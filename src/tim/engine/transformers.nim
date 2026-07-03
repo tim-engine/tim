@@ -406,9 +406,11 @@ block extendvancodeAstAndCodeGen:
       let returnTy = gen.module.sym"void"
       
       # create a new proc
+      let isExported = node[0].kind == nkPostfix
       var (sym, theProc) =
             gen.script.newProc(name, impl = node,
-                        params, returnTy, kind = pkNative, 
+                        params, returnTy, kind = pkNative,
+                        exported = isExported,
                         genKind = gen.kind)
       sym.genericParams = genericParams
       sym.procType = ProcType.procTypeMacro

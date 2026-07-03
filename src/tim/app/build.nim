@@ -4,7 +4,7 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim
 
-import std/[os, monotimes, times, strutils, json, options, ropes]
+import std/[os, monotimes, times, strutils, json, options, ropes, tables]
 
 import pkg/flatty
 import pkg/kapsis/runtime
@@ -14,7 +14,7 @@ import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]
 import pkg/vancode/manager/packager
 
 import ../engine/parser
-import ../engine/stdlib/[libsystem, libarrays]
+import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
 
 proc parserCallback(astProgram: var Ast, path: string, resolver: FileResolver) =
@@ -95,13 +95,21 @@ proc srcCommand*(v: Values) =
 
   script.stdpos = script.procs.high
 
+  let stdlibs = newTable[string, proc(script: Script, systemModule: Module): Module]()
+  stdlibs["system"] = proc(script: Script, systemModule: Module): Module =
+    result = libsystem.loadLibrary(script)
+  stdlibs["strings"] = initStrings
+  stdlibs["arrays"] = initArrays
+  stdlibs["json"] = initJSON
+  stdlibs["objects"] = initObjects
+
   # let timesModule = script.initTimes(systemModule)
   # module.load(timesModule)
   var output: string
   if ext == "html":
     try:
-      var compiler = codegen.initCodeGen(script, module, mainChunk, pkgr = pkgr,
-                                    parserCallback = parserCallback)
+      var compiler = codegen.initCompiler(script, module, mainChunk, pkgr,
+                                    stdlibs, parserCallback)
       compiler.declareGlobals()
       compiler.genScript(program, none(string))
       let vmInstance = newVm()

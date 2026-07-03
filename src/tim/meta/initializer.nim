@@ -20,7 +20,7 @@ when defined timHotCode:
 # Standard Libraries
 # 
 import ../engine/stdlib/[libsystem, libffi, libtimes,
-              libstrings, libarrays, libjson, inliner]
+              libstrings, libarrays, libjson, libobjects, inliner]
 
 export TypeKind, StackView, Value, CodeGenError
 export configurator, paramDef
@@ -110,6 +110,12 @@ type
   TimEngineError* = object of CatchableError
 
 let stdlibs = newTable[string, proc(script: Script, systemModule: Module): Module]()
+stdlibs["system"] = proc(script: Script, systemModule: Module): Module =
+  result = libsystem.loadLibrary(script)
+stdlibs["strings"] = initStrings
+stdlibs["arrays"] = initArrays
+stdlibs["json"] = initJSON
+stdlibs["objects"] = initObjects
 
 proc parseHook(p: var json.JsonParser, v: var semver.Version) =
   # A JSON parsing hook to parse the `version` field in the
