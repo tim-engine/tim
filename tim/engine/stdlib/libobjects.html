@@ -5,7 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>tim/engine/stdlib/libsystem</title>
+<title>tim/engine/stdlib/libobjects</title>
 
 <!-- Google fonts -->
 <link href='https://fonts.googleapis.com/css?family=Lato:400,600,900' rel='stylesheet' type='text/css'/>
@@ -27,7 +27,7 @@
     <label for="nav-toggle" id="nav-burger">&#9776;</label>
     <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
-      <h1 class="title">tim/engine/stdlib/libsystem</h1>
+      <h1 class="title">tim/engine/stdlib/libobjects</h1>
       <div class="row">
   <div class="three columns">
     <div class="theme-select-wrapper">
@@ -59,19 +59,10 @@
 </li>
 <li>
   <details open>
-    <summary><a class="reference reference-toplevel" href="#7" id="57">Types</a></summary>
-    <ul class="simple simple-toc-section">
-      <li><a class="reference" href="#TimRuntime" title="TimRuntime = object of CatchableError">TimRuntime</a></li>
-
-    </ul>
-  </details>
-</li>
-<li>
-  <details open>
     <summary><a class="reference reference-toplevel" href="#12" id="62">Procs</a></summary>
     <ul class="simple simple-toc-section">
-      <ul class="simple nested-toc-section">loadLibrary
-  <li><a class="reference" href="#loadLibrary%2CScript" title="loadLibrary(script: Script): Module">loadLibrary(script: Script): Module</a></li>
+      <ul class="simple nested-toc-section">initObjects
+  <li><a class="reference" href="#initObjects%2CScript%2CModule" title="initObjects(script: Script; systemModule: Module): Module">initObjects(script: Script; systemModule: Module): Module</a></li>
 
 </ul>
 
@@ -90,34 +81,19 @@
     <div class="section" id="6">
   <h1><a class="toc-backref" href="#6">Imports</a></h1>
   <dl class="item">
-    <a class="reference external" href="inliner.html">inliner</a>
-  </dl>
-</div>
-<div class="section" id="7">
-  <h1><a class="toc-backref" href="#7">Types</a></h1>
-  <dl class="item">
-    <div id="TimRuntime">
-  <dt><pre><a href="#TimRuntime"><span class="Identifier">TimRuntime</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">CatchableError</span></pre></dt>
-  <dd>
-    
-    
-    
-  </dd>
-</div>
-
+    <a class="reference external" href="inliner.html">inliner</a>, <a class="reference external" href="../parser.html">../parser</a>
   </dl>
 </div>
 <div class="section" id="12">
   <h1><a class="toc-backref" href="#12">Procs</a></h1>
   <dl class="item">
-    <div id="loadLibrary-procs-all">
-  <div id="loadLibrary,Script">
-  <dt><pre><span class="Keyword">proc</span> <a href="#loadLibrary%2CScript"><span class="Identifier">loadLibrary</span></a><span class="Other">(</span><span class="Identifier">script</span><span class="Other">:</span> <span class="Identifier">Script</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Module</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span>
-    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+    <div id="initObjects-procs-all">
+  <div id="initObjects,Script,Module">
+  <dt><pre><span class="Keyword">proc</span> <a href="#initObjects%2CScript%2CModule"><span class="Identifier">initObjects</span></a><span class="Other">(</span><span class="Identifier">script</span><span class="Other">:</span> <span class="Identifier">Script</span><span class="Other">;</span> <span class="Identifier">systemModule</span><span class="Other">:</span> <span class="Identifier">Module</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">Module</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Create and initialize the <tt class="docutils literal"><span class="pre">system</span></tt> module.
+    
     
   </dd>
 </div>

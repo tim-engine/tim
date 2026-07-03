@@ -1,0 +1,2 @@
+nimTitle	libobjects	tim/engine/stdlib/libobjects.html	module tim/engine/stdlib/libobjects		0
+nim	initObjects	tim/engine/stdlib/libobjects.html#initObjects,Script,Module	proc initObjects(script: Script; systemModule: Module): Module		16
