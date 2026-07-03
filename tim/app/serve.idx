@@ -1,4 +1,4 @@
 nimTitle	serve	tim/app/serve.html	module tim/app/serve		0
-nim	WebApp	tim/app/serve.html#WebApp	type WebApp		18
-nim	webapp	tim/app/serve.html#webapp_2	var webapp		26
-nim	serveCommand	tim/app/serve.html#serveCommand,Values	proc serveCommand(v: Values)		76
+nim	WebApp	tim/app/serve.html#WebApp	type WebApp		19
+nim	webapp	tim/app/serve.html#webapp_2	var webapp		27
+nim	serveCommand	tim/app/serve.html#serveCommand,Values	proc serveCommand(v: Values)		78
