@@ -132,6 +132,9 @@ Statistics        Avg      Stdev        Max
 
 Amazing! The built-in webserver is powered by [Supranim](https://github.com/supranin/supranim) using the [PowPow](https://github.com/openpeeps/powpow) backend.
 
+## Changelog
+This project uses [changer](https://github.com/iffy/changer) to manage its changelog. See the [CHANGELOG.md](./CHANGELOG.md) file for the release history.
+
 ## Roadmap 
 - [ ] Update Tim Engine for Node.js runtime
 - [ ] Build and publish Tim extension package for PHP, Lua, Python and Ruby

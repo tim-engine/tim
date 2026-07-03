@@ -399,9 +399,26 @@ proc parseAttributes(p: var Parser, attrs: var seq[Node], el: TokenTuple) =
           attrs.add(ast.newHtmlAttribute(htmlAttr, attr))
       else: break
 
+proc wrapMultiply(el: Node, multiplier: Node): Node =
+  if multiplier == nil: return el
+  let i = ast.newIdent("i")
+  let zero = ast.newIntLit(0)
+  let lt = ast.newIdent("<")
+  let varDecl = ast.newNode(nkVar)
+  let identDefs = ast.newNode(nkIdentDefs)
+  identDefs.add(ast.newTree(nkAssign, i, ast.newEmpty(), zero))
+  varDecl.add(identDefs)
+  let body = ast.newNode(nkBlock)
+  body.add(el)
+  body.add(ast.newCall(ast.newIdent("inc"), i))
+  let whileLoop = ast.newTree(nkWhile,
+    ast.newInfix(lt, i, multiplier), body)
+  result = ast.newTree(nkBlock, varDecl, whileLoop)
+
 prefixHandle parseElement:
   # parse an HTML element
   let tk = p.curr
+  var multiplier: Node
   let tag = htmlTag(tk.value)
   result = ast.newHtmlElement(tag, tk.value)
   result.ln = p.curr.line
@@ -427,27 +444,20 @@ prefixHandle parseElement:
     of tkDot, tkID, tkIdentifier, tkType:
       p.parseAttributes(result.attributes, tk)
     else: discard
-  of tkAsterisk:
-    walk p
-    # case p.curr.kind
-    # of tkInteger:
-    #   result.htmlMultiplyBy = ast.newNode(nkInt)
-    #   result.htmlMultiplyBy.intVal = p.curr.value.parseInt
-    #   walk p
-    # of tkIdentVar, tkIdentVarSafe:
-    #   result.htmlMultiplyBy = p.parseIdent()
-    #   caseNotNil result.htmlMultiplyBy:
-    #     discard
-    # of tkIdentifier:
-    #   result.htmlMultiplyBy = p.parseExpression()
-    #   caseNotNil result.htmlMultiplyBy:
-    #     discard
-    # else: return nil
   else:
     if p.curr is tkLP and
       (p.curr.line == tk.line or p.curr.col > tk.col):
         p.parseAttributes(result.attributes, tk)
     else: discard
+
+  # parse optional element multiplication (*N)
+  if p.curr.kind == tkAsterisk:
+    walk p
+    if p.curr.kind == tkInteger:
+      multiplier = ast.newIntLit(p.curr.value.parseInt)
+      walk p
+    else:
+      p.curr.error("Expected integer literal after '*'")
 
   # parse inline elements
   case p.curr.kind
@@ -492,6 +502,8 @@ prefixHandle parseElement:
           result.childElements.add(node)
           if p.lvl != 0:
             dec p.lvl
+          if multiplier != nil:
+            return wrapMultiply(result, multiplier)
           return result
       of tkAt:
         walk p
@@ -523,6 +535,8 @@ prefixHandle parseElement:
             dec p.lvl
         if p.curr.col == 0:
           p.lvl = 0 # reset level
+  if multiplier != nil:
+    result = wrapMultiply(result, multiplier)
 
 proc parseBlock(p: var Parser, indentPos = 0,
             parseFnBlock: static bool = false): Node {.rule.} =
