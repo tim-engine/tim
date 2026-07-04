@@ -16,3 +16,7 @@
   via `$this.getPath()`, `$this.getMethod()`, `$this.getQuery("key")`,
   `$this.getHeader("key")`, `$this.getBody()`, `$this.getIp()`,
   `$this.getUrl()`, `$this.getAgent()`, `$this.getParam("key")`
+
+# v0.2.6 - 2026-07-04
+
+- **FIX**: fixed `source` and `output` fields in `tim.config.yml` 

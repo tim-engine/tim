@@ -73,8 +73,8 @@ version: "0.1.0"
 license: "{pkgLicense}"
 
 compilation:
-  source: "./templates"
-  output: "./app/frontend"
+  source: "./src/templates"
+  output: "./build"
   release: false
 
 server:
