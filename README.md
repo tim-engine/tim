@@ -54,11 +54,11 @@ To get started with Tim Engine, you can install it using Nimble, or download the
 Tim comes with a command-line interface application that wraps the core engine and provides a way to compile and run templates directly from the terminal. Additionally, the CLI app can be used to generate AST representation of templates, manage Tim packages using the built-in package manager and also use Tim Engine at runtime to serve templates via the built-in HTTP server. Crazy!
 
 ### Tim Runtime 
-Use the built-in HTTP server to compile and serve templates at runtime. Basically, you can use Tim Engine as a web server to serve dynamic content. The built-in HTTP server supports routing, middleware, and WebSocket connections.
+Use the built-in HTTP server to compile and serve templates at runtime. Basically, you can use Tim Engine as a web server to serve dynamic content. The HTTP server supports routing, middleware, and WebSocket connections.
 
 ### Source to Source transpilation
 
-The CLI app supports source-to-source transpilation to multiple target languages: **Lua**, **Python**, **Ruby**, **JavaScript** and **PHP** and **Nim**. Note that all transpilation targets are currently in very early stages of development and may not yet be fully functional or stable.
+The CLI app supports source-to-source transpilation to multiple target languages: **Lua**, **Python**, **Ruby**, **JavaScript**, **PHP** and **Nim**. Note that all transpilation targets are currently in very early stages of development and may not yet be fully functional or stable.
 
 > [!NOTE]
 > The primary focus of the project is currently on the core templating engine and its features, with transpilation capabilities being developed incrementally over time.
