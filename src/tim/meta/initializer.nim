@@ -185,7 +185,7 @@ proc newTim*(src, output, basepath: string,
     depResolver: initResolver(),
     enableThemes: enableThemes,
     activeThemeName: activeThemeName,
-    config: PackageCOnfig(
+    config: PackageConfig(
       `type`: ConfigType.typeProject,
       compilation: CompilationSettings(
         source: sourcePath,
@@ -194,7 +194,6 @@ proc newTim*(src, output, basepath: string,
         layoutsPath: sourcePath / "layouts",
         viewsPath: sourcePath / "views",
         partialsPath: sourcePath / "partials",
-        # target: target
       )
     )
   )
@@ -434,7 +433,8 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
         inlineModule.load(systemModule)
 
         var inlineCompiler = codegen.initCompiler(inlineScript, inlineModule,
-                                inlineChunk, pkgr, stdlibs, parserCallback)
+                                inlineChunk, pkgr, stdlibs, parserCallback,
+                                policy = engine.config.compilation.policy)
 
         inlineCompiler.declareGlobals()
         inlineCompiler.genScript(
@@ -466,7 +466,8 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
   
   var compiler =
     codegen.initCompiler(script, module, mainChunk,
-                          pkgr, stdlibs, parserCallback)
+                          pkgr, stdlibs, parserCallback,
+                          policy = engine.config.compilation.policy)
   compiler.declareGlobals()
   try:
     compiler.genScript(
@@ -536,9 +537,8 @@ proc precompileEmbeddedTemplate*(engine: TimEngine, tpl: TimTemplate,
   
   var compiler =
     codegen.initCompiler(script, module, mainChunk,
-                      pkgr, stdlibs, parserCallback)
-
-  # Inject an in-memory FS into the compiler's resolver so genImport/resolveFile
+                      pkgr, stdlibs, parserCallback,
+                      policy = engine.config.compilation.policy)
   # and parserCallback read from embedded contents.
   # Use the provided vfsMap (all templates) or fall back to a single-entry map
   var localVfsMap = vfsMap

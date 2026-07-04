@@ -19,4 +19,9 @@
 
 # v0.2.6 - 2026-07-04
 
-- **FIX**: fixed `source` and `output` fields in `tim.config.yml` 
+- **FIX**: fixed `source` and `output` fields in `tim.config.yml`
+- **FIX**: `parseVarIdent` now handles generic type annotations (`var abc: array[string]`)
+  by calling `parseGenericType` instead of leaving `[string]` unconsumed
+- **NEW**: `CompilationPolicy` is now threaded from `engine.config.compilation.policy`
+  into the codegen via `initCompiler`, enabling per-project feature restrictions
+  (imports, stdlib, packages, loops, conditionals, assignments, dynamic libs)

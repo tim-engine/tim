@@ -18,14 +18,14 @@ This is Tim &bullet; Red Hiney &bullet; The Great Pantzini! &bullet; A powerful 
 
 ## Key features
 - ⚡️ Fast, Compiled, Clean syntax
-- 🎯 Template engine with support for **layouts**, **partials** and **views**
-- 🍭 Source-to-Source transpilation to **Lua**, **Python**, **Ruby**, **JavaScript**, **PHP** and **Nim** lang
-- 📚 **Standard Library** with many built-in utilities for web development
+- Template engine with support for **layouts**, **partials** and **views**
+- Source-to-Source transpilation to **Lua**, **Python**, **Ruby**, **JavaScript**, **PHP** and **Nim** lang
+- **Standard Library** with many built-in utilities for web development
 - 📦 **Built-in Package Manager** for easy installation of third-party packages
 - 🔁 Built-in **Browser Sync & Reload**
-- 🫶 Built-in **HTTP Server** and WebSocket support
+- Built-in **HTTP Server** and WebSocket support
 - Available natively as a **Node.js NAPI module**, **PHP extension**, **Python module**, **Ruby gem**, and **Lua rock**
-- 🪄 SPA Awareness with support for client-side routing and dynamic content updates
+- SPA Awareness with support for client-side routing and dynamic content updates
 - 👑 Written in Nim language
 
 ## Syntax Overview

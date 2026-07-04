@@ -756,6 +756,8 @@ proc parseVarIdent(p: var Parser): Node {.rule.} =
       walk p  # Consume `:`
       if p.curr.kind == tkIdentifier:
         ty = p.parseIdent()
+        if p.curr.kind == tkLB:
+          ty = p.parseGenericType(ty)
       else:
         p.curr.error("Expected type after ':'")
     # check for an assignment

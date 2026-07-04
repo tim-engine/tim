@@ -87,6 +87,7 @@ proc serveCommand*(v: Values) =
     output = config.compilation.output,
     basepath = baseDir
   )
+  timEngine.config.compilation.policy = config.compilation.policy
 
   timEngine.userScript.addProc("getPath", @[paramDef("obj", ttyJson)], ttyString,
     proc (args: StackView; argc: int): value.Value =

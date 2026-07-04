@@ -11,7 +11,7 @@ import pkg/kapsis/runtime
 import pkg/kapsis/interactive/prompts
 
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]
-import pkg/vancode/manager/packager
+import pkg/vancode/manager/[packager, configurator]
 
 import ../engine/parser
 import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
@@ -108,8 +108,9 @@ proc srcCommand*(v: Values) =
   var output: string
   if ext == "html":
     try:
-      var compiler = codegen.initCompiler(script, module, mainChunk, pkgr,
-                                    stdlibs, parserCallback)
+      var compiler = codegen.initCompiler(script,
+              module, mainChunk, pkgr, stdlibs, parserCallback,
+              policy = CompilationPolicy()) # empty polcy for now - TODO - tim.config.yaml
       compiler.declareGlobals()
       compiler.genScript(program, none(string))
       let vmInstance = newVm()
