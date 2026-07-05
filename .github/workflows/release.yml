@@ -181,7 +181,6 @@ jobs:
 
   ruby-gem:
     runs-on: ${{ matrix.runner }}
-    if: runner.os != 'Windows'
     strategy:
       matrix:
         include:
