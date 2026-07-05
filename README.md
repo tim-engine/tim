@@ -130,7 +130,7 @@ Statistics        Avg      Stdev        Max
   Throughput:   237.78MB/s
 ```
 
-Amazing! The built-in webserver is powered by [Supranim](https://github.com/supranin/supranim) using the [PowPow](https://github.com/openpeeps/powpow) backend.
+Amazing! The built-in webserver is powered by [Supranim](https://github.com/supranim/supranim) using the [PowPow](https://github.com/openpeeps/powpow) backend.
 
 ## Changelog
 This project uses [changer](https://github.com/iffy/changer) to manage its changelog. See the [CHANGELOG.md](./CHANGELOG.md) file for the release history.
