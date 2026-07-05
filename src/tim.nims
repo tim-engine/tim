@@ -20,12 +20,11 @@ when defined php_build:
 
 when defined ruby_build:
   --app:lib
-  when defined(macosx):
-    --passC:"-I/opt/local/include/ruby-3.0.0 -I/opt/local/include/ruby-3.0.0/x86_64-darwin23"
-    --passL:"-L/opt/local/lib -lruby.3.0 -Wl,-undefined,dynamic_lookup"
-  when defined(linux):
+  when defined(macosx) or defined(linux):
     --passC: staticExec("pkg-config --cflags --silence-errors ruby-3.2 2>/dev/null || pkg-config --cflags --silence-errors ruby")
     --passL: staticExec("pkg-config --libs --silence-errors ruby-3.2 2>/dev/null || pkg-config --libs --silence-errors ruby")
+  when defined(macosx):
+    --passL:"-Wl,-undefined,dynamic_lookup"
 
 when defined python_build:
   --app:lib
