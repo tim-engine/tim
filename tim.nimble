@@ -29,7 +29,12 @@ requires "clue#head"
 requires "bag >= 0.1.0"
 
 let arch = staticExec("uname -m").strip()
-let plat = arch & "-darwin"
+when defined(linux):
+  let plat = arch & "-linux"
+elif defined(macosx):
+  let plat = arch & "-darwin"
+else:
+  let plat = arch
 
 task napi, "build a dev version":
   exec "denim build src/tim.nim --cmake -y"

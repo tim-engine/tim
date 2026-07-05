@@ -25,3 +25,11 @@
 - **NEW**: `CompilationPolicy` is now threaded from `engine.config.compilation.policy`
   into the codegen via `initCompiler`, enabling per-project feature restrictions
   (imports, stdlib, packages, loops, conditionals, assignments, dynamic libs)
+- **NEW**: Ruby gem automation — `release.yml` now pushes platform-specific binaries
+  (x86_64-darwin, arm64-darwin, x86_64-linux) to `openpeeps/tim-ruby` on tag releases
+- **FIX**: `tim.nims` Ruby build now uses `pkg-config` on both macOS and Linux (was
+  hardcoded to MacPorts paths)
+- **FIX**: `tim.nimble` `plat` variable now detects Linux (`x86_64-linux`) in addition
+  to macOS (`x86_64-darwin` / `arm64-darwin`)
+- **FIX**: Removed hardcoded MacPorts paths from Clue's `ruby_api.nim` — uses
+  project-level `pkg-config` instead
