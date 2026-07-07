@@ -104,7 +104,7 @@ Deep nesting                             500       161.140       322.281        
 Mixed template                           500       205.136       410.272         2437.
 ```
 
-Now, let's run some HTTP server benchmarks to see how Tim performs when serving templates over HTTP. We'll use the `wrk` and `bombardier` tools to simulate concurrent requests and measure the throughput and latency of the server.
+Now, let's run some HTTP server benchmarks to see how Tim performs when serving templates over HTTP. We'll use the `wrk` and `bombardier` tools to simulate concurrent requests and measure the throughput and latency of the server. We are going to use `tim.config.yml` available in the [/examples](https://github.com/tim-engine/tim/tree/main/examples) directory, which will load the `index.timl` + `base.timl` layout available at `/examples/templates/`.
 
 1. wrk benchmark
 ```
