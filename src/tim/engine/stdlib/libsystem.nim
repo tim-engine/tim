@@ -23,13 +23,14 @@ proc convertObjectToJson(arg: Value): string =
     let obj = arg.objectVal
     for i in 0..<obj.keys.len:
       result.add("\"" & obj.keys[i] & "\": ")
-      case obj.fields[i].typeId
+      let v = obj.fields[i].toValue
+      case v.typeId
       of 4: # string
-        result.add("\"" & obj.fields[i].stringVal[] & "\"")
+        result.add("\"" & v.stringVal[] & "\"")
       of 15: # object
         result.add("[Object]")
       else: # other types
-        result.add($obj.fields[i])
+        result.add($v)
       if i < obj.keys.len - 1:
         result.add(", ")
     result.add("}")

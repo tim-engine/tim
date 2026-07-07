@@ -24,7 +24,7 @@ proc initArrays*(script: Script, systemModule: Module): Module =
     proc (args: StackView, argc: int): Value =
       # TODO runtime check for type compatibility
       # inside the standard library 
-      args[0].objectVal.fields.add(args[1])
+      args[0].objectVal.fields.add(args[1].toStorage)
     )
     
   script.addProc(result, "delete", @[
@@ -38,22 +38,23 @@ proc initArrays*(script: Script, systemModule: Module): Module =
       paramDef("item", ttyAny),
       paramDef("offset", ttyInt)], ttyVoid,
     proc (args: StackView, argc: int): Value =
-      insert(args[0].objectVal.fields, args[1], args[2].intVal)
+      insert(args[0].objectVal.fields, args[1].toStorage, args[2].intVal)
   )
 
   script.addProc(result, "join", @[paramDef("s", ttyArray)], ttyString,
     proc (args: StackView, argc: int): Value =
       # joins an array of strings with ", "
-      for v in args[0].objectVal.fields:
-        assert v.typeId == tyString, "join() only works on arrays of strings"
+      for vs in args[0].objectVal.fields:
+        assert vs.refVal.typeId == tyString, "join() only works on arrays of strings"
       result = initvalue("")
-      result.stringVal[] = args[0].objectVal.fields.mapIt(it.stringVal[]).join(", ")
+      result.stringVal[] = args[0].objectVal.fields.mapIt(it.refVal.stringVal[]).join(", ")
   )
 
   script.addProc(result, "contains", @[paramDef("arr", ttyArray), paramDef("x", ttyString)], ttyBool,
     proc (args: StackView, argc: int): Value =
       # checks if an array contains a value
-      for v in args[0].objectVal.fields:
+      for vs in args[0].objectVal.fields:
+        let v = vs.toValue
         case v.typeId
         of tyInt:
           if v.intVal == args[1].intVal:
@@ -76,7 +77,8 @@ proc initArrays*(script: Script, systemModule: Module): Module =
     proc (args: StackView, argc: int): Value =
       # returns the index of the first occurrence of item in the array, or -1 if not found
       result = initvalue(-1)
-      for i, v in args[0].objectVal.fields:
+      for i, vs in args[0].objectVal.fields:
+        let v = vs.toValue
         case v.typeId
         of tyInt:
           if v.intVal == args[1].intVal:
@@ -109,7 +111,7 @@ proc initArrays*(script: Script, systemModule: Module): Module =
       var seen = newSeq[Hash]()
       var i = 0
       while i < args[0].objectVal.fields.len:
-        let v = args[0].objectVal.fields[i]
+        let v = args[0].objectVal.fields[i].toValue
         let h = valueHash(v)
         if h in seen:
           args[0].objectVal.fields.delete(i)
@@ -125,12 +127,12 @@ proc initArrays*(script: Script, systemModule: Module): Module =
   script.addProc(result, "first", @[paramDef("arr", ttyArray)], ttyAny,
     proc (args: StackView, argc: int): Value =
       if args[0].objectVal.fields.len > 0:
-        result = args[0].objectVal.fields[0])
+        result = args[0].objectVal.fields[0].toValue)
 
   script.addProc(result, "last", @[paramDef("arr", ttyArray)], ttyAny,
     proc (args: StackView, argc: int): Value =
       if args[0].objectVal.fields.len > 0:
-        result = args[0].objectVal.fields[^1])
+        result = args[0].objectVal.fields[^1].toValue)
 
   script.addProc(result, "reverse", @[paramDef("arr", ttyArray)], ttyArray,
     proc (args: StackView, argc: int): Value =

@@ -25,7 +25,7 @@ requires "semver >= 1.2.3"
 
 requires "supranim >= 0.1.1"
 requires "powpow >= 0.1.0"
-requires "clue#head"
+requires "clue >= 0.1.0"
 requires "bag >= 0.1.0"
 
 let arch = staticExec("uname -m").strip()

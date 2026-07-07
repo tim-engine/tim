@@ -1,4 +1,14 @@
-# v0.2.5 - 2026-07-03
+# v0.2.6 - 2026-07-04
+
+- **CHANGE:** Updated stdlib for VanCode v0.1.9 ValueStorage API — `Object.fields`
+  changed from `seq[Value]` to `seq[ValueStorage]` (inline primitive storage).
+  All field reads now use `.toValue`, all field writes use `.toStorage`:
+  - `libarrays.nim` — `add`, `insert`, `join`, `contains`, `find`, `dedup`,
+    `first`, `last` updated for `ValueStorage`
+  - `libobjects.nim` — `add`, `insert`, `join`, `find`, `keys` updated
+  - `libstrings.nim` — `split` result assignment updated
+  - `libsystem.nim` — object `$` dump helper updated
+  No functional changes — the engine continues to work unchanged.
 
 - **NEW:** Element multiplication syntax: `tag*N` repeats an HTML element N times
   with an injected `$i` index variable (0-based).

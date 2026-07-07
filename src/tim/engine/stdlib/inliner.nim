@@ -75,7 +75,6 @@ iterator items*(data: json): json {
   }
 }
 
-
 iterator items*(arr: array[object]): object {
   var i = 0
   const total = high($arr)

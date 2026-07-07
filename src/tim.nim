@@ -39,7 +39,7 @@ when defined napi_build:
 
 elif defined php_build:
   import pkg/openparser/json
-  import pkg/clue/kits/phpkit
+  import pkg/cluepkg/kits/phpkit
   import ./tim/meta/initializer
 
   var timEngine: TimEngine
@@ -61,7 +61,7 @@ elif defined php_build:
 
 elif defined ruby_build:
   import pkg/openparser/json
-  import pkg/clue/kits/rubykit
+  import pkg/cluepkg/kits/rubykit
   import ./tim/meta/initializer
 
   var timEngine: TimEngine
@@ -83,7 +83,7 @@ elif defined ruby_build:
 
 elif defined python_build:
   import pkg/openparser/json
-  import pkg/clue/kits/pykit
+  import pkg/cluepkg/kits/pykit
   import ./tim/meta/initializer
 
   var timEngine: TimEngine
@@ -106,7 +106,7 @@ elif defined python_build:
 
 elif defined lua_build:
   import pkg/openparser/json
-  import pkg/clue/kits/luakit
+  import pkg/cluepkg/kits/luakit
   import ./tim/meta/initializer
 
   var timEngine: TimEngine

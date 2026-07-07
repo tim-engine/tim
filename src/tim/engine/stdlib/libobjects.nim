@@ -23,7 +23,7 @@ proc initObjects*(script: Script, systemModule: Module): Module =
     proc (args: StackView, argc: int): Value =
       # TODO runtime check for type compatibility
       # inside the standard library 
-      args[0].objectVal.fields.add(args[1])
+      args[0].objectVal.fields.add(args[1].toStorage)
     )
     
   script.addProc(result, "delete", @[
@@ -36,15 +36,15 @@ proc initObjects*(script: Script, systemModule: Module): Module =
       paramDef("s", ttyArray), paramDef("item", ttyAny),
       paramDef("offset", ttyInt)], ttyVoid,
     proc (args: StackView, argc: int): Value =
-      insert(args[0].objectVal.fields, args[1], args[2].intVal)
+      insert(args[0].objectVal.fields, args[1].toStorage, args[2].intVal)
   )
 
   script.addProc(result, "join", @[paramDef("s", ttyArray)], ttyString,
     proc (args: StackView, argc: int): Value =
-      for v in args[0].objectVal.fields:
-        assert v.typeId == tyString, "join() only works on arrays of strings"
+      for vs in args[0].objectVal.fields:
+        assert vs.refVal.typeId == tyString, "join() only works on arrays of strings"
       result = initvalue("")
-      result.stringVal[] = args[0].objectVal.fields.mapIt(it.stringVal[]).join(", ")
+      result.stringVal[] = args[0].objectVal.fields.mapIt(it.refVal.stringVal[]).join(", ")
   )
 
   script.addProc(result, "hasKey", @[
@@ -63,7 +63,8 @@ proc initObjects*(script: Script, systemModule: Module): Module =
       # this should work for strings and numbers
       result = initvalue(-1)
       var i = 1
-      for v in args[0].objectVal.fields:
+      for vs in args[0].objectVal.fields:
+        let v = vs.toValue
         case v.typeId
         of tyInt:
           if v.intVal == args[1].intVal:
@@ -101,7 +102,7 @@ proc initObjects*(script: Script, systemModule: Module): Module =
       let n = args[0].objectVal.keys.len
       result = initArray(n)
       for i, k in args[0].objectVal.keys:
-        result.objectVal.fields[i] = initValue(k)
+        result.objectVal.fields[i] = initValue(k).toStorage
     )
 
   script.addProc(result, "values", @[paramDef("obj", ttyObject)], ttyArray,

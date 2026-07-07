@@ -26,7 +26,7 @@ type
 
 var webapp*: WebApp
 
-var templateLock: Lock
+var templateLock: Lock # TODO use pkg/threading/rwlocks
 initLock(templateLock)
 
 proc serveTemplate(req: var Request, viewName: string) =
@@ -57,6 +57,8 @@ proc onRequest(req: var Request) {.gcsafe.} =
     if viewName.len > 0:
       serveTemplate(req, viewName)
     else:
+      # TODO use powpow stream file
+      # https://github.com/openpeeps/powpow/blob/main/examples/stream_server.nim
       let staticPath = webapp.baseDir / "public" / path.relativePath("/")
       if fileExists(staticPath):
         let headers = newHttpHeaders()
@@ -138,6 +140,20 @@ proc serveCommand*(v: Values) =
       let key = args[1].stringVal[]
       return initValue(req.routeParams.getOrDefault(key, ""))
     )
+  timEngine.userScript.addProc("isDevel", @[], ttyBool,
+    proc (args: StackView; argc: int): value.Value =
+      return initValue(config.compilation.release == false)
+    )
+  timEngine.userScript.addProc("getConfig", @[], ttyJson,
+    proc (args: StackView; argc: int): value.Value =
+      return initValue(%*{
+        "isDevel": config.compilation.release == false,
+        "browserSync": %*{
+          "port": uint16(config.browser_sync.port),
+          "delay": config.browser_sync.delay
+        }
+      })
+    )
 
   timEngine.precompile()
 
@@ -201,8 +217,12 @@ proc serveCommand*(v: Values) =
 
   webapp.watcher.start()
 
-  let wsPort = if config.browser_sync != nil: config.browser_sync.port
-               else: Port(9000)
-  webapp.wsServer = startWebSocket(wsPort)
+  let wsPort =
+    if config.browser_sync != nil:
+      config.browser_sync.port
+    else:
+      config.browser_sync = BrowserSync(port: Port(9000), delay: 300)
+      config.browser_sync.port
 
+  webapp.wsServer = startWebSocket(wsPort)
   webapp.server.start(onRequest)

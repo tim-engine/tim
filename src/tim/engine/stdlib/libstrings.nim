@@ -67,7 +67,7 @@ proc initStrings*(script: Script, systemModule: Module): Module =
       let parts = strutils.split(args[0].stringVal[], args[1].stringVal[])
       result = initArray(parts.len)
       for i, p in parts:
-        result.objectVal.fields[i] = initValue(p))
+        result.objectVal.fields[i] = initValue(p).toStorage)
 
   script.addProc(result, "replace", @[paramDef("s", ttyString), paramDef("from", ttyString), paramDef("to", ttyString)], ttyString,
     proc (args: StackView, argc: int): Value =
