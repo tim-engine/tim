@@ -579,13 +579,14 @@ proc interpret*(view, layout: TimTemplate, localData,
   
   # first, evaluate the view template to get its output
   let viewOutput = view.vmInstance.interpret(view.script, view.mainChunk,
-                      globalData = globalData, localData = localData)
+                                      globalData = globalData, localData = localData)
 
   # then evaluate the layout template, passing the view output
   # and returning the final result
   view.vmInstance.interpret(layout.script, layout.mainChunk,
-                      some($viewOutput), globalData = globalData,
-                      localData = localData)
+                              staticString = some($viewOutput),
+                              globalData = globalData,
+                              localData = localData)
 
 proc interpret*(view: TimTemplate, localData,
       globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
