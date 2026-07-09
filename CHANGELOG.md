@@ -1,5 +1,6 @@
 # v0.2.6 - 2026-07-04
 
+- **NEW**: Lexer gains `tkIs`/`tkIsNot` token kinds; parser recognizes them as infix operators (precedence 5, equal to `==`). Registered as stdlib foreign procs with Nim implementations that compare values at runtime by `TypeId`. Related to VanCode v0.2.0 - 2026-07-08
 - **CHANGE:** Updated stdlib for VanCode v0.1.9 ValueStorage API — `Object.fields`
   changed from `seq[Value]` to `seq[ValueStorage]` (inline primitive storage).
   All field reads now use `.toValue`, all field writes use `.toStorage`:
