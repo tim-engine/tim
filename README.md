@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://openpeeps.github.io/tim/">API reference</a><br>
-  <img src="https://github.com/openpeeps/tim/workflows/test/badge.svg" alt="Github Actions">  <img src="https://github.com/openpeeps/tim/workflows/docs/badge.svg" alt="Github Actions">
+  <img src="https://github.com/tim-engine/tim/workflows/test/badge.svg" alt="Github Actions">  <img src="https://github.com/tim-engine/tim/workflows/docs/badge.svg" alt="Github Actions">
 </p>
 
 ## About
