@@ -28,6 +28,13 @@
   `$this.getHeader("key")`, `$this.getBody()`, `$this.getIp()`,
   `$this.getUrl()`, `$this.getAgent()`, `$this.getParam("key")`
 
+- **NEW:** `@static` compile-time evaluator for `for` loops and `if`/`elif`/`else`
+  conditionals. The body is captured as raw text, `{$varName}` patterns are
+  substituted with literal iteration values, then re-parsed by an inner parser.
+  For loops unroll into the parent AST; conditionals select the matching branch
+  at compile time. Both the lexer and parser were extended (`tkStatic`, `nkStatic`,
+  `parseStaticStmt` rewrite, `parseScript` flattening of expanded nodes).
+
 # v0.2.6 - 2026-07-04
 
 - **FIX**: fixed `source` and `output` fields in `tim.config.yml`
