@@ -183,6 +183,7 @@ proc parseExpression(p: var Parser, minPrec = 0): Node
 proc parseIdent(p: var Parser, minPrec = 0): Node
 proc parseCall(p: var Parser, minPrec = 0): Node
 proc parseMacroCall(p: var Parser, minPrec = 0): Node
+proc parseScript*(astProgram: var Ast, code: string, sourcePath: string)
 
 #
 # Parse handlers
@@ -621,14 +622,121 @@ prefixHandle parseIf:
         children.add(elseBlock)
     result = ast.newTree(nkIf, children)
 
+proc captureStaticBody(source: string, colonLine, staticCol: int): string =
+  ## Capture indented body text from source lines after colonLine (1-indexed).
+  ## Returns lines indented deeper than staticCol, stopping at the first
+  ## non-empty line at or above staticCol.
+  let lines = source.split('\n')
+  result = ""
+  for i in colonLine..<lines.high:
+    let line = lines[i]
+    if line.strip().len == 0:
+      if result.len > 0:
+        result.add('\n')
+      continue
+    var indent = 0
+    for c in line:
+      if c == ' ': indent += 1
+      elif c == '\t': indent += 1
+      else: break
+    if indent <= staticCol:
+      break
+    if result.len > 0:
+      result.add('\n')
+    result.add(line)
+
+proc walkPastBody(p: var Parser, staticCol: int) =
+  ## Walk tokens forward until we're back at or above staticCol indentation.
+  while p.curr.kind != tkEOF and p.curr.col > staticCol:
+    walk p
+
 prefixHandle parseStaticStmt:
-  # parse a statement inside a `static` block
-  result = ast.newNode(nkStatic)
+  let staticCol = p.curr.col
   walk p # tkStatic
-  p.curr.col = 0
-  let stmtNode: Node = p.parseStmt()
-  caseNotNil stmtNode:
-    result.add(stmtNode)
+  result = ast.newNode(nkStatic)
+
+  if p.curr.kind == tkFor:
+    # Parse for loop header
+    walk p # tkFor
+    var itemVar: Node
+    if p.next.kind == tkComma:
+      itemVar = ast.newTree(nkBracket)
+      itemVar.add(ast.newIdent(p.curr.value))
+      walk p, 2
+      itemVar.add(ast.newIdent(p.curr.value))
+    else:
+      itemVar = ast.newIdent(p.curr.value)
+    walk p
+    expectWalk(tkIN)
+    let iterExpr = p.parseExpression()
+    if iterExpr == nil: return
+    if p.curr.kind != tkColon: return
+    let colonLine = p.curr.line
+    walk p # colon
+
+    let bodyStr = captureStaticBody(p.lex.input, colonLine, staticCol)
+    walkPastBody(p, staticCol)
+
+    # Expand for loop
+    let varName = itemVar.ident
+    if iterExpr.kind == nkArray:
+      for child in iterExpr.children:
+        if child.kind == nkString:
+          let substituted = bodyStr.replace("{$" & varName & "}", child.stringVal)
+          var innerAst: Ast
+          parseScript(innerAst, substituted, "")
+          for n in innerAst.nodes:
+            result.add(n)
+
+  elif p.curr.kind == tkIf:
+    walk p # tkIf
+    let condExpr = p.parseExpression()
+    if condExpr == nil: return
+    if p.curr.kind != tkColon: return
+    let ifColonLine = p.curr.line
+    walk p # colon
+
+    var matched = false
+    var matchedBody = ""
+
+    # Evaluate if condition
+    if condExpr.kind == nkBool and condExpr.boolVal == true:
+      matched = true
+      matchedBody = captureStaticBody(p.lex.input, ifColonLine, staticCol)
+      walkPastBody(p, staticCol)
+    else:
+      walkPastBody(p, staticCol)
+
+    # Handle elif
+    while p.curr.kind == tkElif and p.curr.col == staticCol:
+      walk p # tkElif
+      let elifCond = p.parseExpression()
+      if elifCond == nil: return
+      if p.curr.kind != tkColon: return
+      let elifColonLine = p.curr.line
+      walk p
+
+      if not matched and elifCond.kind == nkBool and elifCond.boolVal == true:
+        matched = true
+        matchedBody = captureStaticBody(p.lex.input, elifColonLine, staticCol)
+      walkPastBody(p, staticCol)
+
+    # Handle else
+    if p.curr.kind == tkElse and p.curr.col == staticCol:
+      walk p # tkElse
+      if p.curr.kind != tkColon: return
+      let elseColonLine = p.curr.line
+      walk p
+
+      if not matched:
+        matchedBody = captureStaticBody(p.lex.input, elseColonLine, staticCol)
+      walkPastBody(p, staticCol)
+
+    if matchedBody.len > 0:
+      var innerAst: Ast
+      parseScript(innerAst, matchedBody, "")
+      for n in innerAst.nodes:
+        result.add(n)
 
 prefixHandle parseIdent:
   # parse an identifier
@@ -1347,7 +1455,12 @@ proc parseScript*(astProgram: var Ast, code: string, sourcePath: string) =
   while p.curr.kind != tkEOF:
     let node: Node = p.parseStmt()
     caseNotNil node:
-      astProgram.nodes.add(node)
+      if node.kind == nkStatic:
+        # Flatten @static expansion children into top-level nodes
+        for child in node.children:
+          astProgram.nodes.add(child)
+      else:
+        astProgram.nodes.add(node)
     do:
       p.curr.error(ErrUnexpectedToken % $p.curr.kind)
   astProgram.otherPaths = move(p.otherPaths)

@@ -16,6 +16,10 @@ block extendvancodeAstAndCodeGen:
     nkClientBlock    # client block using `@client ... @end`
     nkMacro          # a block - {...}
 
+  extendObject do:
+    type Ast = ref object        # required by `extendCase`
+      forwardDecl*: seq[Node]
+
   extendCase do:
     # Extend the Node variant to support HTML elements
     # attributes and JavaScript snippets

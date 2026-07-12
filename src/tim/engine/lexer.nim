@@ -480,6 +480,8 @@ proc nextToken*(lex: var Lexer): TokenTuple =
       result = initToken(lex, tkClient, "@client", line, col, pos, wsno)
     of "end":
       result = initToken(lex, tkEnd, "@end", line, col, pos, wsno)
+    of "static":
+      result = initToken(lex, tkStatic, "@static", line, col, pos, wsno)
     else:
       if lex.strbuf.len > 0:
         lex.pos = savePos
