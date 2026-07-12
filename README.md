@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/openpeeps/tim/main/.github/tim_logo.png" alt="Tim - Template Engine" width="120px" height="120px"><br>
+  <img src="https://raw.githubusercontent.com/tim-engine/tim/main/.github/tim_logo.png" alt="Tim - Template Engine" width="120px" height="120px"><br>
   ⚡️ A high-performance templating engine & markup language<br>
   <strong>Fast</strong> • <strong>Compiled</strong> • <strong>Source-to-Source</strong> • <strong>Interpreter</strong><br>
 </p>
@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://openpeeps.github.io/tim/">API reference</a><br>
-  <img src="https://github.com/openpeeps/tim/workflows/test/badge.svg" alt="Github Actions">  <img src="https://github.com/openpeeps/tim/workflows/docs/badge.svg" alt="Github Actions">
+  <a href="https://tim-engine.github.io/tim/">API reference</a><br>
+  <img src="https://github.com/tim-engine/tim/workflows/test/badge.svg" alt="Github Actions">  <img src="https://github.com/tim-engine/tim/workflows/docs/badge.svg" alt="Github Actions">
 </p>
 
 ## About
