@@ -34,6 +34,8 @@
   For loops unroll into the parent AST; conditionals select the matching branch
   at compile time. Both the lexer and parser were extended (`tkStatic`, `nkStatic`,
   `parseStaticStmt` rewrite, `parseScript` flattening of expanded nodes).
+  Supports both literal arrays and `start..end` integer ranges
+  (e.g., `@static for $x in 1..12:`).
 
 # v0.2.6 - 2026-07-04
 
