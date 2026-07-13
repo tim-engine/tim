@@ -650,6 +650,22 @@ proc walkPastBody(p: var Parser, staticCol: int) =
   while p.curr.kind != tkEOF and p.curr.col > staticCol:
     walk p
 
+proc substituteStaticVar(body, varName, bareVal, exprVal: string): string =
+  ## Substitute both `{$varName}` (bare) and standalone `$varName` (expr) in body.
+  let dollarVar = "$" & varName
+  let braceVar = "{$" & varName & "}"
+  result = body.replace(braceVar, bareVal)
+  var i = 0
+  while i < result.len:
+    let pos = result.find(dollarVar, i)
+    if pos < 0: break
+    let nextIdx = pos + dollarVar.len
+    if nextIdx >= result.len or result[nextIdx] notin {'a'..'z', 'A'..'Z', '0'..'9', '_', '-'}:
+      result = result[0..<pos] & exprVal & result[nextIdx..^1]
+      i = pos + exprVal.len
+    else:
+      i = pos + 1
+
 prefixHandle parseStaticStmt:
   let staticCol = p.curr.col
   walk p # tkStatic
@@ -682,7 +698,18 @@ prefixHandle parseStaticStmt:
     if iterExpr.kind == nkArray:
       for child in iterExpr.children:
         if child.kind == nkString:
-          let substituted = bodyStr.replace("{$" & varName & "}", child.stringVal)
+          let substituted = substituteStaticVar(bodyStr, varName,
+            child.stringVal, "\"" & child.stringVal & "\"")
+          var innerAst: Ast
+          parseScript(innerAst, substituted, "")
+          for n in innerAst.nodes:
+            result.add(n)
+    elif iterExpr.kind == nkCall and iterExpr[0].ident == "..":
+      if iterExpr[1].kind == nkInt and iterExpr[2].kind == nkInt:
+        let rangeStart = iterExpr[1].intVal
+        let rangeEnd = iterExpr[2].intVal
+        for val in rangeStart..rangeEnd:
+          let substituted = substituteStaticVar(bodyStr, varName, $val, $val)
           var innerAst: Ast
           parseScript(innerAst, substituted, "")
           for n in innerAst.nodes:
