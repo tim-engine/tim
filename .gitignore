@@ -20,3 +20,5 @@ tests/snippets
 src/tim/experiments
 bindings
 !examples/templates
+/build
+/benchmarks
