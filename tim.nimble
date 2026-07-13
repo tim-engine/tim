@@ -7,6 +7,7 @@ license       = "LGPL-3.0-or-later"
 srcDir        = "src"
 skipDirs      = @["example", "editors", "bindings"]
 installExt    = @["nim"]
+installDirs   = @["tim"]
 bin           = @["tim"]
 binDir        = "bin"
 
