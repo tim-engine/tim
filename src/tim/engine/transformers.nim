@@ -510,11 +510,23 @@ block extendvancodeAstAndCodeGen:
         for attr in node.attributes:
           case attr.attrType:
           of htmlAttrClass:
-            classAttributes.add(attr.attrNode.stringVal)
+            if attr.attrNode.kind in {nkString, nkInt, nkFloat, nkBool}:
+              classAttributes.add(attr.attrNode.stringVal)
+            else:
+              gen.chunk.emit(opcWSpace)
+              discard gen.genExpr(attr.attrNode)
+              discard gen.pushConst(ast.newStringLit("class"))
+              gen.chunk.emit(opcAttr)
           of htmlAttrId:
-            gen.chunk.emit(opcWSpace)
-            gen.chunk.emit(opcAttrId)
-            gen.chunk.emit(gen.chunk.getString(attr.attrNode.stringVal))
+            if attr.attrNode.kind in {nkString, nkInt, nkFloat, nkBool}:
+              gen.chunk.emit(opcWSpace)
+              gen.chunk.emit(opcAttrId)
+              gen.chunk.emit(gen.chunk.getString(attr.attrNode.stringVal))
+            else:
+              gen.chunk.emit(opcWSpace)
+              discard gen.genExpr(attr.attrNode)
+              discard gen.pushConst(ast.newStringLit("id"))
+              gen.chunk.emit(opcAttr)
           of htmlAttr:
             if attr.attrNode.kind == nkInfix:
               gen.chunk.emit(opcWSpace) # add a space before the attribute
@@ -601,6 +613,8 @@ block extendvancodeAstAndCodeGen:
     
     injectSnippet "VanCodeVMBeforeMainLoop":
       # a Voodoo injected snippet to initialize the `result` variable
+      vm.globals["app"] = initValue(globalData)
+      vm.globals["this"] = initValue(localData)
       result = initValue("")
 
     extendCaseStmt "vmInterpretCase":

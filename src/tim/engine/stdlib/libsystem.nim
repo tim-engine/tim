@@ -160,6 +160,50 @@ proc loadLibrary*(script: Script): Module =
       else:
         raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind))
 
+  #
+  # Arithmetic operators between JSON and int/float
+  #
+  proc jsonNumToFloat(j: JsonNode): float =
+    case j.kind
+    of JInt: j.getInt().toFloat
+    of JFloat: j.getFloat()
+    else: raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $j.kind)
+
+  proc jsonArithCb(tyA, tyB: TypeKind, forceFloat: bool, op: string): ForeignProc =
+    result = proc (args: StackView, argc: int): Value =
+      let a =
+        if tyA == ttyInt: args[0].intVal.toFloat
+        elif tyA == ttyFloat: args[0].floatVal
+        else: jsonNumToFloat(args[0].jsonVal)
+      let b =
+        if tyB == ttyInt: args[1].intVal.toFloat
+        elif tyB == ttyFloat: args[1].floatVal
+        else: jsonNumToFloat(args[1].jsonVal)
+      let useFloat = forceFloat or a != trunc(a) or b != trunc(b)
+      case op
+      of "+":
+        if useFloat: result = initValue(%(a + b))
+        else: result = initValue(%(int(a) + int(b)))
+      of "-":
+        if useFloat: result = initValue(%(a - b))
+        else: result = initValue(%(int(a) - int(b)))
+      of "*":
+        if useFloat: result = initValue(%(a * b))
+        else: result = initValue(%(int(a) * int(b)))
+      of "/":
+        result = initValue(%(a / b))
+
+  let arithPairs = [(ttyJson, ttyInt, false), (ttyInt, ttyJson, false),
+               (ttyJson, ttyFloat, true), (ttyFloat, ttyJson, true),
+               (ttyJson, ttyJson, false)]
+  for pairIdx in 0..arithPairs.high:
+    let tyA = arithPairs[pairIdx][0]
+    let tyB = arithPairs[pairIdx][1]
+    let isFloat = arithPairs[pairIdx][2]
+    for op in ["+", "-", "*", "/"]:
+      let cb = jsonArithCb(tyA, tyB, isFloat or op == "/", op)
+      script.addProc(result, op, @[paramDef("a", tyA), paramDef("b", tyB)], ttyJson, cb)
+
   script.addProc(result, "type", @[paramDef("x", ttyAny)], ttyString,
     proc (args: StackView, argc: int): Value =
       let valueType =
@@ -809,6 +853,16 @@ proc loadLibrary*(script: Script): Module =
   script.addProc(result, "toBool", @[paramDef("x", ttyString)], ttyBool,
     proc (args: StackView, argc: int): Value =
       result = initValue(args[0].stringVal[] == "true"))
+
+  script.addProc(result, "toBool", @[paramDef("x", ttyJson)], ttyBool,
+    proc (args: StackView, argc: int): Value =
+      case args[0].jsonVal.kind
+      of JBool:
+        result = initValue(args[0].jsonVal.getBool())
+      of JNull:
+        result = initValue(false)
+      else:
+        result = initValue(true))
 
   script.addProc(result, "intVal", @[paramDef("x", ttyJson)], ttyInt,
     proc (args: StackView, argc: int): Value =

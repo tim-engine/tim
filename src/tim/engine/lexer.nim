@@ -518,7 +518,10 @@ proc nextToken*(lex: var Lexer): TokenTuple =
           lex.strbuf.add(lex.current)
         lex.advance()
       return initToken(lex, tkFloat, move lex.strbuf, line, col, pos, wsno)
-    result = initToken(lex, tkInteger, move lex.strbuf, line, col, pos, wsno)
+    if isFloat:
+      result = initToken(lex, tkFloat, move lex.strbuf, line, col, pos, wsno)
+    else:
+      result = initToken(lex, tkInteger, move lex.strbuf, line, col, pos, wsno)
   else:
     if lex.current.isAlphaAscii() or lex.current in {'_', '-'}:
       lex.strbuf.setLen(0)
