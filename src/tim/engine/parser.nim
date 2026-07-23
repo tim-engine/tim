@@ -387,8 +387,14 @@ proc parseAttributes(p: var Parser, attrs: var seq[Node], el: TokenTuple) =
         var attr = ast.newStringLit(p.curr.value)
         walk p # tk any attribute name
         if p.curr is tkColon:
-          attrs.add(ast.newHtmlAttribute(htmlAttr, attr))
-          break
+          if p.next is tkIdentifier and p.next.line == p.curr.line:
+            # namespaced attribute e.g. xlink:href, xml:space
+            attr = ast.newStringLit(attr.stringVal & ":" & p.next.value)
+            walk p # tkColon
+            walk p # tkIdentifier (namespace suffix)
+          else:
+            attrs.add(ast.newHtmlAttribute(htmlAttr, attr))
+            break
         if p.curr is tkAssign:
           # parse an HTML attribute with a value
           walk p # tkAssign
@@ -604,7 +610,7 @@ prefixHandle parseIf:
       children.add(ifBlock)
     
     # handle elif statements
-    while p.curr is tkELIF:
+    while p.curr is tkELIF and p.curr.col == tokenIf.col:
       let tokenElif = p.curr
       walk p # tkELIF
       let elifExpr: Node = p.parseExpression()
