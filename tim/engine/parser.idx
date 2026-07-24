@@ -2,4 +2,4 @@ nimTitle	parser	tim/engine/parser.html	module tim/engine/parser		0
 nim	Parser	tim/engine/parser.html#Parser	object Parser		14
 nim	TimParserError	tim/engine/parser.html#TimParserError	object TimParserError		28
 nim	PrefixFunction	tim/engine/parser.html#PrefixFunction	type PrefixFunction		82
-nim	parseScript	tim/engine/parser.html#parseScript,Ast,string,string	proc parseScript(astProgram: var Ast; code: string; sourcePath: string)		1337
+nim	parseScript	tim/engine/parser.html#parseScript,Ast,string,string	proc parseScript(astProgram: var Ast; code: string; sourcePath: string)		186

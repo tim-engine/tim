@@ -1,3 +1,3 @@
 nimTitle	build	tim/app/build.html	module tim/app/build		0
 nim	srcCommand	tim/app/build.html#srcCommand,Values	proc srcCommand(v: Values)		30
-nim	astCommand	tim/app/build.html#astCommand,Values	proc astCommand(v: Values)		155
+nim	astCommand	tim/app/build.html#astCommand,Values	proc astCommand(v: Values)		156

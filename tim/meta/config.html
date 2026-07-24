@@ -16,16 +16,13 @@
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4QQQEwksSS9ZWwAAAk1JREFUWMPtll2ITVEUx39nn/O7Y5qR8f05wtCUUr6ZIS++8pEnkZInPImneaCQ5METNdOkeFBKUhMPRIkHKfEuUZSUlGlKPN2TrgfncpvmnntnmlEyq1Z7t89/rf9a6+y99oZxGZf/XeIq61EdtgKXgdXA0xrYAvBjOIF1AI9zvjcC74BSpndrJPkBWDScTF8Aa4E3wDlgHbASaANmVqlcCnwHvgDvgVfAJ+AikAAvgfVZwLnSVZHZaOuKoQi3ZOMi4NkYkpe1p4J7A8BpYAD49hfIy/oqG0+hLomiKP2L5L+1ubn5115S+3OAn4EnwBlgMzCjyt6ZAnQCJ4A7wOs88iRJHvw50HoujuPBoCKwHWiosy8MdfZnAdcHk8dxXFJ3VQbQlCTJvRBCGdRbD4M6uc5glpY3eAihpN5S5w12diSEcCCEcKUO4ljdr15T76ur1FDDLIQQ3qv71EdDOe3Kxj3leRXyk+pxdWnFWod6Wt2bY3de3aSuUHcPBVimHs7mK9WrmeOF6lR1o9qnzskh2ar2qm1qizpfXaPeVGdlmGN5pb09qMxz1Xb1kLqgzn1RyH7JUXW52lr5e/Kqi9qpto7V1atuUzfnARrV7jEib1T76gG2qxdGmXyiekkt1GswPTtek0aBfJp6YySGBfWg2tPQ0FAYgf1stUfdmdcjarbYJEniKIq6gY/Aw+zWHAC+p2labGpqiorFYgGYCEzN7oQdQClN07O1/EfDyGgC0ALMBdYAi4FyK+4H3gLPsxfR1zRNi+NP7nH5J+QntnXe5B5mpfQAAAAASUVORK5CYII=">
 
 <!-- CSS -->
-<link rel="stylesheet" type="text/css" href="../../nimdoc.out.css?v=2.2.10">
+<link rel="stylesheet" type="text/css" href="../../nimdoc.out.css?v=2.2.0">
 
 <!-- JS -->
-<script type="text/javascript" src="../../dochack.js?v=2.2.10"></script>
+<script type="text/javascript" src="../../dochack.js?v=2.2.0"></script>
 </head>
 <body>
   <div class="document" id="documentId">
-    <input type="checkbox" id="nav-toggle" hidden>
-    <label for="nav-toggle" id="nav-burger">&#9776;</label>
-    <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">tim/meta/config</h1>
       <div class="row">
@@ -124,7 +121,7 @@
   <h1><a class="toc-backref" href="#7">Types</a></h1>
   <dl class="item">
     <div id="BrowserSync">
-  <dt><pre><a href="#BrowserSync"><span class="Identifier">BrowserSync</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
+  <dt><pre><a href="config.html#BrowserSync"><span class="Identifier">BrowserSync</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">port</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">Port</span>
   <span class="Identifier">delay</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">uint</span></pre></dt>
   <dd>
@@ -134,7 +131,7 @@
   </dd>
 </div>
 <div id="EmbeddedTemplates">
-  <dt><pre><a href="#EmbeddedTemplates"><span class="Identifier">EmbeddedTemplates</span></a> <span class="Other">=</span> <span class="Identifier">TableRef</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">string</span><span class="Other">]</span></pre></dt>
+  <dt><pre><a href="config.html#EmbeddedTemplates"><span class="Identifier">EmbeddedTemplates</span></a> <span class="Other">=</span> <span class="Identifier">TableRef</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">string</span><span class="Other">]</span></pre></dt>
   <dd>
     
     An alias for a simple in-memory template store, used when loading templates from embedded resources instead of the filesystem.
@@ -142,7 +139,7 @@
   </dd>
 </div>
 <div id="SourceType">
-  <dt><pre><a href="#SourceType"><span class="Identifier">SourceType</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="config.html#SourceType"><span class="Identifier">SourceType</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">sourceFilesystem</span><span class="Other">,</span> <span class="Identifier">sourceEmbedded</span></pre></dt>
   <dd>
     
@@ -151,7 +148,7 @@
   </dd>
 </div>
 <div id="TargetSource">
-  <dt><pre><a href="#TargetSource"><span class="Identifier">TargetSource</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="config.html#TargetSource"><span class="Identifier">TargetSource</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">tsNim</span> <span class="Other">=</span> <span class="StringLit">&quot;nim&quot;</span><span class="Other">,</span> <span class="Identifier">tsJS</span> <span class="Other">=</span> <span class="StringLit">&quot;js&quot;</span><span class="Other">,</span> <span class="Identifier">tsHtml</span> <span class="Other">=</span> <span class="StringLit">&quot;html&quot;</span><span class="Other">,</span> <span class="Identifier">tsRuby</span> <span class="Other">=</span> <span class="StringLit">&quot;rb&quot;</span><span class="Other">,</span> <span class="Identifier">tsPython</span> <span class="Other">=</span> <span class="StringLit">&quot;py&quot;</span></pre></dt>
   <dd>
     
@@ -160,7 +157,7 @@
   </dd>
 </div>
 <div id="TimConfig">
-  <dt><pre><a href="#TimConfig"><span class="Identifier">TimConfig</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
+  <dt><pre><a href="config.html#TimConfig"><span class="Identifier">TimConfig</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">name</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>              <span class="Comment">## Name of the package or project</span>
                              <span class="Comment">## This must be a valid identifier</span>
   <span class="Identifier">version</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>           <span class="Comment">## The version of the package</span>
@@ -173,8 +170,8 @@
   <span class="Keyword">case</span>
   <span class="Keyword">of</span> <span class="Identifier">ConfigType</span><span class="Other">.</span><span class="Identifier">typeProject</span><span class="Other">:</span>
     <span class="Identifier">compilation</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">CompilationSettings</span>
-    <span class="Identifier">browser_sync</span><span class="Operator">*</span><span class="Other">:</span> <a href="#BrowserSync"><span class="Identifier">BrowserSync</span></a>
-    <span class="Identifier">server</span><span class="Operator">*</span><span class="Other">:</span> <a href="#WebServerConfig"><span class="Identifier">WebServerConfig</span></a>
+    <span class="Identifier">browser_sync</span><span class="Operator">*</span><span class="Other">:</span> <a href="config.html#BrowserSync"><span class="Identifier">BrowserSync</span></a>
+    <span class="Identifier">server</span><span class="Operator">*</span><span class="Other">:</span> <a href="config.html#WebServerConfig"><span class="Identifier">WebServerConfig</span></a>
   <span class="Keyword">else</span><span class="Other">:</span>
     <span class="Keyword">nil</span></pre></dt>
   <dd>
@@ -184,7 +181,7 @@
   </dd>
 </div>
 <div id="WebServerConfig">
-  <dt><pre><a href="#WebServerConfig"><span class="Identifier">WebServerConfig</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <dt><pre><a href="config.html#WebServerConfig"><span class="Identifier">WebServerConfig</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
   <span class="Identifier">port</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">Port</span>
   <span class="Identifier">threads</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">uint</span>
   <span class="Identifier">routes</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">Table</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">string</span><span class="Other">]</span></pre></dt>
@@ -202,7 +199,7 @@
   <dl class="item">
     <div id="$-procs-all">
   <div id="$,TimConfig">
-  <dt><pre><span class="Keyword">proc</span> <a href="#%24%2CTimConfig"><span class="Identifier">`$`</span></a><span class="Other">(</span><span class="Identifier">c</span><span class="Other">:</span> <a href="#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#%24%2CTimConfig"><span class="Identifier">`$`</span></a><span class="Other">(</span><span class="Identifier">c</span><span class="Other">:</span> <a href="config.html#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     
@@ -213,7 +210,7 @@
 </div>
 <div id="generateYaml-procs-all">
   <div id="generateYaml,TimConfig">
-  <dt><pre><span class="Keyword">proc</span> <a href="#generateYaml%2CTimConfig"><span class="Identifier">generateYaml</span></a><span class="Other">(</span><span class="Identifier">c</span><span class="Other">:</span> <a href="#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.
+  <dt><pre><span class="Keyword">proc</span> <a href="#generateYaml%2CTimConfig"><span class="Identifier">generateYaml</span></a><span class="Other">(</span><span class="Identifier">c</span><span class="Other">:</span> <a href="config.html#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">OpenParserJsonError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
@@ -226,7 +223,7 @@
 </div>
 <div id="getBasePath-procs-all">
   <div id="getBasePath,TimConfig">
-  <dt><pre><span class="Keyword">proc</span> <a href="#getBasePath%2CTimConfig"><span class="Identifier">getBasePath</span></a><span class="Other">(</span><span class="Identifier">config</span><span class="Other">:</span> <a href="#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#getBasePath%2CTimConfig"><span class="Identifier">getBasePath</span></a><span class="Other">(</span><span class="Identifier">config</span><span class="Other">:</span> <a href="config.html#TimConfig"><span class="Identifier">TimConfig</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     Get the base path for template loading based on the configuration
@@ -245,7 +242,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-07-04 10:59:43 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-07-24 14:48:46 UTC</small>
       </div>
     </div>
   </div>

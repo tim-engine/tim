@@ -23,23 +23,23 @@ nim	newTemplate	tim/meta/initializer.html#newTemplate,string,TimTemplateType,Tem
 nim	addProc	tim/meta/initializer.html#addProc,UserScript,string,seq[TempParamDef],TypeKind,ForeignProc	proc addProc(userScript: UserScript; name: string; params: seq[TempParamDef] = @[];\n        returnTy: TypeKind; impl: ForeignProc = nil; exportSym = true)		161
 nim	injectScript	tim/meta/initializer.html#injectScript,UserScript,string	proc injectScript(userScript: UserScript; code: string)		166
 nim	newTim	tim/meta/initializer.html#newTim,string,string,string,JsonNode,staticbool,string	proc newTim(src, output, basepath: string; target = TargetSource.tsHtml;\n       globalData: JsonNode = newJObject(); enableThemes: static bool = false;\n       activeThemeName: string = ""): TimEngine		170
-nim	newTim	tim/meta/initializer.html#newTim,JsonNode	proc newTim(globalData: JsonNode = nil): TimEngine		203
-nim	getTemplateByPath	tim/meta/initializer.html#getTemplateByPath,TimEngine,string	proc getTemplateByPath(engine: TimEngine; path: string): TimTemplate		221
-nim	getLayout	tim/meta/initializer.html#getLayout,TimEngine,string	proc getLayout(engine: TimEngine; key: string): TimTemplate		248
-nim	getView	tim/meta/initializer.html#getView,TimEngine,string	proc getView(engine: TimEngine; key: string): TimTemplate		255
-nim	getPartial	tim/meta/initializer.html#getPartial,TimEngine,string	proc getPartial(engine: TimEngine; key: string): TimTemplate		262
-nim	getThemePartial	tim/meta/initializer.html#getThemePartial,TimEngine,string	proc getThemePartial(engine: TimEngine; key: string): TimTemplate		275
-nim	getThemeLayout	tim/meta/initializer.html#getThemeLayout,TimEngine,string	proc getThemeLayout(engine: TimEngine; key: string): TimTemplate		285
-nim	getThemeView	tim/meta/initializer.html#getThemeView,TimEngine,string	proc getThemeView(engine: TimEngine; key: string): TimTemplate		295
-nim	registerTemplate	tim/meta/initializer.html#registerTemplate,TimEngine,string	proc registerTemplate(engine: TimEngine; src: string): TimTemplate		305
-nim	declareGlobals	tim/meta/initializer.html#declareGlobals,CodeGen	proc declareGlobals(compiler: CodeGen)		379
-nim	precompileEmbeddedTemplate	tim/meta/initializer.html#precompileEmbeddedTemplate,TimEngine,TimTemplate,Packager,JsonNode,TableRef[string,string]	proc precompileEmbeddedTemplate(engine: TimEngine; tpl: TimTemplate; pkgr: Packager;\n                           data: JsonNode = nil;\n                           vfsMap: TableRef[string, string] = nil): bool		490
+nim	newTim	tim/meta/initializer.html#newTim,JsonNode	proc newTim(globalData: JsonNode = nil): TimEngine		202
+nim	getTemplateByPath	tim/meta/initializer.html#getTemplateByPath,TimEngine,string	proc getTemplateByPath(engine: TimEngine; path: string): TimTemplate		220
+nim	getLayout	tim/meta/initializer.html#getLayout,TimEngine,string	proc getLayout(engine: TimEngine; key: string): TimTemplate		247
+nim	getView	tim/meta/initializer.html#getView,TimEngine,string	proc getView(engine: TimEngine; key: string): TimTemplate		254
+nim	getPartial	tim/meta/initializer.html#getPartial,TimEngine,string	proc getPartial(engine: TimEngine; key: string): TimTemplate		261
+nim	getThemePartial	tim/meta/initializer.html#getThemePartial,TimEngine,string	proc getThemePartial(engine: TimEngine; key: string): TimTemplate		274
+nim	getThemeLayout	tim/meta/initializer.html#getThemeLayout,TimEngine,string	proc getThemeLayout(engine: TimEngine; key: string): TimTemplate		284
+nim	getThemeView	tim/meta/initializer.html#getThemeView,TimEngine,string	proc getThemeView(engine: TimEngine; key: string): TimTemplate		294
+nim	registerTemplate	tim/meta/initializer.html#registerTemplate,TimEngine,string	proc registerTemplate(engine: TimEngine; src: string): TimTemplate		304
+nim	declareGlobals	tim/meta/initializer.html#declareGlobals,CodeGen	proc declareGlobals(compiler: CodeGen)		378
+nim	precompileEmbeddedTemplate	tim/meta/initializer.html#precompileEmbeddedTemplate,TimEngine,TimTemplate,Packager,JsonNode,TableRef[string,string]	proc precompileEmbeddedTemplate(engine: TimEngine; tpl: TimTemplate; pkgr: Packager;\n                           data: JsonNode = nil;\n                           vfsMap: TableRef[string, string] = nil): bool		491
 nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,TimTemplate,JsonNode,JsonNode	proc interpret(view, layout: TimTemplate; localData, globalData: JsonNode): Value		568
-nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,JsonNode,JsonNode	proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value		590
-nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,TimTemplate,JsonNode,JsonNode	proc compileCode(view, layout: TimTemplate; localData, globalData: JsonNode): Value		599
-nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,JsonNode,JsonNode	proc compileCode(view: TimTemplate; localData, globalData: JsonNode): Value		606
-nim	precompile	tim/meta/initializer.html#precompile,TimEngine,EmbeddedTemplates,EmbeddedTemplates,EmbeddedTemplates,JsonNode	proc precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;\n           globalData: JsonNode = nil)		611
+nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,JsonNode,JsonNode	proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value		591
+nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,TimTemplate,JsonNode,JsonNode	proc compileCode(view, layout: TimTemplate; localData, globalData: JsonNode): Value		600
+nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,JsonNode,JsonNode	proc compileCode(view: TimTemplate; localData, globalData: JsonNode): Value		607
+nim	precompile	tim/meta/initializer.html#precompile,TimEngine,EmbeddedTemplates,EmbeddedTemplates,EmbeddedTemplates,JsonNode	proc precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;\n           globalData: JsonNode = nil)		612
 nimgrp	precompile	tim/meta/initializer.html#precompile-procs-all	proc		148
 nimgrp	interpret	tim/meta/initializer.html#interpret-procs-all	proc		568
-nimgrp	compilecode	tim/meta/initializer.html#compileCode-procs-all	proc		599
+nimgrp	compilecode	tim/meta/initializer.html#compileCode-procs-all	proc		600
 nimgrp	newtim	tim/meta/initializer.html#newTim-procs-all	proc		170
