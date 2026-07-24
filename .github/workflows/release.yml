@@ -188,6 +188,6 @@ jobs:
           GH_TOKEN: ${{ secrets.TIM_EXT_PAT }}
         run: |
           VERSION="${{ github.event.inputs.test_version || github.ref_name }}"
-          gh api repos/tim-engine/tim-ruby/dispatches \
-            -f event_type=build-ruby \
-            -f "client_payload={\"version\": \"${VERSION#v}\"}"
+           jq -n --arg v "${VERSION#v}" \
+            '{event_type: "build-ruby", client_payload: {version: $v}}' |
+            gh api repos/tim-engine/tim-ruby/dispatches --input -
