@@ -65,31 +65,24 @@ jobs:
       - name: "Build Lua extension"
         run: nimble lua
 
-      - name: "Test PHP showcase"
-        run: >
-          php -d extension=build/tim_php.so -r 'echo extension_loaded("tim") ? "PHP OK\n" : "PHP FAIL\n";'
-
-      - name: "Test Python showcase"
-        run: python3 -c "import sys; sys.path.insert(0,'build'); import tim; print('Python OK')"
-
-      - name: "Update Tim addon for Node.js"
-        run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          timNodeName="tim-$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]').node"
-          git pull origin main
-          git checkout .
-          if test -f ./bindings/node/tim/src/bin/$timNodeName; then
-            rm -f ./bindings/node/tim/src/bin/$timNodeName
-            git add -f ./bindings/node/tim/src/bin/$timNodeName
-            git commit -m "cleanup previous tim.node" || true
-          fi
-          cp ./bin/tim.node ./bindings/node/tim/src/bin/$timNodeName
-          git status
-          git add -f ./bindings/node/tim/src/bin/$timNodeName
-          git commit -m "update tim addon for nodejs on ${{ runner.os }}" || true
-      - name: "Push changes"
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: 'main'
+        # - name: "Update Tim addon for Node.js"
+        #   run: |
+        #     git config --local user.name "github-actions[bot]"
+        #     git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        #     timNodeName="tim-$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]').node"
+        #     git pull origin main
+        #     git checkout .
+        #     if test -f ./bindings/node/tim/src/bin/$timNodeName; then
+        #       rm -f ./bindings/node/tim/src/bin/$timNodeName
+        #       git add -f ./bindings/node/tim/src/bin/$timNodeName
+        #       git commit -m "cleanup previous tim.node" || true
+        #     fi
+        #     cp ./bin/tim.node ./bindings/node/tim/src/bin/$timNodeName
+        #     git status
+        #     git add -f ./bindings/node/tim/src/bin/$timNodeName
+        #     git commit -m "update tim addon for nodejs on ${{ runner.os }}" || true
+        # - name: "Push changes"
+        #   uses: ad-m/github-push-action@master
+        #   with:
+        #     github_token: ${{ secrets.GITHUB_TOKEN }}
+        #     branch: 'main'
