@@ -179,87 +179,15 @@ jobs:
           asset_name: ${{ env.APP_NAME }}_${{ matrix.asset_name_suffix }}
           asset_content_type: ${{ matrix.asset_content_type }}
 
-  ruby-gem:
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix:
-        include:
-          - runner: macos-13
-            arch: x86_64-darwin
-            ext: bundle
-          - runner: macos-latest
-            arch: arm64-darwin
-            ext: bundle
-          - runner: ubuntu-22.04
-            arch: x86_64-linux
-            ext: so
+  trigger-ruby-build:
+    needs: build-artifact
+    runs-on: ubuntu-latest
     steps:
-      - name: "Resolve version"
+      - name: "Dispatch Ruby extension build to tim-engine/tim-ruby"
         run: |
           VERSION="${{ github.event.inputs.test_version || github.ref_name }}"
-          echo "VERSION=${VERSION#v}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-        with:
-          path: tim-main
-
-      - uses: actions/checkout@v4
-        with:
-          repository: tim-engine/tim-ruby
-          token: ${{ secrets.TIM_EXT_PAT }}
-          path: tim-ruby
-
-      - uses: jiro4989/setup-nim-action@v1
-        with:
-          nim-version: ${{ env.NIM_VERSION }}
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-
-      - name: "Set Ruby pkg-config path"
-        run: |
-          ruby -rrbconfig -e '
-            libdir = RbConfig::CONFIG["libdir"]
-            pkgconfig_dir = File.join(libdir, "pkgconfig")
-            if File.directory?(pkgconfig_dir)
-              puts "PKG_CONFIG_PATH=#{pkgconfig_dir}"
-            end
-          ' >> $GITHUB_ENV
-
-      - name: "Install language runtime dependencies"
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev
-
-      - name: "Install Clue"
-        run: nimble install -y clue@#head
-        working-directory: tim-main
-
-      - name: "Build Ruby extension"
-        run: nimble ruby
-        working-directory: tim-main
-
-      - name: "Copy binary to tim-ruby"
-        run: |
-          platform="${{ matrix.arch }}"
-          ext="${{ matrix.ext }}"
-          mkdir -p tim-ruby/lib
-          cp tim-main/build/Tim.bundle "tim-ruby/lib/tim_engine-${platform}.${ext}"
-
-      - name: "Update gemspec version"
-        run: |
-          cd tim-ruby
-          sed -i "s/s.version.*=.*\".*\"/s.version     = \"${VERSION}\"/" tim.gemspec
-
-      - name: "Commit and push to tim-ruby"
-        if: env.VERSION != '' && env.VERSION != 'main'
-        run: |
-          cd tim-ruby
-          git config user.name "OpenPeeps Bot"
-          git config user.email "bot@openpeeps.dev"
-          git add -A
-          git commit -m "Tim Engine v${VERSION} (${{ matrix.arch }})" || echo "Nothing to commit"
-          git tag -f "v${VERSION}"
-          git push origin main --tags
+          gh api repos/tim-engine/tim-ruby/dispatches \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.TIM_EXT_PAT }}" \
+            -f event_type=build-ruby \
+            -f "client_payload={\"version\": \"${VERSION#v}\"}"
