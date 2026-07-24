@@ -184,10 +184,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Dispatch Ruby extension build to tim-engine/tim-ruby"
+        env:
+          GH_TOKEN: ${{ secrets.TIM_EXT_PAT }}
         run: |
           VERSION="${{ github.event.inputs.test_version || github.ref_name }}"
           gh api repos/tim-engine/tim-ruby/dispatches \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.TIM_EXT_PAT }}" \
             -f event_type=build-ruby \
             -f "client_payload={\"version\": \"${VERSION#v}\"}"
