@@ -451,11 +451,37 @@ prefixHandle parseElement:
     of tkDot, tkID, tkIdentifier, tkType:
       p.parseAttributes(result.attributes, tk)
     else: discard
+  of tkColon:
+    if tag == tagInput and p.curr.wsno == 0 and
+       p.curr.line == tk.line and p.next.kind == tkIdentifier:
+      walk p
+      let typeVal = ast.newStringLit(p.curr.value)
+      let infixNode = ast.newInfix(nil, ast.newStringLit("type"), typeVal)
+      result.attributes.add(newHtmlAttribute(htmlAttr, infixNode))
+      walk p
+      if p.curr.kind in {tkDot, tkID, tkIdentifier, tkType}:
+        p.parseAttributes(result.attributes, tk)
+    else:
+      discard
   else:
     if p.curr is tkLP and
       (p.curr.line == tk.line or p.curr.col > tk.col):
         p.parseAttributes(result.attributes, tk)
     else: discard
+
+  if tk.value == "svg":
+    var hasXmlns = false
+    for attr in result.attributes:
+      if attr.attrType == htmlAttr and
+         attr.attrNode.kind == nkInfix and
+         attr.attrNode[1].kind == nkString and
+         attr.attrNode[1].stringVal == "xmlns":
+        hasXmlns = true
+        break
+    if not hasXmlns:
+      let nsVal = ast.newStringLit("http://www.w3.org/2000/svg")
+      let infixNode = ast.newInfix(nil, ast.newStringLit("xmlns"), nsVal)
+      result.attributes.insert(newHtmlAttribute(htmlAttr, infixNode), 0)
 
   # parse optional element multiplication (*N)
   if p.curr.kind == tkAsterisk:
