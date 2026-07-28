@@ -4,6 +4,6 @@ nim	initCodeGen	tim/engine/transpilers/jsgen.html#initCodeGen,Script,Module,Chun
 nim	minifyInlineJs	tim/engine/transpilers/jsgen.html#minifyInlineJs,sinkstring	proc minifyInlineJs(js: sink string): owned string		107
 nim	minifyRawHtml	tim/engine/transpilers/jsgen.html#minifyRawHtml,sinkstring,string	proc minifyRawHtml(code: sink string; res: var string)		225
 nim	minifyInlineCSS	tim/engine/transpilers/jsgen.html#minifyInlineCSS,sinkstring	proc minifyInlineCSS(css: sink string): owned string		410
-nim	genScript	tim/engine/transpilers/jsgen.html#genScript,CodeGen,Ast,Option[string],staticbool,staticbool	proc genScript(gen: var CodeGen; program: Ast; includePath: Option[string];\n          isMainScript: static bool = false; isSnippet: static bool = false;\n          commonJs = true): Rope		346
-nim	genScript	tim/engine/transpilers/jsgen.html#genScript,CodeGen,seq[Node]	proc genScript(gen: var CodeGen; nodes: seq[Node]): Rope		361
-nimgrp	genscript	tim/engine/transpilers/jsgen.html#genScript-procs-all	proc		343
+nim	genScript	tim/engine/transpilers/jsgen.html#genScript,CodeGen,Ast,Option[string],staticbool,staticbool	proc genScript(gen: var CodeGen; program: Ast; includePath: Option[string];\n          isMainScript: static bool = false; isSnippet: static bool = false;\n          commonJs = true): Rope		403
+nim	genScript	tim/engine/transpilers/jsgen.html#genScript,CodeGen,seq[Node]	proc genScript(gen: var CodeGen; nodes: seq[Node]): Rope		418
+nimgrp	genscript	tim/engine/transpilers/jsgen.html#genScript-procs-all	proc		400

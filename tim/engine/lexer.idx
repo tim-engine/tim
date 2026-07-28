@@ -58,6 +58,7 @@ nim	tkSnippetJson	tim/engine/lexer.html#tkSnippetJson	TokenKind.tkSnippetJson		1
 nim	tkSnippetMarkdown	tim/engine/lexer.html#tkSnippetMarkdown	TokenKind.tkSnippetMarkdown		10
 nim	tkPlaceholder	tim/engine/lexer.html#tkPlaceholder	TokenKind.tkPlaceholder		10
 nim	tkViewLoader	tim/engine/lexer.html#tkViewLoader	TokenKind.tkViewLoader		10
+nim	tkLitElement	tim/engine/lexer.html#tkLitElement	TokenKind.tkLitElement		10
 nim	tkClient	tim/engine/lexer.html#tkClient	TokenKind.tkClient		10
 nim	tkEnd	tim/engine/lexer.html#tkEnd	TokenKind.tkEnd		10
 nim	tkInclude	tim/engine/lexer.html#tkInclude	TokenKind.tkInclude		10
@@ -91,4 +92,4 @@ nim	TimLexerError	tim/engine/lexer.html#TimLexerError	object TimLexerError		63
 nim	newLexer	tim/engine/lexer.html#newLexer,string	proc newLexer(input: string): Lexer		65
 nim	error	tim/engine/lexer.html#error,Lexer,string	proc error(l: var Lexer; msg: string)		104
 nim	nextToken	tim/engine/lexer.html#nextToken,Lexer	proc nextToken(lex: var Lexer): TokenTuple		173
-nim	getToken	tim/engine/lexer.html#getToken,Lexer	proc getToken(lex: var Lexer): TokenTuple		590
+nim	getToken	tim/engine/lexer.html#getToken,Lexer	proc getToken(lex: var Lexer): TokenTuple		592
