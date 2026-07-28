@@ -44,16 +44,16 @@ task devlog, "build a dev version":
   exec "nimble build --mm:arc -d:hayaVmWriteStackOps -d:hayaVmWritePcFlow -d:timLogCodeGen -d:useMalloc"
 
 task php, "build PHP extension":
-  exec "nimble build -d:php_build -d:release && mkdir -p build && cp bin/tim build/tim_php.so"
+  exec "rm -f bin/tim && nimble build -d:php_build -d:release && mkdir -p build && cp bin/tim build/tim_php.so"
 
 task ruby, "build Ruby extension":
-  exec "nimble build -d:ruby_build -d:release && mkdir -p build && cp bin/tim build/Tim.bundle"
+  exec "rm -f bin/tim && nimble build -d:ruby_build -d:release && mkdir -p build && cp bin/tim build/Tim.bundle"
 
 task python, "build Python extension":
-  exec "nimble build -d:python_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
+  exec "rm -f bin/tim && nimble build -d:python_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
 
 task lua, "build Lua extension":
-  exec "nimble build -d:lua_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
+  exec "rm -f bin/tim && nimble build -d:lua_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
 
 import std/os
 task build_examples, "build examples":

@@ -28,7 +28,7 @@ type
     tkAt, tkImport, tkSnippetHtml, tkSnippetJs, tkSnippetYaml,
     tkSnippetCSS, tkSnippetJson, tkSnippetMarkdown,
     tkPlaceholder, tkViewLoader,
-    tkClient, tkEnd, tkInclude, tkDo, tkFn = "fn",
+    tkLitElement, tkClient, tkEnd, tkInclude, tkDo, tkFn = "fn",
     tkFunc = "func",
     tkMacro = "macro",
     tkIterator = "iterator",
@@ -476,6 +476,8 @@ proc nextToken*(lex: var Lexer): TokenTuple =
       result = initToken(lex, tkSnippetMarkdown, "@md", line, col, pos, wsno)
     of "view":
       result = initToken(lex, tkViewLoader, "@view", line, col, pos, wsno)
+    of "litelement", "LitElement":
+      result = initToken(lex, tkLitElement, "@LitElement", line, col, pos, wsno)
     of "client":
       result = initToken(lex, tkClient, "@client", line, col, pos, wsno)
     of "end":

@@ -183,6 +183,7 @@ proc parseExpression(p: var Parser, minPrec = 0): Node
 proc parseIdent(p: var Parser, minPrec = 0): Node
 proc parseCall(p: var Parser, minPrec = 0): Node
 proc parseMacroCall(p: var Parser, minPrec = 0): Node
+proc parseLitElement(p: var Parser, minPrec = 0): Node
 proc parseScript*(astProgram: var Ast, code: string, sourcePath: string)
 
 #
@@ -1310,6 +1311,63 @@ prefixHandle parseClientBlock:
   if p.curr is tkEnd:
     walk p # tkEnd should not be necessary if 
 
+proc toKebabCase(s: string): string =
+  result = newStringOfCap(s.len + 4)
+  for i, c in s:
+    if c.isUpperAscii:
+      if i > 0:
+        result.add('-')
+      result.add(c.toLowerAscii)
+    else:
+      result.add(c)
+
+prefixHandle parseLitElement:
+  ## Parse a LitElement definition: @LitElement, ClassName
+  let elLine = p.curr.line
+  let elCol = p.curr.col
+  result = ast.newNode(nkCustomElement)
+  walk p # tkLitElement
+  if p.curr isnot tkComma:
+    p.curr.error("Expected ',' after @LitElement")
+  walk p # tkComma
+  if p.curr.kind notin {tkIdentifier}:
+    p.curr.error("Expected identifier for class name")
+  let className = ast.newIdent(p.curr.value)
+  let tagName = ast.newStringLit(toKebabCase(p.curr.value))
+  result.add(className)
+  result.add(tagName)
+  walk p # tkIdentifier
+  if p.curr is tkColon:
+    walk p
+  var classJsBody = ast.newNode(nkBlock)
+  var renderBody: Node = ast.newNode(nkEmpty)
+  while p.curr.col > elCol:
+    case p.curr.kind
+    of tkSnippetJs:
+      let jsNode = p.parseJavaScript()
+      caseNotNil jsNode:
+        classJsBody.add(jsNode)
+    of tkClient:
+      if renderBody.kind != nkEmpty:
+        p.curr.error("Only one @client block allowed per @LitElement")
+      let clientCol = p.curr.col
+      walk p # tkClient
+      if p.curr is tkColon:
+        walk p
+      let body = p.parseBlock(clientCol)
+      renderBody = ast.newNode(nkClientBlock)
+      renderBody.add(body)
+      if p.curr is tkEnd:
+        walk p
+    of tkIf, tkFor, tkWhile:
+      let stmt = p.parseStmt()
+      caseNotNil stmt:
+        classJsBody.add(stmt)
+    else:
+      p.curr.error("Only @javascript and @client blocks allowed inside @LitElement")
+  result.add(classJsBody)
+  result.add(renderBody)
+
 proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
   # Get the prefix function for the current token
   # This is used to parse the current token
@@ -1363,6 +1421,7 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
     of tkHtmlComment: parseHtmlComment
     of tkViewLoader: parseViewPlaceholder
     of tkClient: parseClientBlock
+    of tkLitElement: parseLitElement
     else: nil
 
 prefixHandle parsePrefix:
@@ -1499,6 +1558,7 @@ prefixHandle parseStmt:
     of tkHtmlComment: parseHtmlComment
     of tkViewLoader: parseViewPlaceholder
     of tkClient: parseClientBlock
+    of tkLitElement: parseLitElement
     else: parseExpression
   if prefixFn != nil:
     return prefixFn(p)

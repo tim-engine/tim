@@ -34,7 +34,7 @@ Here is a simple example of Tim Engine's syntax for creating a basic web page te
 var title = "Welcome to Tim Engine"
 div.container > div.row > div.col-12
   h1.display-4.fw-bold: $title // passing variable to template
-  p.lead: "Tim Engine is a powerful templating engine and scripting language for developers."
+  p.lead: "Tim Engine is a powerful templating engine and scripting language for cool developers!"
   a.btn.btn-primary.px-4.rounded-3
     href="https://example.com": "Get Started"
 ```

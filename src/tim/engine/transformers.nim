@@ -1,4 +1,4 @@
-import std/os
+import std/[os, strutils]
 import pkg/voodoo/extensibles
 
 # Extend vancode AST and CodeGen to support
@@ -14,6 +14,7 @@ block extendvancodeAstAndCodeGen:
     nkCssSnippet
     nkViewLoader     # view loader using `@view` placeholder\
     nkClientBlock    # client block using `@client ... @end`
+    nkCustomElement  # custom element using @LitElement, ClassName
     nkMacro          # a block - {...}
 
   extendObject do:
@@ -59,7 +60,7 @@ block extendvancodeAstAndCodeGen:
       let tagPos = gen.chunk.getString(tag)
       gen.chunk.emit(opcBeginHtml)
       gen.chunk.emit(tagPos)
-      discard gen.pushConst(ast.newStringLit(node.snippetCode))
+      discard gen.pushConst(ast.newStringLit(jsDocify(node.snippetCode)))
       gen.chunk.emit(opcTextHtml)
       gen.chunk.emit(opcCloseHtml)
       gen.chunk.emit(tagPos)
@@ -86,6 +87,96 @@ block extendvancodeAstAndCodeGen:
       # let jsSnippet: Rope = jsgen.genScript(jst, node[0].children)
       # gen.chunk.emit(opcClientBlockEnd)
       discard
+    of nkCustomElement:
+      let className = node[0].ident
+      let tagName = node[1].stringVal
+      let classJsBody = node[2]
+      let renderBody = node[3]
+      # Extract var declarations and constructor code from @javascript blocks
+      var staticProps: seq[string]
+      var constructorLines: seq[string]
+      for child in classJsBody.children:
+        if child.kind == nkJavaScriptSnippet:
+          let js = jsDocify(child.snippetCode)
+          let lines = js.split('\n')
+          var i = 0
+          while i < lines.len:
+            let line = lines[i]
+            let trimmed = line.strip()
+            if trimmed.startsWith("/** @type {"):
+              let typeStart = trimmed.find("{") + 1
+              let typeEnd = trimmed.find("}")
+              var prevType = ""
+              if typeStart > 0 and typeEnd > typeStart:
+                prevType = trimmed[typeStart..<typeEnd]
+              i += 1
+              if i < lines.len:
+                let nextLine = lines[i].strip()
+                var kw: string
+                if nextLine.startsWith("var "): kw = "var "
+                elif nextLine.startsWith("let "): kw = "let "
+                elif nextLine.startsWith("const "): kw = "const "
+                if kw.len > 0:
+                  let rest = nextLine[kw.len..^1]
+                  let eqIdx = rest.find('=')
+                  let varName = if eqIdx >= 0: rest[0..<eqIdx].strip else: rest.strip()
+                  let value = if eqIdx >= 0: rest[eqIdx+1..^1].strip else: ""
+                  if prevType.len > 0:
+                    let litType = case prevType
+                      of "number": "Number"
+                      of "boolean": "Boolean"
+                      of "string": "String"
+                      else: prevType
+                    staticProps.add("    " & varName & ": {type: " & litType & "}")
+                  if value.len > 0:
+                    constructorLines.add("    this." & varName & " = " & value & ";")
+                else:
+                  constructorLines.add("  " & lines[i])
+            elif trimmed.startsWith("var ") or trimmed.startsWith("let ") or trimmed.startsWith("const "):
+              var kw: string
+              if trimmed.startsWith("var "): kw = "var "
+              elif trimmed.startsWith("let "): kw = "let "
+              else: kw = "const "
+              let rest = trimmed[kw.len..^1]
+              let eqIdx = rest.find('=')
+              let varName = if eqIdx >= 0: rest[0..<eqIdx].strip else: rest.strip()
+              let value = if eqIdx >= 0: rest[eqIdx+1..^1].strip else: ""
+              if value.len > 0:
+                constructorLines.add("    this." & varName & " = " & value & ";")
+            else:
+              if trimmed.len > 0:
+                constructorLines.add("  " & line)
+            i += 1
+      var jsCode = "class " & className & " extends LitElement {\n"
+      if staticProps.len > 0:
+        jsCode &= "  static properties = {\n"
+        for p in staticProps:
+          jsCode &= p & ",\n"
+        jsCode &= "  };\n"
+      jsCode &= "  constructor() {\n"
+      jsCode &= "    super();\n"
+      for cl in constructorLines:
+        jsCode &= cl & "\n"
+      jsCode &= "  }\n"
+      jsCode &= "  render() {\n"
+      if renderBody.kind == nkClientBlock:
+        jsCode &= "    return html`\n"
+        for child in renderBody[0].children:
+          jsCode &= genClientRender(child, 6, asTemplate = true)
+        jsCode &= "\n    `;\n"
+      else:
+        jsCode &= "    return html``;\n"
+      jsCode &= "  }\n"
+      jsCode &= "}\n"
+      jsCode &= "customElements.define('" & tagName & "', " & className & ");\n"
+      let tag = "script"
+      let tagPos = gen.chunk.getString(tag)
+      gen.chunk.emit(opcBeginHtml)
+      gen.chunk.emit(tagPos)
+      discard gen.pushConst(ast.newStringLit(jsCode))
+      gen.chunk.emit(opcTextHtml)
+      gen.chunk.emit(opcCloseHtml)
+      gen.chunk.emit(tagPos)
 
   # Extends the AST module with new node constructors and utilities
   # for HTML elements and macros
@@ -98,6 +189,9 @@ block extendvancodeAstAndCodeGen:
         h = h !& hash(attr.attrType)
         h = h !& hash(attr.attrNode)
       for child in node.childElements:
+        h = h !& hash(child)
+    of nkCustomElement:
+      for child in node.children:
         h = h !& hash(child)
     of nkHtmlAttribute:
       h = h !& hash(node.attrType)
@@ -276,6 +370,316 @@ block extendvancodeAstAndCodeGen:
         result = $node.tag
 
   extendModule "vancode" / "interpreter" / "codegen.nim":
+
+    proc jsDocify*(js: string): string =
+      result = newStringOfCap(js.len)
+      for line in js.splitLines:
+        let trimmed = line.strip
+        let indentLen = line.len - trimmed.len
+        var kw: string
+        if trimmed.startsWith("var "): kw = "var "
+        elif trimmed.startsWith("let "): kw = "let "
+        elif trimmed.startsWith("const "): kw = "const "
+        else:
+          result.add(line & "\n")
+          continue
+        let rest = trimmed[kw.len..^1]
+        let colonIdx = rest.find(':')
+        let eqIdx = rest.find('=')
+        if colonIdx >= 0 and (eqIdx < 0 or colonIdx < eqIdx):
+          let varName = rest[0..<colonIdx].strip
+          let afterType = rest[colonIdx+1..^1].strip
+          let valueEq = afterType.find('=')
+          let typeName = if valueEq >= 0: afterType[0..<valueEq].strip else: afterType
+          let value = if valueEq >= 0: " = " & afterType[valueEq+1..^1].strip else: ""
+          let jsType = case typeName
+            of "int", "float": "number"
+            of "bool": "boolean"
+            of "string": "string"
+            of "void": "void"
+            of "any": "*"
+            else: typeName
+          let indent = repeat(' ', indentLen)
+          result.add(indent & "/** @type {" & jsType & "} */\n")
+          result.add(indent & kw & varName & value & "\n")
+        else:
+          result.add(line & "\n")
+
+    proc jsEscapeStr(s: string): string =
+      result = newStringOfCap(s.len)
+      for c in s:
+        case c
+        of '\n': result.add("\\n")
+        of '\r': result.add("\\r")
+        of '\t': result.add("\\t")
+        of '\\': result.add("\\\\")
+        of '`':  result.add("\\`")
+        of '$':  result.add("\\$")
+        else:    result.add(c)
+
+    proc jsEscapeDQuote(s: string): string =
+      result = newStringOfCap(s.len)
+      for c in s:
+        case c
+        of '\n': result.add("\\n")
+        of '\r': result.add("\\r")
+        of '\t': result.add("\\t")
+        of '\\': result.add("\\\\")
+        of '"':  result.add("\\\"")
+        else:    result.add(c)
+
+    proc jsIdent(ident: string): string =
+      if ident.len > 0 and ident[0] == '$':
+        ident[1..^1]
+      else:
+        ident
+
+    proc jsOp(op: string): string =
+      case op
+      of "&": "+"
+      of "and": "&&"
+      of "or": "||"
+      of "not": "!"
+      of "==": "==="
+      of "!=": "!=="
+      of "is": "==="
+      of "isnot": "!=="
+      of "mod": "%"
+      else: op
+
+    proc clientExpr(node: Node): string =
+      case node.kind
+      of nkString: "\"" & jsEscapeDQuote(node.stringVal) & "\""
+      of nkInt: $node.intVal
+      of nkFloat: $node.floatVal
+      of nkBool: $node.boolVal
+      of nkIdent: jsIdent(node.ident)
+      of nkPrefix: jsOp(node[0].ident) & clientExpr(node[1])
+      of nkPostfix: clientExpr(node[0]) & jsOp(node[1].ident)
+      of nkInfix:
+        let op = if node[0].kind == nkIdent: jsOp(node[0].ident) else: jsOp(node[0].render)
+        "(" & clientExpr(node[1]) & " " & op & " " & clientExpr(node[2]) & ")"
+      of nkCall:
+        let callee = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: clientExpr(node[0])
+        callee & "(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ")"
+      of nkBracket:
+        clientExpr(node[0]) & "[" & clientExpr(node[1]) & "]"
+      of nkDot:
+        clientExpr(node[0]) & "." & clientExpr(node[1])
+      else:
+        node.render
+
+    proc genClientRender(node: Node, indent: int, asTemplate: bool = false): string =
+      let i = if asTemplate: "" else: repeat(' ', indent)
+      let ni = if asTemplate: "" else: repeat(' ', indent + 2)
+      if asTemplate:
+        case node.kind
+        of nkHtmlElement:
+          let tag = node.getTag()
+          result = "<" & tag
+          for attr in node.attributes:
+            if attr.kind == nkHtmlAttribute:
+              case attr.attrType
+              of htmlAttrClass:
+                case attr.attrNode.kind
+                of nkString:
+                  result.add(" class=\"" & attr.attrNode.stringVal & "\"")
+                of nkIdent:
+                  result.add(" class=\"${" & jsIdent(attr.attrNode.ident) & "}\"")
+                else:
+                  result.add(" class=\"${" & clientExpr(attr.attrNode) & "}\"")
+              of htmlAttrId:
+                case attr.attrNode.kind
+                of nkString:
+                  result.add(" id=\"" & attr.attrNode.stringVal & "\"")
+                else:
+                  result.add(" id=\"${" & clientExpr(attr.attrNode) & "}\"")
+              of htmlAttr:
+                if attr.attrNode.kind == nkInfix and attr.attrNode.len >= 3:
+                  let keyNode = attr.attrNode[1]
+                  let valNode = attr.attrNode[2]
+                  let key = if keyNode.kind == nkString: keyNode.stringVal
+                            elif keyNode.kind == nkIdent: jsIdent(keyNode.ident)
+                            else: clientExpr(keyNode)
+                  let val = if valNode.kind == nkString: valNode.stringVal
+                            else: "${" & clientExpr(valNode) & "}"
+                  result.add(" " & key & "=\"" & val & "\"")
+                elif attr.attrNode.kind == nkString:
+                  result.add(" " & attr.attrNode.stringVal)
+                elif attr.attrNode.kind == nkIdent:
+                  result.add(" " & jsIdent(attr.attrNode.ident))
+              else: discard
+          result.add(">")
+          for child in node.childElements:
+            result.add(genClientRender(child, indent, asTemplate))
+          if node.tag notin voidHtmlElements:
+            result.add("</" & tag & ">")
+        of nkString:
+          result = jsEscapeStr(node.stringVal)
+        of nkInt:
+          result = "${" & $node.intVal & "}"
+        of nkFloat:
+          result = "${" & $node.floatVal & "}"
+        of nkBool:
+          result = "${" & $node.boolVal & "}"
+        of nkIdent:
+          result = "${" & jsIdent(node.ident) & "}"
+        of nkBlock:
+          for child in node.children:
+            result.add(genClientRender(child, indent, asTemplate))
+        of nkIf:
+          result = "${" & clientExpr(node[0]) & " ? html`" & genClientRender(node[1], indent, asTemplate) & "`"
+          let hasElse = node.children.len mod 2 == 1
+          let elifBranches = if hasElse: node[2..^2] else: node[2..^1]
+          for idx in countup(0, elifBranches.len - 1, 2):
+            result.add(" : " & clientExpr(elifBranches[idx]) & " ? html`" & genClientRender(elifBranches[idx + 1], indent, asTemplate) & "`")
+          if hasElse:
+            result.add(" : html`" & genClientRender(node[^1], indent, asTemplate) & "`")
+          else:
+            result.add(" : ''")
+          result.add("}")
+        of nkFor:
+          let varName = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: node[0].render
+          let iterable = node[1]
+          if iterable.kind == nkCall and iterable[0].kind == nkIdent and iterable[0].ident == "..":
+            let start = clientExpr(iterable[1])
+            let endVal = clientExpr(iterable[2])
+            result = "${Array.from({length: (" & endVal & " - " & start & " + 1)}, (_, i) => i + " & start & ").map(" & varName & " => html`" & genClientRender(node[2], indent, asTemplate) & "`)}"
+          else:
+            let iterExpr = clientExpr(iterable)
+            result = "${" & iterExpr & ".map(" & varName & " => html`" & genClientRender(node[2], indent, asTemplate) & "`)}"
+        of nkWhile:
+          result = ""
+        of nkCall:
+          result = "${" & clientExpr(node) & "}"
+        of nkInfix, nkPrefix, nkPostfix:
+          result = "${" & clientExpr(node) & "}"
+        of nkReturn, nkBreak, nkContinue:
+          result = ""
+        of nkVar, nkLet, nkConst:
+          result = ""
+        of nkRawHtml:
+          result = jsEscapeStr(node.rawHtml)
+        of nkJavaScriptSnippet:
+          result = "${" & node.snippetCode & "}"
+        of nkDocComment:
+          if node.comment.len > 0:
+            result = "/* " & node.comment & " */"
+        else:
+          result = ""
+      else:
+        case node.kind
+        of nkHtmlElement:
+          let tag = node.getTag()
+          result = i & "html += `<" & tag
+          for attr in node.attributes:
+            if attr.kind == nkHtmlAttribute:
+              case attr.attrType
+              of htmlAttrClass:
+                case attr.attrNode.kind
+                of nkString:
+                  result.add(" class=\\\"" & attr.attrNode.stringVal & "\\\"")
+                of nkIdent:
+                  result.add(" class=\\\"${" & jsIdent(attr.attrNode.ident) & "}\\\"")
+                else:
+                  result.add(" class=\\\"${" & clientExpr(attr.attrNode) & "}\\\"")
+              of htmlAttrId:
+                case attr.attrNode.kind
+                of nkString:
+                  result.add(" id=\\\"" & attr.attrNode.stringVal & "\\\"")
+                else:
+                  result.add(" id=\\\"${" & clientExpr(attr.attrNode) & "}\\\"")
+              of htmlAttr:
+                if attr.attrNode.kind == nkInfix and attr.attrNode.len >= 3:
+                  let keyNode = attr.attrNode[1]
+                  let valNode = attr.attrNode[2]
+                  let key = if keyNode.kind == nkString: keyNode.stringVal
+                            elif keyNode.kind == nkIdent: jsIdent(keyNode.ident)
+                            else: clientExpr(keyNode)
+                  let val = if valNode.kind == nkString: valNode.stringVal
+                            else: "${" & clientExpr(valNode) & "}"
+                  result.add(" " & key & "=\\\"" & val & "\\\"")
+                elif attr.attrNode.kind == nkString:
+                  result.add(" " & attr.attrNode.stringVal)
+                elif attr.attrNode.kind == nkIdent:
+                  result.add(" " & jsIdent(attr.attrNode.ident))
+              else: discard
+          result.add(">`;\n")
+          for child in node.childElements:
+            result.add(genClientRender(child, indent, asTemplate))
+          if node.tag notin voidHtmlElements:
+            result.add(i & "html += `</" & tag & ">`;\n")
+        of nkString:
+          result = i & "html += `" & jsEscapeStr(node.stringVal) & "`;\n"
+        of nkInt:
+          result = i & "html += " & $node.intVal & ";\n"
+        of nkFloat:
+          result = i & "html += " & $node.floatVal & ";\n"
+        of nkBool:
+          result = i & "html += " & $node.boolVal & ";\n"
+        of nkIdent:
+          result = i & "html += String(" & jsIdent(node.ident) & ");\n"
+        of nkBlock:
+          for child in node.children:
+            result.add(genClientRender(child, indent, asTemplate))
+        of nkVar, nkLet, nkConst:
+          for decl in node[0]:
+            let varName = if decl[0].kind == nkIdent: jsIdent(decl[0].ident) else: decl[0].render
+            let varValue = if decl[2].kind != nkEmpty: " = " & clientExpr(decl[2]) else: ""
+            result.add(i & $node.kind & " " & varName & varValue & ";\n")
+        of nkIf:
+          result = i & "if (" & clientExpr(node[0]) & ") {\n"
+          result.add(genClientRender(node[1], indent + 2, asTemplate))
+          result.add(i & "}\n")
+          let hasElse = node.children.len mod 2 == 1
+          let elifBranches = if hasElse: node[2..^2] else: node[2..^1]
+          for idx in countup(0, elifBranches.len - 1, 2):
+            result.add(ni & "else if (" & clientExpr(elifBranches[idx]) & ") {\n")
+            result.add(genClientRender(elifBranches[idx + 1], indent + 4, asTemplate))
+            result.add(ni & "}\n")
+          if hasElse:
+            result.add(ni & "else {\n")
+            result.add(genClientRender(node[^1], indent + 4, asTemplate))
+            result.add(ni & "}\n")
+        of nkFor:
+          let varName = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: node[0].render
+          let iterable = node[1]
+          if iterable.kind == nkCall and iterable[0].kind == nkIdent and iterable[0].ident == "..":
+            result = i & "for (let " & varName & " = " & clientExpr(iterable[1]) & "; " & varName & " <= " & clientExpr(iterable[2]) & "; " & varName & "++) {\n"
+          else:
+            result = i & "for (let " & varName & " of " & clientExpr(iterable) & ") {\n"
+          result.add(genClientRender(node[2], indent + 2, asTemplate))
+          result.add(i & "}\n")
+        of nkWhile:
+          result = i & "while (" & clientExpr(node[0]) & ") {\n"
+          result.add(genClientRender(node[1], indent + 2, asTemplate))
+          result.add(i & "}\n")
+        of nkCall:
+          let callee = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: clientExpr(node[0])
+          if callee == "echo" or callee == "console.log":
+            result = i & "console.log(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ");\n"
+          else:
+            result = i & callee & "(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ");\n"
+        of nkInfix, nkPrefix, nkPostfix:
+          result = i & clientExpr(node) & ";\n"
+        of nkReturn:
+          if node[0].kind != nkEmpty:
+            result = i & "return " & clientExpr(node[0]) & ";\n"
+          else:
+            result = i & "return;\n"
+        of nkBreak:
+          result = i & "break;\n"
+        of nkRawHtml:
+          result = i & "html += `" & jsEscapeStr(node.rawHtml) & "`;\n"
+        of nkJavaScriptSnippet:
+          let js = jsDocify(node.snippetCode)
+          for line in js.split('\n'):
+            result.add(i & line & "\n")
+        of nkDocComment:
+          if node.comment.len > 0:
+            result = i & "/* " & node.comment & " */\n"
+        else:
+          result = ""
 
     proc genMacro*(node: Node, isInstantiation = false): Sym {.codegen.}
     

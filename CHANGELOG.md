@@ -1,4 +1,35 @@
-# v0.2.6 - 2026-07-04
+# v0.2.6
+
+### 2026-07-27
+
+- **NEW**: Emmet-style `input:TYPE` shorthand — `input:time`, `input:color`, `input:range`,
+  etc. are parsed as `<input type="TYPE">` at the lexer/parser level. Distinguishes from
+  tim's `:` text-content syntax by checking `wsno == 0` (no whitespace before colon).
+  Only triggers on `tagInput`. Subsequent attributes (`.class`, `#id`) still apply.
+- **NEW**: `svg` elements now auto-inject `xmlns="http://www.w3.org/2000/svg"` at parse time.
+  Skips if the user explicitly provides `xmlns`.
+- **FIX**: PHP Linux build — replaced `--passC: staticExec(...)` with `switch("passC", ...)`
+  in `tim.nims` (staticExec returns literal text at compile-time, not the const value).
+  Uses `php-config --include-dir` as primary header discovery on Linux (with pkg-config
+  fallback).
+- **FIX**: Clue hardcoded macOS pragmas — wrapped `{.passC:}`/`{.passL:}` in
+  `php_api.nim`, `python_api.nim`, `lua_api.nim` inside `when defined(macosx):` to
+  prevent MacPorts paths and `-framework CoreFoundation` from leaking into Linux builds.
+- **FIX**: Docs workflow — added `permissions: contents: write` to allow
+  `peaceiris/actions-gh-pages` to push the `gh-pages` branch (GITHUB_TOKEN defaults to
+  read-only on newer repos).
+- **NEW**: Ruby extension CI — `tim-ruby/.github/workflows/build.yml` builds the native
+  extension via `repository_dispatch` (triggered from tim's release workflow). Builds
+  for x86_64-darwin, arm64-darwin, and x86_64-linux sequentially, commits platform
+  binaries to the tim-ruby repo.
+- **NEW**: `@LitElement, ClassName, "tag-name"` — define Lit-like custom HTML elements
+  in Tim. Body supports `@javascript` blocks (concatenated into the class body) and a
+  single `@client` block (the render template compiled to JS template literals).
+  Generates a JavaScript class extending `LitElement` with `connectedCallback`,
+  `render()`, and `customElements.define()`. Client-side only; server-side rendering
+  emits the class as a `<script>` block.
+
+### 2026-07-04
 
 - **NEW**: Lexer gains `tkIs`/`tkIsNot` token kinds; parser recognizes them as infix operators (precedence 5, equal to `==`). Registered as stdlib foreign procs with Nim implementations that compare values at runtime by `TypeId`. Related to VanCode v0.2.0 - 2026-07-08
 - **CHANGE:** Updated stdlib for VanCode v0.1.9 ValueStorage API — `Object.fields`

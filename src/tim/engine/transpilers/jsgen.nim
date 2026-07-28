@@ -6,6 +6,41 @@
 
 include ./private
 
+proc jsDocify(js: string): string =
+  ## Transform Tim-style typed JS vars (var x: int = 5) to JSDoc-annotated JS
+  result = newStringOfCap(js.len)
+  for line in js.splitLines:
+    let trimmed = line.strip
+    let indentLen = line.len - trimmed.len
+    var kw: string
+    if trimmed.startsWith("var "): kw = "var "
+    elif trimmed.startsWith("let "): kw = "let "
+    elif trimmed.startsWith("const "): kw = "const "
+    else:
+      result.add(line & "\n")
+      continue
+    let rest = trimmed[kw.len..^1]
+    let colonIdx = rest.find(':')
+    let eqIdx = rest.find('=')
+    if colonIdx >= 0 and (eqIdx < 0 or colonIdx < eqIdx):
+      let varName = rest[0..<colonIdx].strip
+      let afterType = rest[colonIdx+1..^1].strip
+      let valueEq = afterType.find('=')
+      let typeName = if valueEq >= 0: afterType[0..<valueEq].strip else: afterType
+      let value = if valueEq >= 0: " = " & afterType[valueEq+1..^1].strip else: ""
+      let jsType = case typeName
+        of "int", "float": "number"
+        of "bool": "boolean"
+        of "string": "string"
+        of "void": "void"
+        of "any": "*"
+        else: typeName
+      let indent = repeat(' ', indentLen)
+      result.add(indent & "/** @type {" & jsType & "} */\n")
+      result.add(indent & kw & varName & value & "\n")
+    else:
+      result.add(line & "\n")
+
 #
 # Forward declarations
 #
@@ -331,13 +366,35 @@ proc genStmt(node: Node, indent: int = 0): Rope {.codegen.} =
     result.add(ind & "html += `" & jsEscapeStr(css) & "`;\n")
     result.add(ind & "html += `</style>`;\n")
   of nkJavaScriptSnippet:
-    let js = node.snippetCode
+    let js = jsDocify(node.snippetCode)
     result.add(ind & "html += `<script>`" & ";\n")
     result.add(ind & js & "\n")
     result.add(ind & "html += `</script>`;\n")
   of nkDocComment:
     if node.comment.len > 0:
       result.add(ind & "/* " & node.comment & " */\n")
+  of nkCustomElement:
+    let className = node[0].ident
+    let tagName = node[1].stringVal
+    let classJsBody = node[2]
+    let renderBody = node[3]
+    result.add(ind & "class " & className & " extends LitElement {\n")
+    for child in classJsBody.children:
+      if child.kind == nkJavaScriptSnippet:
+        for line in jsDocify(child.snippetCode).split('\n'):
+          result.add(ind & "  " & line & "\n")
+      else:
+        result.add(gen.genStmt(child, indent + 1))
+    result.add(ind & "  connectedCallback() { this.render(); }\n")
+    result.add(ind & "  render() {\n")
+    result.add(ind & "    let html = ``;\n")
+    if renderBody.kind == nkClientBlock:
+      for stmt in renderBody[0].children:
+        result.add(gen.genStmt(stmt, indent + 2))
+    result.add(ind & "    this.innerHTML = html;\n")
+    result.add(ind & "  }\n")
+    result.add(ind & "}\n")
+    result.add(ind & "customElements.define('" & tagName & "', " & className & ");\n")
   else: discard
 
 proc genScript*(program: Ast, includePath: Option[string],
