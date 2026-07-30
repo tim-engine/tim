@@ -27,7 +27,7 @@ jobs:
       - uses: georgelemon/setup-nim-action@master
         with:
           nim-version: ${{ env.NIM_VERSION }}
-      - run: choosenim show path -y
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Install language runtime dependencies"
         if: runner.os != 'Windows'
