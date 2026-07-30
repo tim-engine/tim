@@ -35,7 +35,7 @@ nim	registerTemplate	tim/meta/initializer.html#registerTemplate,TimEngine,string
 nim	declareGlobals	tim/meta/initializer.html#declareGlobals,CodeGen	proc declareGlobals(compiler: CodeGen)		378
 nim	precompileEmbeddedTemplate	tim/meta/initializer.html#precompileEmbeddedTemplate,TimEngine,TimTemplate,Packager,JsonNode,TableRef[string,string]	proc precompileEmbeddedTemplate(engine: TimEngine; tpl: TimTemplate; pkgr: Packager;\n                           data: JsonNode = nil;\n                           vfsMap: TableRef[string, string] = nil): bool		491
 nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,TimTemplate,JsonNode,JsonNode	proc interpret(view, layout: TimTemplate; localData, globalData: JsonNode): Value		568
-nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,JsonNode,JsonNode	proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value		591
+nim	interpret	tim/meta/initializer.html#interpret,TimTemplate,JsonNode,JsonNode	proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value		590
 nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,TimTemplate,JsonNode,JsonNode	proc compileCode(view, layout: TimTemplate; localData, globalData: JsonNode): Value		600
 nim	compileCode	tim/meta/initializer.html#compileCode,TimTemplate,JsonNode,JsonNode	proc compileCode(view: TimTemplate; localData, globalData: JsonNode): Value		607
 nim	precompile	tim/meta/initializer.html#precompile,TimEngine,EmbeddedTemplates,EmbeddedTemplates,EmbeddedTemplates,JsonNode	proc precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;\n           globalData: JsonNode = nil)		612
