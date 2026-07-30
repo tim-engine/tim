@@ -577,25 +577,25 @@ proc interpret*(view, layout: TimTemplate, localData,
   assert view.script != nil and
     layout.script != nil, "View or Layout script is not initialized"
   
-  # first, evaluate the view template to get its output
+  let vm = VM()
   let viewOutput = view.vmInstance.interpret(view.script, view.mainChunk,
                                       globalData = globalData, localData = localData)
-
-  # then evaluate the layout template, passing the view output
-  # and returning the final result
-  view.vmInstance.interpret(layout.script, layout.mainChunk,
-                              staticString = some($viewOutput),
-                              globalData = globalData,
-                              localData = localData)
+  result = vm.interpret(layout.script, layout.mainChunk,
+                  staticString = some($viewOutput),
+                  globalData = globalData,
+                  localData = localData)
+  if result == nil:
+    result = initValue("")
 
 proc interpret*(view: TimTemplate, localData,
       globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
   ## Evaluate a view without a layout and return the final HTML output. 
   ## This can be used for rendering partials or standalone views.
   assert view.script != nil, "View script is not initialized"
+  # let vm = newVM()
   view.vmInstance.interpret(view.script, view.mainChunk,
-                      globalData = globalData,
-                      localData = localData)
+                  globalData = globalData,
+                  localData = localData)
 
 proc compileCode*(view, layout: TimTemplate,
                 localData, globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =

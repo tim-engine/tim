@@ -30,11 +30,6 @@ const
   pkgrPackageSourceDir* = pkgrPackagesDir / "$1" / "$2" / "src"
   pkgrIndexPath* = pkgrPackagesDir / "index.json"
 
-# when not defined release:
-#   proc `$`*(pkgr: Packager): string =
-#     # for debug purposes
-#     pretty(jsony.fromJson(jsony.toJson(pkgr)), 2)
-
 proc initPackager*: Packager =
   discard existsOrCreateDir(pkgrHomeDir)
   discard existsOrCreateDir(pkgrHomeDirTemp)
