@@ -29,6 +29,9 @@ jobs:
           nim-version: ${{ env.NIM_VERSION }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upgrade nimble
+        run: nimble install -Y nimble
+
       - name: "Install language runtime dependencies"
         if: runner.os != 'Windows'
         run: |
