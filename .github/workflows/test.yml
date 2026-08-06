@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         nim-version:
-          - '2.2.0'
+          - '2.2.10'
     steps:
       - uses: actions/checkout@v3
       
