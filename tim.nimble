@@ -13,10 +13,10 @@ binDir        = "bin"
 
 # Dependencies
 
-requires "nim >= 2.0.0"
+requires "nim >= 2.2.10"
 
 requires "kapsis >= 0.3.3"
-requires "vancode >= 0.1.2"
+requires "vancode >= 0.2.5"
 requires "flatty >= 0.4.0"
 requires "checksums >= 0.2.2"
 requires "voodoo >= 0.1.9"
@@ -24,10 +24,10 @@ requires "watchout >= 0.2.2"
 requires "openparser >= 0.1.2"
 requires "semver >= 1.2.3"
 
-requires "supranim >= 0.1.1"
-requires "powpow >= 0.1.0"
-requires "clue >= 0.1.0"
 requires "bag >= 0.1.0"
+requires "boogie >= 0.1.0"
+requires "clue >= 0.1.0"
+requires "supranim >= 0.1.5[powpow]"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):
