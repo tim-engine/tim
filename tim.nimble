@@ -39,20 +39,17 @@ else:
 task napi, "build a dev version":
   exec "denim build src/tim.nim --cmake -y"
 
-task devlog, "build a dev version":
-  exec "nimble build --mm:arc -d:hayaVmWriteStackOps -d:hayaVmWritePcFlow -d:timLogCodeGen -d:useMalloc"
-
 task php, "build PHP extension":
-  exec "rm -f bin/tim && nimble build -d:php_build -d:release && mkdir -p build && cp bin/tim build/tim_php.so"
+  exec "nim c -d:php_build -d:release -o:build/tim_php.so src/tim.nim"
 
 task ruby, "build Ruby extension":
-  exec "rm -f bin/tim && nimble build -d:ruby_build -d:release && mkdir -p build && cp bin/tim build/Tim.bundle"
+  exec "nim c -d:ruby_build -d:release -o:build/Tim.bundle src/tim.nim"
 
 task python, "build Python extension":
-  exec "rm -f bin/tim && nimble build -d:python_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
+  exec "nim c -d:python_build -d:release -o:build/tim.so src/tim.nim"
 
 task lua, "build Lua extension":
-  exec "rm -f bin/tim && nimble build -d:lua_build -d:release && mkdir -p build && cp bin/tim build/tim.so"
+  exec "nim c -d:lua_build -d:release -o:build/tim.so src/tim.nim"
 
 import std/os
 task build_examples, "build examples":
