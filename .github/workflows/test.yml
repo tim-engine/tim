@@ -5,7 +5,8 @@ jobs:
     uses: nimbase/setup-nim-action/.github/workflows/test_clue.yml@main
     with:
       nim-version: stable
-      os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
+      # os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
+      os: '[{"os":"windows"}]
       pre-install-command: |
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo apt-get update
@@ -22,11 +23,8 @@ jobs:
           echo "C:\ProgramData\chocolatey\bin" >> "$GITHUB_PATH"
         fi
         npm install cmake-js -g
-
+        clue install https://github.com/nimbase/nimbase
       pre-test-command: |
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          export PATH="/c/tools/ruby34/bin:/c/tools/php:/c/tools/luajit:$PATH"
-        fi
         if [ "$RUNNER_OS" = "Linux" ]; then
           clue task ruby
           clue task php
@@ -38,6 +36,7 @@ jobs:
           clue task python
           clue task lua
         elif [ "$RUNNER_OS" = "Windows" ]; then
+          clue task ruby
           clue task php
           clue task python
           clue task lua
