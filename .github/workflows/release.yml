@@ -11,3 +11,5 @@ jobs:
     with:
       nim-version: '2.2.10'
       app-name: tim
+      pre-release-command: |
+        clue install https://github.com/nimbase/nimbase --build
