@@ -1,3 +1,16 @@
+# v0.2.7
+
+### 2026-08-05
+
+- **NEW**: TTL-based response caching for the `fetch` (libsystem) function in `tim serve`.
+  Enabled via a `cache:` section in `tim.yml` (`enabled`, `path` defaults to `./cache`,
+  `default_ttl` in seconds defaults to 3600). Responses are keyed by a deterministic
+  name-based (v3, MD5) UUID derived from method/url/body and stored in a WAL-backed
+  Boogie KV store; fresh entries within TTL are served without a network call. Per-call
+  overrides in the fetch options: `ttl`, `refresh` (bypass read, still write),
+  `noCache` (bypass read and write). Only successful (2xx) responses are cached. The
+  cache is a no-op outside of `tim serve` (build, embedded, tests).
+
 # v0.2.6
 
 ### 2026-07-27
