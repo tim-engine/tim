@@ -7,9 +7,6 @@ jobs:
       nim-version: stable
       os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
       pre-install-command: |
-        npm install cmake-js -g
-        clue install denim --build
-        clue install https://github.com/nimbase/nimbase --build
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo apt-get update
           sudo apt-get install -y \
@@ -21,20 +18,26 @@ jobs:
           brew install luajit php ruby python3
         elif [ "$RUNNER_OS" = "Windows" ]; then
           choco install -y luajit php ruby python3
+          export PATH="/c/tools/ruby34/bin:/c/tools/php:/c/tools/luajit:$PATH"
         fi
+        npm install cmake-js -g
+        nimble install -y https://github.com/nimbase/nimbase
       pre-test-command: |
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          export PATH="/c/tools/ruby34/bin:/c/tools/php:/c/tools/luajit:$PATH"
+        fi
         if [ "$RUNNER_OS" = "Linux" ]; then
-          clue ruby
-          clue php
-          clue python
-          clue lua
+          clue task ruby
+          clue task php
+          clue task python
+          clue task lua
         elif [ "$RUNNER_OS" = "macOS" ]; then
-          clue ruby
-          clue php
-          clue python
-          clue lua
+          clue task ruby
+          clue task php
+          clue task python
+          clue task lua
         elif [ "$RUNNER_OS" = "Windows" ]; then
-          clue php
-          clue python
-          clue lua
+          clue task php
+          clue task python
+          clue task lua
         fi
