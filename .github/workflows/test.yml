@@ -40,10 +40,10 @@ jobs:
         run: "npm install cmake-js -g"
 
       - name: "Install Denim for building node bindings"
-        run: "nimble install -y denim@#head"
+        run: "nimble install -y denim"
 
       - name: "Install Nimbase for building native extensions"
-        run: "nimble install -y https://github.com/nimbase/nimbase@#head"
+        run: "nimble install https://github.com/nimbase/nimbase" # not published yet
 
       - name: "Install & test via Nimble"
         run: |

@@ -1,6 +1,6 @@
 import strutils
---path:"/Users/georgelemon/Development/packages/denim/src"
---mm:atomicArc
+
+--mm:arc
 --threads:on
 --deepcopy:on
 --define:ssl
