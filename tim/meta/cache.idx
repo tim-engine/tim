@@ -1,0 +1,11 @@
+nimTitle	cache	tim/meta/cache.html	module tim/meta/cache		0
+nim	cacheStore	tim/meta/cache.html#cacheStore	var cacheStore		22
+nim	cacheDefaultTTL	tim/meta/cache.html#cacheDefaultTTL	var cacheDefaultTTL		23
+nim	initFetchCache	tim/meta/cache.html#initFetchCache,string,int	proc initFetchCache(path: string; defaultTTL: int)		27
+nim	closeFetchCache	tim/meta/cache.html#closeFetchCache	proc closeFetchCache()		40
+nim	fetchCacheGet	tim/meta/cache.html#fetchCacheGet,string	proc fetchCacheGet(key: string): Option[string]		46
+nim	fetchCachePut	tim/meta/cache.html#fetchCachePut,string,string	proc fetchCachePut(key, value: string)		55
+nim	fetchCacheDelete	tim/meta/cache.html#fetchCacheDelete,string	proc fetchCacheDelete(key: string)		64
+nim	fetchCacheKey	tim/meta/cache.html#fetchCacheKey,string,string,string	proc fetchCacheKey(httpMethod, url, body: string): string		73
+nim	fetchCacheHit	tim/meta/cache.html#fetchCacheHit,string,int	proc fetchCacheHit(key: string; now: int): Option[JsonNode]		79
+nim	fetchCacheStore	tim/meta/cache.html#fetchCacheStore,string,JsonNode,int,int	proc fetchCacheStore(key: string; resp: JsonNode; ttl, now: int)		101
