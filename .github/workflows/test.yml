@@ -6,7 +6,7 @@ jobs:
     with:
       nim-version: stable
       # os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
-      os: '[{"os":"windows"}]
+      os: '[{"os":"windows"}]'
       pre-install-command: |
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo apt-get update
