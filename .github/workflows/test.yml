@@ -18,10 +18,11 @@ jobs:
           brew install luajit php ruby python3
         elif [ "$RUNNER_OS" = "Windows" ]; then
           choco install -y luajit php ruby python3
-          export PATH="/c/tools/ruby34/bin:/c/tools/php:/c/tools/luajit:$PATH"
+          echo "C:\tools\ruby34\bin" >> "$GITHUB_PATH"
+          echo "C:\ProgramData\chocolatey\bin" >> "$GITHUB_PATH"
         fi
         npm install cmake-js -g
-        nimble install -y https://github.com/nimbase/nimbase
+
       pre-test-command: |
         if [ "$RUNNER_OS" = "Windows" ]; then
           export PATH="/c/tools/ruby34/bin:/c/tools/php:/c/tools/luajit:$PATH"
