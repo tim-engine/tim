@@ -8,8 +8,8 @@ jobs:
       os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
       pre-install-command: |
         npm install cmake-js -g
-        clue install denim
-        clue install -y https://github.com/nimbase/nimbase
+        clue install denim --build
+        clue install https://github.com/nimbase/nimbase --build
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo apt-get update
           sudo apt-get install -y \
