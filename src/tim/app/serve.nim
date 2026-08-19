@@ -13,7 +13,7 @@ import pkg/vancode/manager/packager
 import supranim/network/webserver
 from supranim/core/request import getUrl, getAgent
 
-import ../meta/[initializer, config, websocket]
+import ../meta/[initializer, config, websocket, cache]
 
 type
   WebApp* = ref object
@@ -83,6 +83,15 @@ proc serveCommand*(v: Values) =
   let config: TimConfig = parseYaml(yamlFile, TimConfig)
   let baseDir = absolutePath(configPath.parentDir())
   discard existsOrCreateDir(baseDir / config.compilation.output)
+
+  if config.cache != nil and config.cache.enabled:
+    let cachePath =
+      if config.cache.path.len == 0: "cache"
+      else: config.cache.path
+    let defaultTTL =
+      if config.cache.defaultTTL > 0: config.cache.defaultTTL
+      else: 3600
+    initFetchCache(baseDir / cachePath, defaultTTL)
 
   let timEngine = newTim(
     src = config.compilation.source,

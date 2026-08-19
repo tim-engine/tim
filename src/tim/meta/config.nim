@@ -48,6 +48,19 @@ type
     threads*: uint
     routes*: Table[string, string]
 
+  CacheConfig* = ref object
+    ## Configuration for the `fetch` response caching layer used
+    ## by the `tim serve` development server
+    enabled*: bool
+      ## Whether response caching is enabled
+    path*: string
+      ## Directory (relative to the project base dir) where the cache
+      ## store files live. Defaults to `cache`
+    defaultTTL*: int
+      ## Default time-to-live in seconds for cached responses.
+      ## Can be overridden per-call via the `ttl` fetch option.
+      ## Defaults to 3600 when zero
+
   TimConfig* = ref object
     ## The main configuration object for the Tim template engine
     name*: string
@@ -69,6 +82,7 @@ type
       compilation*: CompilationSettings
       browser_sync*: BrowserSync
       server*: WebServerConfig
+      cache*: CacheConfig
     else: discard
 
 when not defined napibuild:

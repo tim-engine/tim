@@ -1,5 +1,5 @@
 import strutils
-
+--path:"/Users/georgelemon/Development/packages/denim/src"
 --mm:atomicArc
 --threads:on
 --deepcopy:on

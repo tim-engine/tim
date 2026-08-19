@@ -26,8 +26,8 @@ requires "semver >= 1.2.3"
 
 requires "bag >= 0.1.0"
 requires "boogie >= 0.1.0"
-requires "clue >= 0.1.0"
-requires "supranim >= 0.1.5[powpow]"
+requires "nimbase >= 0.1.0"
+requires "supranim >= 0.1.8[powpow]"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):

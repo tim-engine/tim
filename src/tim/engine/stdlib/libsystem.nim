@@ -7,11 +7,12 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim | https://openpeeps.dev/packages/tim
 
-import std/[strutils, options, os, sequtils,
+import std/[strutils, options, os, sequtils, times,
         httpclient, httpcore, random, hashes, math]
 
 import pkg/openparser/json
 import pkg/vancode/interpreter/[chunk, ast, sym, value]
+import ../../meta/cache
 import ./inliner
 
 type TimRuntime* = object of CatchableError
@@ -620,6 +621,20 @@ proc loadLibrary*(script: Script): Module =
         if optsJson != nil and optsJson.hasKey("timeout"):
           optsJson["timeout"].getInt()
         else: -1
+      ttl = block:
+        if optsJson != nil and optsJson.hasKey("ttl"):
+          optsJson["ttl"].getInt()
+        else: cacheDefaultTTL
+      refresh = optsJson != nil and optsJson.hasKey("refresh") and
+          optsJson["refresh"].getBool()
+      noCache = optsJson != nil and optsJson.hasKey("noCache") and
+          optsJson["noCache"].getBool()
+    let cacheKey = fetchCacheKey($httpMethod, url, body)
+    if not refresh and not noCache:
+      let cached = fetchCacheHit(cacheKey, int(epochTime()))
+      if cached.isSome:
+        result = initValue(cached.get())
+        return
     var client = newHttpClient(timeout = timeout)
     client.headers = reqHeaders
     try:
@@ -638,6 +653,8 @@ proc loadLibrary*(script: Script): Module =
         resp["json"] = fromJson(res.body)
       except:
         resp["json"] = newJNull()
+      if resp["ok"].getBool() and not noCache:
+        fetchCacheStore(cacheKey, resp, ttl, int(epochTime()))
       result = initValue(resp)
     except:
       let err = getCurrentExceptionMsg()
