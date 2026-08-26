@@ -11,5 +11,6 @@ jobs:
     with:
       nim-version: '2.2.10'
       app-name: tim
+      target-matrix: '[{"os":"ubuntu-latest"},{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"}]'
       pre-release-command: |
         clue install https://github.com/nimbase/nimbase --build
