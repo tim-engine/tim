@@ -40,20 +40,20 @@ task napi, "build a dev version":
   exec "denim build src/tim.nim --cmake -y"
 
 task php, "build PHP extension":
-  exec "nim c -d:php_build -d:release -o:build/tim_php.so src/tim.nim"
+  exec "clue build -d:php_build -d:release -o:build/tim_php.so src/tim.nim"
 
 task ruby, "build Ruby extension":
-  exec "nim c -d:ruby_build -d:release -o:build/Tim.bundle src/tim.nim"
+  exec "clue build -d:ruby_build -d:release -o:build/Tim.bundle src/tim.nim"
 
 task python, "build Python extension":
-  exec "nim c -d:python_build -d:release -o:build/tim.so src/tim.nim"
+  exec "clue build -d:python_build -d:release -o:build/tim.so src/tim.nim"
 
 task lua, "build Lua extension":
-  exec "nim c -d:lua_build -d:release -o:build/tim.so src/tim.nim"
+  exec "clue build -d:lua_build -d:release -o:build/tim.so src/tim.nim"
 
 import std/os
 task build_examples, "build examples":
   for e in walkDir(currentSourcePath().parentDir / "example"):
     let x = e.path.splitFile
     if x.name.startsWith("example_") and x.ext == ".nim" and not x.name.startsWith("!"):
-      exec "nim c -d:timHotCode --threads:on --deepcopy:on --mm:arc -o:./example/" & x.name & " example/" & x.name & x.ext
+      exec "clue build -d:timHotCode --threads:on --deepcopy:on --mm:arc -o:./example/" & x.name & " example/" & x.name & x.ext
