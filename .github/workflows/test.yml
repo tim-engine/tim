@@ -23,20 +23,20 @@ jobs:
         fi
         npm install cmake-js -g
         clue install https://github.com/nimbase/nimbase
-      pre-test-command: |
-        if [ "$RUNNER_OS" = "Linux" ]; then
-          clue task ruby
-          clue task php
-          clue task python
-          clue task lua
-        elif [ "$RUNNER_OS" = "macOS" ]; then
-          clue task ruby
-          clue task php
-          clue task python
-          clue task lua
-        elif [ "$RUNNER_OS" = "Windows" ]; then
-          clue task ruby
-          clue task php
-          clue task python
-          clue task lua
-        fi
+      # pre-test-command: |
+      #   if [ "$RUNNER_OS" = "Linux" ]; then
+      #     clue task ruby
+      #     clue task php
+      #     clue task python
+      #     clue task lua
+      #   elif [ "$RUNNER_OS" = "macOS" ]; then
+      #     clue task ruby
+      #     clue task php
+      #     clue task python
+      #     clue task lua
+      #   elif [ "$RUNNER_OS" = "Windows" ]; then
+      #     clue task ruby
+      #     clue task php
+      #     clue task python
+      #     clue task lua
+      #   fi
