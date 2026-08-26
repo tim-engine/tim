@@ -5,8 +5,7 @@ jobs:
     uses: nimbase/setup-nim-action/.github/workflows/test_clue.yml@main
     with:
       nim-version: stable
-      # os: '[{"os":"ubuntu-latest"},{"os":"windows-latest"},{"os":"macos-15-intel"}]'
-      os: '[{"os":"windows"}]'
+      os: '[{"os":"ubuntu-latest"},{"os":"macos-15-intel"}]'
       pre-install-command: |
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo apt-get update
