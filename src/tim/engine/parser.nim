@@ -427,7 +427,7 @@ prefixHandle parseElement:
   # parse an HTML element
   let tk = p.curr
   var multiplier: Node
-  let tag = htmlTag(tk.value)
+  let tag = getHtmlTag(tk.value)
   result = ast.newHtmlElement(tag, tk.value)
   result.ln = p.curr.line
   result.col = p.curr.col
@@ -1090,12 +1090,23 @@ prefixHandle parseMacroCall:
         caseNotNil arg:
           result.add(arg)
       of tkColon:
-        # parse a statement
+        # parse statement(s) after colon — support multi-line indented block (always child of macro)
         walk p # tkColon
-        let stmtNode: Node = p.parseStmt()
-        caseNotNil stmtNode:
-          result.add(stmtNode)
-          break # break the loop after adding the statement
+        var collected: seq[Node]
+        let first = p.parseStmt()
+        caseNotNil first:
+          collected.add(first)
+          if first.col > tokenAt.col:
+            while p.curr.col == first.col and p.curr.col > tokenAt.col:
+              let extra = p.parseStmt()
+              caseNotNil extra:
+                collected.add(extra)
+              do: break
+          if collected.len == 1:
+            result.add(collected[0])
+          else:
+            result.add(ast.newTree(nkBlock, collected))
+          break
         do: break
       else: break # nothing to add
 
@@ -1114,6 +1125,23 @@ prefixHandle parseMacroCall:
           result.add(callNode)
       else:
         break
+
+    # Indented block without colon: @macroCall \n  p: "hi" \n  p: "second"
+    # Must be always a child of @macroCallFn — consume all indented siblings as trailing block
+    if p.curr.line > tokenAt.line and p.curr.col > tokenAt.col:
+      var collected2: seq[Node]
+      let fc = p.curr.col
+      while p.curr.line > tokenAt.line and p.curr.col == fc and p.curr.col > tokenAt.col:
+        let sub = p.parseStmt()
+        caseNotNil sub:
+          collected2.add(sub)
+        do: break
+        if p.curr.col <= tokenAt.col: break
+        if p.curr.col != fc: break
+      if collected2.len == 1:
+        result.add(collected2[0])
+      elif collected2.len > 1:
+        result.add(ast.newTree(nkBlock, collected2))
 
 prefixHandle parseCall:
   # parse a function call

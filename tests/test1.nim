@@ -1,5 +1,6 @@
 import std/[unittest, os, xmltree, strtabs,
-        sequtils, json, options, htmlparser, strutils]
+        sequtils, json, options, strutils]
+import pkg/openparser/html/ast
 
 include ../src/tim/engine/transformers
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]

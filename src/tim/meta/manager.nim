@@ -5,8 +5,9 @@
 #          https://github.com/openpeeps/tim
 
 import std/[tables, strutils, os, osproc, options, sequtils]
-import pkg/[flatty, openparser/yaml, semver, checksums/md5]
+import pkg/[openparser/yaml, openparser/fbe, semver, checksums/md5]
 import pkg/vancode/interpreter/ast
+import ../engine/fbe_ast
 
 import ./remote, ./configurator
 
@@ -100,20 +101,20 @@ proc getModulePath*(pkgr: Packager, pkgName, path: string): string =
   result = normalizedPath(pkgPath / path & ".timl")
 
 proc cacheModule*(pkgr: Packager, pkgName: string, ast: Ast) =
-  ## Cache a Tim Engine module to binary AST
+  ## Cache a Tim Engine module to binary AST via FBE
   let pkgName = pkgName[4..^1].split("/")
   let cachePath = pkgrPackageCachedDir % [pkgName[0], "0.1.0"]
   let cacheAstPath = cachePath / getMD5(pkgName[1..^1].join("/")) & ".ast"
   discard existsOrCreateDir(cachePath)
-  writeFile(cacheAstPath, toFlatty(ast))
+  writeFile(cacheAstPath, toFbe(ast))
 
 proc getCachedModule*(pkgr: Packager, pkgName: string): Ast =
-  ## Retrieve a cached binary AST
+  ## Retrieve a cached binary AST via FBE
   let pkgName = pkgName[4..^1].split("/")
   let cachePath = pkgrPackageCachedDir % [pkgName[0], "0.1.0"]
   let cacheAstPath = cachePath / getMD5(pkgName[1..^1].join("/")) & ".ast"
-  # if fileExists(cacheAstPath):
-    # result = fromFlatty(readFile(cacheAstPath), Ast)
+  if fileExists(cacheAstPath):
+    result = fromFbe(readFile(cacheAstPath), Ast)
 
 proc hasLoadedPackages*(pkgr: Packager): bool =
   ## Determine if packager has loaded the local database in memory

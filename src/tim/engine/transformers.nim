@@ -28,10 +28,8 @@ block extendvancodeAstAndCodeGen:
       case kind: NodeKind
       # the branches we add to the Node variant
       of nkHtmlElement:
-        case tag*: HtmlTag
-        of tagUnknown:
-          tagCustom*: string
-        else: discard
+        tag*: HtmlTag
+        tagCustom*: string
         attributes*: seq[Node]
         childElements*: seq[Node]
       of nkHtmlAttribute:
@@ -207,8 +205,7 @@ block extendvancodeAstAndCodeGen:
   extendModule "vancode" / "interpreter" / "ast.nim":
     const voidHtmlElements* = [tagArea, tagBase, tagBr, tagCol,
       tagEmbed, tagHr, tagImg, tagInput, tagLink, tagMeta,
-      tagParam, tagSource, tagTrack, tagWbr, tagCommand,
-      tagKeygen, tagFrame]
+      tagParam, tagSource, tagTrack, tagWbr]
 
     proc newMacro*(children: varargs[Node]): Node =
       ## Construct a new block.
@@ -226,31 +223,26 @@ block extendvancodeAstAndCodeGen:
       result = case tag
         of tagA: "a"
         of tagAbbr: "abbr"
-        of tagAcronym: "acronym"
         of tagAddress: "address"
-        of tagApplet: "applet"
         of tagArea: "area"
         of tagArticle: "article"
         of tagAside: "aside"
         of tagAudio: "audio"
         of tagB: "b"
         of tagBase: "base"
-        of tagBasefont: "basefont"
         of tagBdi: "bdi"
         of tagBdo: "bdo"
-        of tagBig: "big"
         of tagBlockquote: "blockquote"
         of tagBody: "body"
         of tagBr: "br"
         of tagButton: "button"
         of tagCanvas: "canvas"
         of tagCaption: "caption"
-        of tagCenter: "center"
         of tagCite: "cite"
         of tagCode: "code"
         of tagCol: "col"
         of tagColgroup: "colgroup"
-        of tagCommand: "command"
+        of tagData: "data"
         of tagDatalist: "datalist"
         of tagDd: "dd"
         of tagDel: "del"
@@ -258,7 +250,6 @@ block extendvancodeAstAndCodeGen:
         of tagDfn: "dfn"
         of tagDialog: "dialog"
         of tagDiv: "div"
-        of tagDir: "dir"
         of tagDl: "dl"
         of tagDt: "dt"
         of tagEm: "em"
@@ -266,11 +257,8 @@ block extendvancodeAstAndCodeGen:
         of tagFieldset: "fieldset"
         of tagFigcaption: "figcaption"
         of tagFigure: "figure"
-        of tagFont: "font"
         of tagFooter: "footer"
         of tagForm: "form"
-        of tagFrame: "frame"
-        of tagFrameset: "frameset"
         of tagH1: "h1"
         of tagH2: "h2"
         of tagH3: "h3"
@@ -279,7 +267,6 @@ block extendvancodeAstAndCodeGen:
         of tagH6: "h6"
         of tagHead: "head"
         of tagHeader: "header"
-        of tagHgroup: "hgroup"
         of tagHtml: "html"
         of tagHr: "hr"
         of tagI: "i"
@@ -287,21 +274,17 @@ block extendvancodeAstAndCodeGen:
         of tagImg: "img"
         of tagInput: "input"
         of tagIns: "ins"
-        of tagIsindex: "isindex"
         of tagKbd: "kbd"
-        of tagKeygen: "keygen"
         of tagLabel: "label"
         of tagLegend: "legend"
         of tagLi: "li"
         of tagLink: "link"
+        of tagMain: "main"
         of tagMap: "map"
         of tagMark: "mark"
-        of tagMenu: "menu"
         of tagMeta: "meta"
         of tagMeter: "meter"
         of tagNav: "nav"
-        of tagNobr: "nobr"
-        of tagNoframes: "noframes"
         of tagNoscript: "noscript"
         of tagObject: "object"
         of tagOl: "ol"
@@ -310,6 +293,7 @@ block extendvancodeAstAndCodeGen:
         of tagOutput: "output"
         of tagP: "p"
         of tagParam: "param"
+        of tagPicture: "picture"
         of tagPre: "pre"
         of tagProgress: "progress"
         of tagQ: "q"
@@ -324,7 +308,6 @@ block extendvancodeAstAndCodeGen:
         of tagSmall: "small"
         of tagSource: "source"
         of tagSpan: "span"
-        of tagStrike: "strike"
         of tagStrong: "strong"
         of tagStyle: "style"
         of tagSub: "sub"
@@ -333,6 +316,7 @@ block extendvancodeAstAndCodeGen:
         of tagTable: "table"
         of tagTbody: "tbody"
         of tagTd: "td"
+        of tagTemplate: "template"
         of tagTextarea: "textarea"
         of tagTfoot: "tfoot"
         of tagTh: "th"
@@ -341,23 +325,19 @@ block extendvancodeAstAndCodeGen:
         of tagTitle: "title"
         of tagTr: "tr"
         of tagTrack: "track"
-        of tagTt: "tt"
         of tagU: "u"
         of tagUl: "ul"
         of tagVar: "var"
         of tagVideo: "video"
         of tagWbr: "wbr"
+        of tagSlot: "slot"
         else: "" # non-standard HTML tag / custom tag
       
     proc newHtmlElement*(tag: HtmlTag, tagStr: string): Node =
       ## Construct a new HTML element node.
       case tag
       of tagUnknown:
-        result = Node(
-          kind: nkHtmlElement,
-          tag: tagUnknown,
-          tagCustom: tagStr
-        )
+        result = Node(kind: nkHtmlElement, tag: tagUnknown, tagCustom: tagStr)
       else:
         result = Node(kind: nkHtmlElement, tag: tag)
 
@@ -686,7 +666,7 @@ block extendvancodeAstAndCodeGen:
     const procCallOverwrite = true
     proc procCall*(node: Node, procSym: Sym): Sym {.codegen.} =
       var argTypes: seq[Sym]
-      let hasTrailingStmt = node.len > 1 and (node[^1].kind in {nkHtmlElement, nkIf, nkFor, nkCall})
+      let hasTrailingStmt = node.len > 1 and (node[^1].kind in {nkBlock, nkHtmlElement, nkIf, nkFor, nkWhile, nkCall, nkRawHtml, nkViewLoader})
       let isMacroSym = procSym.kind == skProc and procSym.procType == ProcType.procTypeMacro
 
       proc bindStatementBody(macroImpl: Node, injectedStmt: Node) =

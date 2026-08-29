@@ -9,9 +9,11 @@ import pkg/[watchout, semver, checksums/sha1]
 import pkg/openparser/yaml
 
 import ../engine/parser
+import ../engine/validator
 import ./config
 
 export value
+export validator
 
 when defined timHotCode:
   import ./websocket
@@ -382,17 +384,56 @@ proc declareGlobals*(compiler: CodeGen) =
   compiler.declareVar(appStorage, skConst, compiler.module.sym"json", isMagic = true)
   compiler.declareVar(thisStorage, skConst, compiler.module.sym"json", isMagic = true)
 
+proc tryLoadValidatedAst*(path, sourcePath: string): tuple[ast: Ast, ok: bool] =
+  ## Try to load a cached AST from `path` and validate it. Returns (ast, true) on success,
+  ## (nil, false) if file missing or validation failed. Used for packed theme distribution
+  ## where `.timl` sources may be omitted.
+  if not fileExists(path):
+    return (nil, false)
+  try:
+    let data = readFile(path)
+    var a = fromJson(data, Ast)
+    if sourcePath.len > 0:
+      a.sourcePath = sourcePath
+    a.validateAst()
+    return (a, true)
+  except Exception as e:
+    when defined timDebugCache:
+      displayInfo("Cached AST invalid at " & path & ": " & e.msg)
+    return (nil, false)
+
 proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
                  pkgr: Packager, data: JsonNode = nil): bool {.discardable.} =
   ## Precompile a Tim template. This involves parsing the template to extract its dependencies,
   ## compiling the template into a script, and updating the engine's dependency resolver.
   var astProgram: Ast
-  try:
-    parser.parseScript(astProgram, readFile(tpl.sources.src), tpl.sources.src)
-  except TimParserError as e:
-    displayError("Tim Engine –– Parsing error –– " & e.msg)
-    displayInfo(cyan(engine.simplifyTemplatePath(tpl)))
-    return
+  var loadedFromCache = false
+  # Try to reuse validated cached AST (enables packed themes without .timl)
+  block tryCache:
+    if fileExists(tpl.sources.ast):
+      let (cached, ok) = tryLoadValidatedAst(tpl.sources.ast, tpl.sources.src)
+      if ok and cached != nil:
+        # If the original .timl is missing (packed distribution), accept cache directly.
+        # If .timl exists, still prefer cache if newer? For now prefer cache when valid.
+        astProgram = cached
+        loadedFromCache = true
+        break tryCache
+      elif not fileExists(tpl.sources.src):
+        # Packed mode: we have no source, cache is corrupt -> cannot proceed
+        displayError("Tim Engine –– Cached AST invalid and no source at " & tpl.sources.src)
+        return
+  if not loadedFromCache:
+    # Fallback: parse from .timl source (normal development path)
+    try:
+      parser.parseScript(astProgram, readFile(tpl.sources.src), tpl.sources.src)
+    except TimParserError as e:
+      displayError("Tim Engine –– Parsing error –– " & e.msg)
+      displayInfo(cyan(engine.simplifyTemplatePath(tpl)))
+      return
+    except IOError as e:
+      # Packed distribution without .timl but no valid cache
+      displayError("Tim Engine –– Missing source and no valid cache for " & tpl.sources.src & ": " & e.msg)
+      return
 
   var
     mainChunk = newChunk(tpl.sources.src)

@@ -6,7 +6,7 @@
 
 import std/[os, monotimes, times, strutils, json, options, ropes, tables]
 
-import pkg/flatty
+import pkg/openparser/fbe
 import pkg/kapsis/runtime
 import pkg/kapsis/interactive/prompts
 
@@ -14,6 +14,7 @@ import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]
 import pkg/vancode/manager/[packager, configurator]
 
 import ../engine/parser
+import ../engine/fbe_ast
 import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
 
@@ -161,4 +162,4 @@ proc astCommand*(v: Values) =
   
   var program: Ast # the AST representation of the script
   parser.parseScript(program, timlCode, srcPath)
-  writeFile(srcPath.changeFileExt("ast"), toFlatty(program))
+  writeFile(srcPath.changeFileExt("ast"), toFbe(program))
