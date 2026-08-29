@@ -14,6 +14,7 @@ import pkg/openparser/json
 import pkg/vancode/interpreter/[chunk, ast, sym, value]
 import ../../meta/cache
 import ./inliner
+import ../test_state
 
 type TimRuntime* = object of CatchableError
 
@@ -258,11 +259,63 @@ proc loadLibrary*(script: Script): Module =
         raise newException(TimRuntime, "Cannot convert JSON value to float.")
   )
 
+  proc valuesEqual(a,b: Value): bool =
+    if a == nil and b == nil: return true
+    if a == nil or b == nil: return false
+    if a.typeId == b.typeId:
+      case a.typeId
+      of tyString: return a.stringVal[] == b.stringVal[]
+      of tyInt: return a.intVal == b.intVal
+      of tyFloat: return a.floatVal == b.floatVal
+      of tyBool: return a.boolVal == b.boolVal
+      of tyNil: return true
+      of tyJsonStorage: return a.jsonVal == b.jsonVal
+      of tyArrayObject:
+        if a.objectVal.fields.len != b.objectVal.fields.len: return false
+        for i in 0..<a.objectVal.fields.len:
+          if not valuesEqual(a.objectVal.fields[i].toValue, b.objectVal.fields[i].toValue): return false
+        return true
+      else:
+        return $a == $b
+    else:
+      if a.typeId==tyInt and b.typeId==tyFloat: return toFloat(a.intVal) == b.floatVal
+      if a.typeId==tyFloat and b.typeId==tyInt: return a.floatVal == toFloat(b.intVal)
+      if a.typeId==tyJsonStorage:
+        case b.typeId
+        of tyString: return a.jsonVal.kind==JString and a.jsonVal.getStr() == b.stringVal[]
+        of tyInt: return (a.jsonVal.kind==JInt and a.jsonVal.getInt()==b.intVal) or (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==toFloat(b.intVal))
+        of tyFloat: return (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==b.floatVal) or (a.jsonVal.kind==JInt and toFloat(a.jsonVal.getInt())==b.floatVal)
+        of tyBool: return a.jsonVal.kind==JBool and a.jsonVal.getBool()==b.boolVal
+        of tyNil: return a.jsonVal.kind==JNull
+        else: return false
+      if b.typeId==tyJsonStorage:
+        case a.typeId
+        of tyString: return b.jsonVal.kind==JString and b.jsonVal.getStr()==a.stringVal[]
+        of tyInt: return (b.jsonVal.kind==JInt and b.jsonVal.getInt()==a.intVal) or (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==toFloat(a.intVal))
+        of tyFloat: return (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==a.floatVal) or (b.jsonVal.kind==JInt and toFloat(b.jsonVal.getInt())==a.floatVal)
+        of tyBool: return b.jsonVal.kind==JBool and b.jsonVal.getBool()==a.boolVal
+        of tyNil: return b.jsonVal.kind==JNull
+        else: return false
+      return false
+
   script.addProc(result, "assert", @[paramDef("condition", ttyBool)], ttyVoid,
     proc (args: StackView, argc: int): Value =
       ## Assert that the given condition is true.
       if not args[0].boolVal:
-        raise newException(TimRuntime, "Assertion failed: " & $args[0].boolVal))
+        test_state.gTestFailed = true
+        test_state.gTestMsg = "Assertion failed: expected true, got false"
+        if test_state.gTestLabel.len == 0:
+          raise newException(TimRuntime, test_state.gTestMsg))
+
+  script.addProc(result, "assert", @[paramDef("a", ttyAny), paramDef("b", ttyAny)], ttyVoid,
+    proc (args: StackView, argc: int): Value =
+      let a = args[0]
+      let b = args[1]
+      if not valuesEqual(a, b):
+        test_state.gTestFailed = true
+        test_state.gTestMsg = $a & " != " & $b
+        if test_state.gTestLabel.len == 0:
+          raise newException(TimRuntime, "Assertion failed: " & test_state.gTestMsg))
 
   #
   # String conversion

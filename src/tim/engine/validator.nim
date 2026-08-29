@@ -479,6 +479,16 @@ proc validateNode(node: Node, path: string, depth: int, visited: var HashSet[poi
           fail(path & "[3]", node[3], "nkMacro body must be nkBlock")
         validateNode(node[3], path & "[3]", depth+1, visited, total)
         return
+    when compiles(NodeKind.nkTest):
+      if node.kind == nkTest:
+        checkStringLen(path, node, node.testLabel, "testLabel")
+        if node.testLabel.len == 0:
+          fail(path, node, "nkTest label must not be empty")
+        ensureNotNil(path & ".testBody", node.testBody, "testBody")
+        if node.testBody.kind != nkBlock:
+          fail(path & ".testBody", node.testBody, "nkTest body must be nkBlock")
+        validateNode(node.testBody, path & ".testBody", depth+1, visited, total)
+        return
     for i, child in node.children:
       ensureNotNil(path & "[" & $i & "]", child, "child")
       validateNode(child, path & "[" & $i & "]", depth+1, visited, total)

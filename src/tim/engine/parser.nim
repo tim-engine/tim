@@ -1415,6 +1415,29 @@ prefixHandle parseLitElement:
   result.add(classJsBody)
   result.add(renderBody)
 
+prefixHandle parseTestStmt:
+  let testCol = p.curr.col
+  walk p # tkTest
+  # label must be string literal (only string, as per spec)
+  if p.curr.kind notin Strings:
+    p.curr.error("Expected string label for @test, got " & $p.curr.kind)
+  let label = p.curr.value
+  walk p # string
+  if p.curr.kind != tkColon:
+    p.curr.error("Expected ':' after @test label")
+  walk p # colon
+  var body = ast.newNode(nkBlock)
+  # collect indented block (like macro/LitElement)
+  while p.curr.col > testCol:
+    if p.curr.kind == tkEof: break
+    let stmt = p.parseStmt()
+    caseNotNil stmt:
+      body.add(stmt)
+    if p.curr.col <= testCol: break
+  result = ast.newNode(nkTest)
+  result.testLabel = label
+  result.testBody = body
+
 proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
   # Get the prefix function for the current token
   # This is used to parse the current token
@@ -1479,6 +1502,7 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
     of tkViewLoader: parseViewPlaceholder
     of tkClient: parseClientBlock
     of tkLitElement: parseLitElement
+    of tkTest: parseTestStmt
     else: nil
 
 prefixHandle parsePrefix:
@@ -1621,6 +1645,7 @@ prefixHandle parseStmt:
     of tkViewLoader: parseViewPlaceholder
     of tkClient: parseClientBlock
     of tkLitElement: parseLitElement
+    of tkTest: parseTestStmt
     else: parseExpression
   if prefixFn != nil:
     return prefixFn(p)

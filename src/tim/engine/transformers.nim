@@ -1,9 +1,12 @@
 import std/[os, strutils]
+import ./test_state
+
 import pkg/voodoo/extensibles
 
 # Extend vancode AST and CodeGen to support
 # HTML elements and other Tim Engine specific nodes
 block extendvancodeAstAndCodeGen:
+
   extendEnum NodeKind:
     # Extend `NodeKind` enum to support HTML
     # elements and attributes in the AST
@@ -16,6 +19,7 @@ block extendvancodeAstAndCodeGen:
     nkClientBlock    # client block using `@client ... @end`
     nkCustomElement  # custom element using @LitElement, ClassName
     nkMacro          # a block - {...}
+    nkTest           # test block using `@test "label":`
 
   extendObject do:
     type Ast = ref object        # required by `extendCase`
@@ -40,6 +44,9 @@ block extendvancodeAstAndCodeGen:
         snippetCodeAttrs*: seq[(string, Node)]
       of nkRawHtml:
         rawHtml*: string
+      of nkTest:
+        testLabel*: string
+        testBody*: Node
 
   # Extend the case statement by adding new branches
   # for code generation of the new node kinds we added to the AST
@@ -85,6 +92,8 @@ block extendvancodeAstAndCodeGen:
       # let jsSnippet: Rope = jsgen.genScript(jst, node[0].children)
       # gen.chunk.emit(opcClientBlockEnd)
       discard
+    of nkTest:
+      discard gen.genTest(node)
     of nkCustomElement:
       let className = node[0].ident
       let tagName = node[1].stringVal
@@ -188,6 +197,9 @@ block extendvancodeAstAndCodeGen:
         h = h !& hash(attr.attrNode)
       for child in node.childElements:
         h = h !& hash(child)
+    of nkTest:
+      h = h !& hash(node.testLabel)
+      h = h !& hash(node.testBody)
     of nkCustomElement:
       for child in node.children:
         h = h !& hash(child)
@@ -875,6 +887,20 @@ block extendvancodeAstAndCodeGen:
         gen.popScope()
       result = sym
 
+    proc genTest(node: Node): Sym {.codegen.} =
+      # node is nkTest with testLabel string and testBody block
+      let label = node.testLabel
+      let body = node.testBody
+      let labelPos = gen.chunk.getString(label)
+      gen.chunk.emit(opcTestBegin)
+      gen.chunk.emit(labelPos)
+      gen.pushScope()
+      discard gen.genBlock(body, isStmt = true)
+      gen.popScope()
+      gen.chunk.emit(opcTestEnd)
+      gen.chunk.emit(labelPos)
+      result = gen.module.sym"void"
+
     proc htmlConstr(node: Node): Sym {.codegen.} =
       # Constructs a new HTML element from Html object
       if gen.kind == gkProc:
@@ -988,10 +1014,12 @@ block extendvancodeAstAndCodeGen:
       opcAttrKey = "attrKey"        ## adds a key to HTML object attribute
       opcWSpace = "space"           ## adds whitespace to HTML result
       opcViewLoader = "viewLoader"  ## loads a view using the `@view` placeholder
+      opcTestBegin = "testBegin"
+      opcTestEnd = "testEnd"
     
     extendCaseStmt "vmParseChunkCase":
       case oc:
-      of opcAttrClass, opcAttrId, opcBeginHtmlWithAttrs, opcBeginHtml, opcCloseHtml:
+      of opcAttrClass, opcAttrId, opcBeginHtmlWithAttrs, opcBeginHtml, opcCloseHtml, opcTestBegin, opcTestEnd:
         let sid = readArg[uint16](pc)
         addOp(oc, sid.int64, 0, akString)
     
@@ -1000,6 +1028,10 @@ block extendvancodeAstAndCodeGen:
       vm.globals["app"] = initValue(globalData)
       vm.globals["this"] = initValue(localData)
       result = initValue("")
+
+      var gTestLabel {.inject.}: string
+      var gTestMsg {.inject.}: string
+      var gTestFailed {.inject.} = false
 
     extendCaseStmt "vmInterpretCase":
       case oc:
@@ -1054,3 +1086,16 @@ block extendvancodeAstAndCodeGen:
         result.stringVal[].add("</" & co.getArg1Str(pcIdx, currentChunk) & ">")
       of opcViewLoader:
         result.stringVal[].add(staticString.get())
+      of opcTestBegin:
+        gTestFailed = false
+        gTestLabel = co.getArg1Str(pcIdx, currentChunk)
+        gTestMsg = ""
+      of opcTestEnd:
+        let label = co.getArg1Str(pcIdx, currentChunk)
+        if gTestFailed:
+          echo "  \x1b[31m[FAILED]\x1b[0m " & label & (if gTestMsg.len > 0: ": " & gTestMsg else: "")
+        else:
+          echo "  \x1b[32m[OK]\x1b[0m " & label
+        gTestLabel = ""
+        gTestMsg = ""
+        gTestFailed = false

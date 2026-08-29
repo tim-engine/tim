@@ -128,6 +128,12 @@ proc writeNode(b: var Buffer, n: Node) =
         writeField(b, 19'u16, proc(bb: var Buffer) = writeSnippetAttrs(bb, n.snippetCodeAttrs))
       elif n.kind == nkRawHtml:
         writeField(b, 20'u16, proc(bb: var Buffer) = bb.writeString(n.rawHtml))
+      elif n.kind == nkTest:
+        when compiles(n.testLabel):
+          writeField(b, 22'u16, proc(bb: var Buffer) = bb.writeString(n.testLabel))
+          writeField(b, 23'u16, proc(bb: var Buffer) = writeNode(bb, n.testBody))
+        else:
+          writeField(b, 22'u16, proc(bb: var Buffer) = bb.writeString(""))
       else:
         # generic children for other branch kinds
         if n.children.len > 0 or true:
@@ -161,6 +167,8 @@ proc readNode(b: var Buffer): Node =
   var snippetCode: string
   var snippetAttrs: seq[(string, Node)]
   var rawHtml: string
+  var testLabel: string
+  var testBody: Node
   var fid: uint16
   var fsz: int
   while readFieldHeader(b, fid, fsz):
@@ -186,6 +194,8 @@ proc readNode(b: var Buffer): Node =
     of 19'u16: snippetAttrs = readFieldValue[seq[(string, Node)]](b, fsz, proc(bb: var Buffer): seq[(string, Node)] = readSnippetAttrs(bb))
     of 20'u16: rawHtml = readFieldValue[string](b, fsz, proc(bb: var Buffer): string = bb.readString())
     of 21'u16: children = readFieldValue[seq[Node]](b, fsz, proc(bb: var Buffer): seq[Node] = readNodeSeq(bb))
+    of 22'u16: testLabel = readFieldValue[string](b, fsz, proc(bb: var Buffer): string = bb.readString())
+    of 23'u16: testBody = readFieldValue[Node](b, fsz, proc(bb: var Buffer): Node = readNode(bb))
     else: discard
   endReadInnerStruct(b)
   if isNil:
@@ -248,6 +258,13 @@ proc readNode(b: var Buffer): Node =
       elif k == nkRawHtml:
         n = newNode(k)
         n.rawHtml = rawHtml
+      elif k == nkTest:
+        n = newNode(k)
+        when compiles(n.testLabel):
+          n.testLabel = testLabel
+          n.testBody = testBody
+        else:
+          n.children = children
       else:
         n = newNode(k)
         n.children = children
