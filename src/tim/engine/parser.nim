@@ -1155,7 +1155,9 @@ prefixHandle parseCall:
     # and mark expectRP as true to expect a closing parenthesis
     expectRP = true
     walk p # tkLP
-  if p.curr isnot tkRP:
+  if p.curr.kind == tkColon:
+    discard # colon block will be handled after
+  elif p.curr isnot tkRP:
     while true:
       if p.curr.kind == tkIdentVar and p.next.kind == tkAssign:
         # parse a named argument
@@ -1188,6 +1190,23 @@ prefixHandle parseCall:
         break # todo error EOF before closing parenthesis
       else: break
   else: walk p # tkRP
+  # block call via `:` — `test:` or `test():` + indented block, moved to last param (only last line)
+  # Only when `:` is followed by indented block on next line (not same-line `:` for outer html like `href=dashboard(...): "x"`)
+  if p.curr.kind == tkColon and p.next.line > p.curr.line and p.next.col > fnName.col:
+    walk p # tkColon
+    var peers: seq[Node]
+    let first = p.parseStmt()
+    caseNotNil first:
+      peers.add(first)
+      if first.col > fnName.col:
+        while p.curr.col == first.col and p.curr.col > fnName.col:
+          let extra = p.parseStmt()
+          caseNotNil extra:
+            peers.add(extra)
+          do: break
+      if peers.len > 0:
+        result.add(peers[^1])
+    do: discard
     
 prefixHandle parseArray:
   # parse an array storage
@@ -1410,7 +1429,17 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
     of tkIdentVar: parseIdentVar
     of tkIf: parseIf
     of tkIdentifier:
-      if p.next is tkLP and p.next.line == p.curr.line:
+      if p.next.line == p.curr.line and p.next.kind in {tkLP, tkColon} and p.next.wsno == 0:
+        # HTML tags with `:` must stay as elements (e.g., div: "hi"), not fn calls
+        if p.next.kind == tkColon and getHtmlTag(p.curr.value) != tagUnknown:
+          if minPrec < 45:
+            parseElement
+          else:
+            parseIdent
+        else:
+          parseCall
+      elif p.next.line == p.curr.line and getHtmlTag(p.curr.value) == tagUnknown and p.next.kind in {tkString, tkSqString, tkBool, tkInteger, tkFloat, tkNil, tkIdentifier, tkIdentVar}:
+        # UFC: test "hello"  (no parens, single literal/ident arg on same line)
         parseCall
       else:
         if minPrec < 45:
@@ -1418,7 +1447,7 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
         else:
           parseIdent
     of tkType:
-      if p.next is tkLP and p.next.line == p.curr.line:
+      if p.next.line == p.curr.line and p.next.kind in {tkLP, tkColon} and p.next.wsno == 0:
         parseCall
       elif p.next is tkLC and p.next.line == p.curr.line:
         parseTypeDef
@@ -1556,11 +1585,16 @@ prefixHandle parseStmt:
   let prefixFn: PrefixFunction = 
     case p.curr.kind
     of tkIdentifier:
-      if p.next.line == p.curr.line and p.next is tkLP:
+      if p.next.line == p.curr.line and p.next.kind in {tkLP, tkColon} and p.next.wsno == 0:
+        if p.next.kind == tkColon and getHtmlTag(p.curr.value) != tagUnknown:
+          parseElement
+        else:
+          parseCall
+      elif p.next.line == p.curr.line and getHtmlTag(p.curr.value) == tagUnknown and p.next.kind in {tkString, tkSqString, tkBool, tkInteger, tkFloat, tkNil, tkIdentifier, tkIdentVar}:
         parseCall
       else: parseElement
     of tkType:
-      if p.next.line == p.curr.line and p.next is tkLP:
+      if p.next.line == p.curr.line and p.next.kind in {tkLP, tkColon} and p.next.wsno == 0:
         parseCall
       elif p.next.line == p.curr.line and p.next is tkLC:
         parseTypeDef
