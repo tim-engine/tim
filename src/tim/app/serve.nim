@@ -8,7 +8,7 @@ import std/[tables, httpcore, net, os, strutils, options, locks]
 import pkg/kapsis/runtime
 import pkg/openparser/[yaml, json]
 import pkg/watchout
-import pkg/vancode/manager/packager
+import pkg/vancode/interpreter/manager
 
 import supranim/network/webserver
 from supranim/core/request import getUrl, getAgent
@@ -176,8 +176,7 @@ proc serveCommand*(v: Values) =
     baseDir: baseDir
   )
 
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages()
+  let manager = sharedManager()
 
   webapp.watcher = newWatchout(@[
     timEngine.config.compilation.layoutsPath,
@@ -190,11 +189,11 @@ proc serveCommand*(v: Values) =
     let tpl = webapp.engine.getTemplateByPath(file.getPath())
     if tpl != nil:
       if tpl.templateType in {ttView, ttLayout}:
-        discard webapp.engine.precompileTemplate(tpl, pkgr)
+        discard webapp.engine.precompileTemplate(tpl, manager)
     else:
       let newTpl = webapp.engine.registerTemplate(file.getPath())
       if newTpl.templateType != ttPartial:
-        discard webapp.engine.precompileTemplate(newTpl, pkgr)
+        discard webapp.engine.precompileTemplate(newTpl, manager)
     release(templateLock)
 
   webapp.watcher.onChange = proc(file: watchout.File) =
@@ -207,7 +206,7 @@ proc serveCommand*(v: Values) =
     acquire(templateLock)
     let tpl = webapp.engine.getTemplateByPath(fpath)
     if tpl != nil and tpl.templateType in {ttView, ttLayout}:
-      if webapp.engine.precompileTemplate(tpl, pkgr):
+      if webapp.engine.precompileTemplate(tpl, manager):
         notifyAllClients(webapp.wsServer)
     release(templateLock)
 

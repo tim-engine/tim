@@ -1,6 +1,9 @@
 import std/[os, strutils]
 import ./test_state
 
+import pkg/openparser/html/ast as htmlAst
+template HtmlTag*: untyped = htmlAst.HtmlTag
+template getHtmlTag*(a: string): untyped = htmlAst.getHtmlTag(a)
 import pkg/voodoo/extensibles
 
 # Extend vancode AST and CodeGen to support
@@ -833,6 +836,7 @@ block extendvancodeAstAndCodeGen:
         procGen.includeBasePath = gen.includeBasePath
         procGen.parserCallback = gen.parserCallback
         procGen.resolver = gen.resolver
+        procGen.manager = gen.manager
         procGen.pkgr = gen.pkgr
         procGen.stdlibs = gen.stdlibs
         # procGen.scopes = gen.scopes

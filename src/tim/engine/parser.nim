@@ -507,6 +507,13 @@ prefixHandle parseElement:
         result.childElements.add(valNode)
   of Strings:
     result.childElements.add(p.parseString())
+    if p.curr.kind == tkColon and p.curr.line == tk.line:
+      walk p
+      if p.curr.line == tk.line:
+        let valNode = p.parseExpression()
+        caseNotNil valNode:
+          result.childElements.add(valNode)
+        do: discard
   of tkGT:
     # parse inline HTML tags
     var node: Node
@@ -1461,9 +1468,6 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
             parseIdent
         else:
           parseCall
-      elif p.next.line == p.curr.line and getHtmlTag(p.curr.value) == tagUnknown and p.next.kind in {tkString, tkSqString, tkBool, tkInteger, tkFloat, tkNil, tkIdentifier, tkIdentVar}:
-        # UFC: test "hello"  (no parens, single literal/ident arg on same line)
-        parseCall
       else:
         if minPrec < 45:
           parseElement
@@ -1614,8 +1618,6 @@ prefixHandle parseStmt:
           parseElement
         else:
           parseCall
-      elif p.next.line == p.curr.line and getHtmlTag(p.curr.value) == tagUnknown and p.next.kind in {tkString, tkSqString, tkBool, tkInteger, tkFloat, tkNil, tkIdentifier, tkIdentVar}:
-        parseCall
       else: parseElement
     of tkType:
       if p.next.line == p.curr.line and p.next.kind in {tkLP, tkColon} and p.next.wsno == 0:

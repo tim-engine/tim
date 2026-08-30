@@ -14,7 +14,7 @@ proc parserCallback(astProgram: var Ast, path: string) =
   parser.parseScript(astProgram, readFile(path), path)
 
 template initPackageManager() {.dirty.} =
-  let pkgr = packager.initPackageRemote()
+  let pkgr = packager.initPackageRemote[PackageConfig]()
   pkgr.loadPackages()
 
 template initParser(code: string, srcPath = "HelloWorld") {.dirty.} =

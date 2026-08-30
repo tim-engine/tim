@@ -104,3 +104,11 @@ when not defined napibuild:
 proc getBasePath*(config: TimConfig): string =
   ## Get the base path for template loading based on the configuration
   return config.compilation.basePath
+
+# FBE versioning — Tim supplies version to vancode/manager/fbe_ast via pkginfo
+func semverToFbeVersion*(v: Version): uint32 =
+  result = uint32(((v.major and 0xFF) shl 16) or ((v.minor and 0xFF) shl 8) or (v.patch and 0xFF))
+
+# TimFbeVersion is computed in tim's main package file via pkginfo to avoid
+# pkg().getVersion() issues in submodules; provide default for now
+const TimFbeVersion* = 1'u32

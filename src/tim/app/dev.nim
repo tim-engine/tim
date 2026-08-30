@@ -6,11 +6,18 @@
 
 import std/[os, osproc, strutils, strformat, sequtils, uri, httpclient]
 
-import pkg/[semver, openparser/yaml]
+import pkg/openparser/yaml
 import pkg/kapsis/runtime
 import pkg/kapsis/interactive/[prompts, widgets]
 
-import pkg/vancode/manager/[configurator, packager, remote]
+import pkg/vancode/interpreter/policy
+import std/options
+
+import pkg/semver
+import pkg/datpkgr/operations as datpkgrOps
+import pkg/datpkgr/config as datpkgrConfig
+import ../pkgmanager/configs as timConfigs
+import ../pkgmanager/timparser
 
 #
 # CLI command `init` a new package
@@ -52,8 +59,8 @@ proc initCommand*(v: Values) =
   createDir(currDirPath / pkgName)
   createDir(currDirPath / pkgName / "src")
   
-  let pkgTypeEnum = parseEnum[ConfigType](pkgTypeOpts[pkgType])
-  if pkgTypeEnum == typePackage:
+  let pkgTypeStr = pkgTypeOpts[pkgType]
+  if pkgTypeStr == "package":
     const sampleCode = """
 var hello = "Tim Engine is Awesome"
 echo $hello"""
@@ -67,7 +74,7 @@ echo $hello"""
   # TODO @ pkg/openparser/yaml advanced dump features to
   # allow for adding extra spaces, exclude fields and more.
   writeFile(currDirPath / pkgName / "tim.config.yml", fmt"""
-type: {pkgTypeEnum}
+type: {pkgTypeStr}
 description: "{pkgDesc}"
 version: "0.1.0"
 license: "{pkgLicense}"
@@ -99,83 +106,94 @@ proc watchCommand*(v: Values) =
   
 
 #
-# CLI command `install` a package
-# 
+# CLI command `install` — via datpkgr (https://github.com/tim-engine/pkgs)
+#
+proc isGitUrl(s: string): bool =
+  s.startsWith("https://") or s.startsWith("http://") or
+  s.startsWith("git@") or s.startsWith("git+") or s.startsWith("ssh://")
+
 proc installCommand*(v: Values) =
-  ## Install a package from remote GIT sources
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages() # load database of existing packages
-  let pkgUrl = v.get("pkg").getUrl()
-  if pkgUrl.scheme.len > 0:
-    if pkgUrl.hostname == "github.com":
-      let pkgPath = pkgUrl.path[1..^1].split("/")
-      # Connect to the remote source and try find a `tim.config.yaml`,
-      # Check the `yaml` config file and download the package
-      let orgName = pkgPath[0]
-      let pkgName = pkgPath[1]
-      let res = pkgr.remote.httpGet("repo_contents_path", @[orgName, pkgName, "tim.config.yaml"])
-      case res.code
-      of Http200:
-        let remoteYaml: GithubFileResponse = pkgr.remote.getFileContent(res) # this is base64 encoded
-        let pkgConfig: YamlObject = parseYAML(remoteYaml.content.decode())
-        # case pkgConfig.`type`:
-        #   of typePackage:
-        #     if not pkgr.hasPackage(pkgConfig.name):
-        #       display(("Installing $1@$2" % [pkgConfig.name, pkgConfig.version]))
-        #       if pkgr.createPackage(orgName, pkgName, pkgConfig):
-        #         displayInfo("Updating Packager DB")
-        #         pkgr.updatePackages()
-        #         displaySuccess("Done!")
-        #     else:
-        #       displayInfo("Package $1@$2 is already installed" % [pkgConfig.name, pkgConfig.version])
-        #   else:
-        #     displayError("Tim projects cannot be installed via Packager. Use git instead")
-      else: discard # todo prompt error
+  let cfg = timConfigs.getTimCfg()
+  let raw = if v.has("pkg"): v.get("pkg").getStr.strip() else: ""
+  if raw.len == 0:
+    displayError("Missing package name. Usage: tim install <pkg>[@ref] or <git-url>[#ref]", quitProcess = true)
+    return
+  if isGitUrl(raw):
+    var url = raw
+    var urlRef = ""
+    let hashPos = url.find('#')
+    if hashPos >= 0:
+      urlRef = url[hashPos+1..^1]
+      url = url[0..<hashPos]
+    let name = datpkgrOps.pkgNameFromUrl(url)
+    if name.len == 0:
+      displayError("Could not derive package name from: " & raw, quitProcess = true)
+      return
+    let ok = datpkgrOps.installPackage(cfg, name, urlRef, url = url)
+    if not ok: quit(1)
+    return
+  # handle pkg[@ref] or constraint form `pkg >= 1.0` via parser
+  # split @ first (explicit ref wins over constraint)
+  let atParts = raw.split("@")
+  if atParts.len > 1:
+    let pkgName = atParts[0].strip()
+    let pkgRef = atParts[1].strip()
+    if pkgName.len == 0:
+      displayError("Invalid package spec: " & raw, quitProcess = true)
+      return
+    # pkgRef may be version or branch — let datpkgr handle it
+    let ok = datpkgrOps.installPackage(cfg, pkgName, pkgRef)
+    if not ok: quit(1)
+    return
+  # Try rich constraint parsing (e.g. `foo >= 1.2.3`, `foo ^0.1.0`)
+  try:
+    let dep = timparser.parseRequiresArg(raw)
+    if dep.url.len > 0:
+      let name = if dep.name.len > 0: dep.name else: datpkgrOps.pkgNameFromUrl(dep.url)
+      let ok = datpkgrOps.installPackage(cfg, name, dep.tag, url = dep.url, constraint = dep.constraint)
+      if not ok: quit(1)
+      return
+    if dep.name.len > 0:
+      let refStr = if dep.branch.len > 0: dep.branch elif dep.tag.len > 0: dep.tag else: ""
+      let ok = datpkgrOps.installPackage(cfg, dep.name, refStr, constraint = dep.constraint)
+      if not ok: quit(1)
+      return
+  except CatchableError:
+    discard
+  # fallback — plain name
+  let ok = datpkgrOps.installPackage(cfg, raw)
+  if not ok: quit(1)
 
 #
-# CLI Command `remove` an installed package 
+# CLI Command `remove` — via datpkgr
 #
 proc removeCommand*(v: Values) =
-  ## Removes an installed package by name and version (if provided)
-  let input = v.get("pkg").getStr.split("@")
-  var hasVersion: bool
-  let pkgName = input[0]
-  let pkgVersion =
-    if input.len == 2:
-      hasVersion = true; parseVersion(input[1])
-    else: newVersion(0,1,0)
-  displayInfo("Finding package `" & pkgName & "`")
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages() # load database of existing packages
-  if pkgr.hasPackage(pkgName):
-    displaySuccess("Delete package `" & pkgName & "`")
-    pkgr.deletePackage(pkgName)
-  else:
-    displayError("Package `" & pkgName & "` not found")
-
+  let cfg = timConfigs.getTimCfg()
+  let raw = v.get("pkg").getStr.strip()
+  let parts = raw.split("@")
+  let pkgName = parts[0].strip()
+  let pkgVersion = if parts.len > 1: parts[1].strip() else: ""
+  proc confirm(msg: string): bool = promptConfirm(msg)
+  let ok = datpkgrOps.uninstallPackage(cfg, pkgName, pkgVersion, confirm)
+  if not ok: quit(1)
 
 #
-# CLI Command `develop` a package
+# CLI Command `develop` — via datpkgr
 #
 proc developCommand*(v: Values) =
-  ## Create a symlink to a package in local source
-  let pkgName = v.get("pkg").getStr
-  let pkgr = packager.initPackageRemote()
-  # pkgr.loadPackages() # load database of existing packages
-  # if not pkgr.hasPackage(pkgName):
-  #   displayError("Package `$1` not found" % [pkgName], quitProcess = true)
-  
-  # let pkgPath = pkgr.getPackagePath(pkgName)
-  # if pkgPath.len == 0:
-  #   displayError("Package `$1` is not installed" % [pkgName], quitProcess = true)
-
-  # let srcPath = getCurrentDir() / "src"
-  # if not dirExists(srcPath):
-  #   createDir(srcPath)
-
-  # let linkPath = srcPath / pkgName
-  # if fileExists(linkPath):
-  #   displayError("Symlink `$1` already exists. Please, remove it first" % [linkPath], quitProcess = true)
-
-  # createSymlink(pkgPath, linkPath)
-  # displaySuccess("Symlink created: `$1` -> `$2`" % [linkPath, pkgPath])
+  let cfg = timConfigs.getTimCfg()
+  # `tim develop <pkg>` historically took pkg arg, but for datpkgr develop
+  # we symlink current directory (like `clue develop`). If an explicit path/name
+  # is given and it's a directory, use it; otherwise use cwd.
+  var dir = getCurrentDir()
+  if v.has("pkg"):
+    let arg = v.get("pkg").getStr.strip()
+    if arg.len > 0 and dirExists(arg):
+      dir = absolutePath(arg)
+    elif arg.len > 0 and fileExists(arg):
+      dir = absolutePath(arg.parentDir())
+    elif arg.len > 0:
+      # treat arg as informational only — still develop cwd
+      discard
+  let ok = datpkgrOps.developPackage(cfg, dir)
+  if not ok: quit(1)

@@ -164,7 +164,7 @@ elif isMainModule:
         ## Init a new package
       install string(pkg):
         ## Install a package from remote source
-      develop string(pkg):
+      develop ?string(pkg):
         ## Create a symlink to a package in local source
       remove string(pkg):
         ## Remove a package from local source

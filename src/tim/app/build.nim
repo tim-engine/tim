@@ -6,17 +6,17 @@
 
 import std/[os, monotimes, times, strutils, json, options, ropes, tables]
 
-import pkg/openparser/fbe
 import pkg/kapsis/runtime
 import pkg/kapsis/interactive/prompts
 
-import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]
-import pkg/vancode/manager/[packager, configurator]
+import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver, manager, policy]
+import pkg/vancode/interpreter/cache/fbe as fbeCache
+import pkg/vancode/manager/configurator # shim
 
 import ../engine/parser
-import ../engine/fbe_ast
 import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
+import ../meta/config
 
 proc parserCallback(astProgram: var Ast, path: string, resolver: FileResolver) =
   parser.parseScript(astProgram, readFile(path), path)
@@ -33,9 +33,7 @@ proc srcCommand*(v: Values) =
   # parse the script
   var srcPath = $(v.get("timl").getPath)
   
-  # init the package manager and load the local packages
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages()
+  let manager = sharedManager()
 
   let 
     ext =
@@ -110,8 +108,8 @@ proc srcCommand*(v: Values) =
   if ext == "html":
     try:
       var compiler = codegen.initCompiler(script,
-              module, mainChunk, pkgr, stdlibs, parserCallback,
-              policy = CompilationPolicy()) # empty polcy for now - TODO - tim.config.yaml
+              module, mainChunk, manager, stdlibs, parserCallback,
+              policy = CompilationPolicy())
       compiler.declareGlobals()
       compiler.genScript(program, none(string))
       let vmInstance = newVm()
@@ -162,4 +160,4 @@ proc astCommand*(v: Values) =
   
   var program: Ast # the AST representation of the script
   parser.parseScript(program, timlCode, srcPath)
-  writeFile(srcPath.changeFileExt("ast"), toFbe(program))
+  writeFile(srcPath.changeFileExt("ast"), fbeCache.toFbe(program, TimFbeVersion))

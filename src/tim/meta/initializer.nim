@@ -1,8 +1,8 @@
 import std/[os, tables, net, strutils, sequtils, options]
 
 import pkg/openparser/json
-import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver]
-import pkg/vancode/manager/[configurator, packager]
+import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver, manager, policy]
+import pkg/vancode/manager/configurator # shim for ConfigType/CompilationSettings
 import pkg/kapsis/interactive/prompts
 
 import pkg/[watchout, semver, checksums/sha1]
@@ -149,7 +149,7 @@ iterator getPartials*(engine: TimEngine): TimTemplate =
 # precompile - forward declarations
 proc precompile*(engine: TimEngine) 
 proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
-        pkgr: Packager, data: JsonNode = nil): bool {.discardable.}
+        manager: ModuleManager, data: JsonNode = nil): bool {.discardable.}
 
 proc getHashedPath(path: string): string =
   # Get a SHA1 hash of the given path.
@@ -403,7 +403,7 @@ proc tryLoadValidatedAst*(path, sourcePath: string): tuple[ast: Ast, ok: bool] =
     return (nil, false)
 
 proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
-                 pkgr: Packager, data: JsonNode = nil): bool {.discardable.} =
+                 manager: ModuleManager, data: JsonNode = nil): bool {.discardable.} =
   ## Precompile a Tim template. This involves parsing the template to extract its dependencies,
   ## compiling the template into a script, and updating the engine's dependency resolver.
   var astProgram: Ast
@@ -474,7 +474,7 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
         inlineModule.load(systemModule)
 
         var inlineCompiler = codegen.initCompiler(inlineScript, inlineModule,
-                                inlineChunk, pkgr, stdlibs, parserCallback,
+                                inlineChunk, manager, stdlibs, parserCallback,
                                 policy = engine.config.compilation.policy)
 
         inlineCompiler.declareGlobals()
@@ -506,8 +506,8 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
   script.stdpos = script.procs.high
   
   var compiler =
-    codegen.initCompiler(script, module, mainChunk,
-                          pkgr, stdlibs, parserCallback,
+    codegen.initCompiler(script, module, mainChunk, manager,
+                          stdlibs, parserCallback,
                           policy = engine.config.compilation.policy)
   compiler.declareGlobals()
   try:
@@ -530,7 +530,7 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
     display(e.msg)
 
 proc precompileEmbeddedTemplate*(engine: TimEngine, tpl: TimTemplate,
-        pkgr: Packager, data: JsonNode = nil,
+        manager: ModuleManager, data: JsonNode = nil,
         vfsMap: TableRef[string, string] = nil): bool {.discardable.} =
   ## Precompile a Tim template from embedded code. This is used when the
   ## templates are embedded into the binary as strings, and we need to compile them into scripts.
@@ -577,8 +577,8 @@ proc precompileEmbeddedTemplate*(engine: TimEngine, tpl: TimTemplate,
   script.stdpos = script.procs.high
   
   var compiler =
-    codegen.initCompiler(script, module, mainChunk,
-                      pkgr, stdlibs, parserCallback,
+    codegen.initCompiler(script, module, mainChunk, manager,
+                      stdlibs, parserCallback,
                       policy = engine.config.compilation.policy)
   # and parserCallback read from embedded contents.
   # Use the provided vfsMap (all templates) or fall back to a single-entry map
@@ -659,8 +659,7 @@ proc precompile*(engine: TimEngine,
     raise newException(TimEngineError, "Source type is not set to embedded. Cannot precompile embedded templates.")
   
   # init the package manager and load the local packages
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages()
+  let manager = sharedManager()
 
   # Build a complete VFS with all templates so @include/@import directives
   # can resolve across views, layouts, and partials
@@ -672,19 +671,19 @@ proc precompile*(engine: TimEngine,
   for k, view in views:
     let id = getHashedPath(k)
     let tpl = TimTemplate(id: id, templateType: ttView, embeddedCode: some(view))
-    if engine.precompileEmbeddedTemplate(tpl, pkgr, vfsMap = allTemplates):
+    if engine.precompileEmbeddedTemplate(tpl, manager, vfsMap = allTemplates):
       engine.views[k] = tpl
   
   for k, layout in layouts:
     let id = getHashedPath(k)
     let tpl = TimTemplate(id: id, templateType: ttLayout, embeddedCode: some(layout))
-    if engine.precompileEmbeddedTemplate(tpl, pkgr, vfsMap = allTemplates):
+    if engine.precompileEmbeddedTemplate(tpl, manager, vfsMap = allTemplates):
       engine.layouts[k] = tpl
   
   for k, partial in partials:
     let id = getHashedPath(k)
     let tpl = TimTemplate(id: id, templateType: ttPartial, embeddedCode: some(partial))
-    if engine.precompileEmbeddedTemplate(tpl, pkgr, vfsMap = allTemplates):
+    if engine.precompileEmbeddedTemplate(tpl, manager, vfsMap = allTemplates):
       engine.partials[k] = tpl
 
 
@@ -696,8 +695,7 @@ proc precompile*(engine: TimEngine) =
   ## for hot reloading.
 
   # init the package manager and load the local packages
-  let pkgr = packager.initPackageRemote()
-  pkgr.loadPackages()
+  let manager = sharedManager()
   
   if engine.enableThemes:
     # when themes are enabled, will discover themes available in the `themes` directory
@@ -755,15 +753,15 @@ proc precompile*(engine: TimEngine) =
             case sourceDir:
             of ttLayout:
               let tpl = newTemplate(id, ttLayout, sources)
-              if engine.precompileTemplate(tpl, pkgr):
+              if engine.precompileTemplate(tpl, manager):
                 theme.layouts[srcPath] =  tpl
             of ttView:
               let tpl = newTemplate(id, ttView, sources)
-              if engine.precompileTemplate(tpl, pkgr):
+              if engine.precompileTemplate(tpl, manager):
                 theme.views[srcPath] = tpl
             of ttPartial:
               let tpl = newTemplate(id, ttPartial, sources)
-              if engine.precompileTemplate(tpl, pkgr):
+              if engine.precompileTemplate(tpl, manager):
                 theme.partials[srcPath] = tpl
           
         # set up file watcher for the active theme
@@ -784,7 +782,7 @@ proc precompile*(engine: TimEngine) =
             if tpl != nil:
               case tpl.templateType
               of ttView, ttLayout:
-                engine.precompileTemplate(tpl, pkgr)
+                engine.precompileTemplate(tpl, manager)
               else: discard
             else:
               # if the template is not registered,
@@ -793,7 +791,7 @@ proc precompile*(engine: TimEngine) =
               if newTpl.templateType != ttPartial:
                 # partials don't need to be compiled as they
                 # are included in other templates (layouts or views)
-                engine.precompileTemplate(newTpl, pkgr)
+                engine.precompileTemplate(newTpl, manager)
               else:
                 # for partials, we only need to parse them to get their dependencies
                 parsePartial(engine, newTpl)
@@ -806,7 +804,7 @@ proc precompile*(engine: TimEngine) =
             case tpl.templateType
             of ttView, ttLayout:
               # if the template is a view or layout, compile it
-              engine.precompileTemplate(tpl, pkgr)
+              engine.precompileTemplate(tpl, manager)
               ws2.notifyAllClients()
             of ttPartial:
               # refresh changed partial dependencies first
@@ -817,7 +815,7 @@ proc precompile*(engine: TimEngine) =
                 if depTpl == nil: continue
                 case depTpl.templateType
                 of ttView, ttLayout:
-                  engine.precompileTemplate(depTpl, pkgr)
+                  engine.precompileTemplate(depTpl, manager)
                 of ttPartial:
                   parsePartial(engine, depTpl)
                 # clear the cached AST of the dependants to force
@@ -860,15 +858,15 @@ proc precompile*(engine: TimEngine) =
         case sourceDir:
           of ttLayout:
             let tpl = newTemplate(id, ttLayout, sources)
-            if engine.precompileTemplate(tpl, pkgr):
+            if engine.precompileTemplate(tpl, manager):
               engine.layouts[srcPath] =  tpl
           of ttView:
             let tpl = newTemplate(id, ttView, sources)
-            if engine.precompileTemplate(tpl, pkgr):
+            if engine.precompileTemplate(tpl, manager):
               engine.views[srcPath] = tpl 
           of ttPartial:
             let tpl = newTemplate(id, ttPartial, sources)
-            if engine.precompileTemplate(tpl, pkgr):
+            if engine.precompileTemplate(tpl, manager):
               engine.partials[srcPath] = tpl
           else: discard
 
@@ -890,7 +888,7 @@ proc precompile*(engine: TimEngine) =
         if tpl != nil:
           case tpl.templateType
           of ttView, ttLayout:
-            engine.precompileTemplate(tpl, pkgr)
+            engine.precompileTemplate(tpl, manager)
           else: discard
         else:
           # if the template is not registered,
@@ -899,7 +897,7 @@ proc precompile*(engine: TimEngine) =
           if newTpl.templateType != ttPartial:
             # partials don't need to be compiled as they
             # are included in other templates (layouts or views)
-            engine.precompileTemplate(newTpl, pkgr)
+            engine.precompileTemplate(newTpl, manager)
           else:
             # for partials, we only need to parse them to get their dependencies
             parsePartial(engine, newTpl)
@@ -912,7 +910,7 @@ proc precompile*(engine: TimEngine) =
         case tpl.templateType
         of ttView, ttLayout:
           # if the template is a view or layout, compile it
-          engine.precompileTemplate(tpl, pkgr)
+          engine.precompileTemplate(tpl, manager)
           ws1.notifyAllClients()
         of ttPartial:
           # refresh changed partial dependencies first
@@ -923,7 +921,7 @@ proc precompile*(engine: TimEngine) =
             if depTpl == nil: continue
             case depTpl.templateType
             of ttView, ttLayout:
-              engine.precompileTemplate(depTpl, pkgr)
+              engine.precompileTemplate(depTpl, manager)
             of ttPartial:
               parsePartial(engine, depTpl)
             # clear the cached AST of the dependants to force

@@ -26,6 +26,7 @@ requires "pkginfo >= 0.1.4"
 requires "bag >= 0.1.0"
 requires "boogie >= 0.1.2"
 requires "supranim >= 0.1.9[powpow]"
+requires "datpkgr >= 0.1.0"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):
