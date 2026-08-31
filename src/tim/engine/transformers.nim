@@ -1,9 +1,6 @@
 import std/[os, strutils]
 import ./test_state
 
-import pkg/openparser/html/ast as htmlAst
-template HtmlTag*: untyped = htmlAst.HtmlTag
-template getHtmlTag*(a: string): untyped = htmlAst.getHtmlTag(a)
 import pkg/voodoo/extensibles
 
 # Extend vancode AST and CodeGen to support
@@ -35,8 +32,7 @@ block extendvancodeAstAndCodeGen:
       case kind: NodeKind
       # the branches we add to the Node variant
       of nkHtmlElement:
-        tag*: HtmlTag
-        tagCustom*: string
+        tag*: string
         attributes*: seq[Node]
         childElements*: seq[Node]
       of nkHtmlAttribute:
@@ -218,9 +214,9 @@ block extendvancodeAstAndCodeGen:
           h = h !& hash(node.attrNode)
 
   extendModule "vancode" / "interpreter" / "ast.nim":
-    const voidHtmlElements* = [tagArea, tagBase, tagBr, tagCol,
-      tagEmbed, tagHr, tagImg, tagInput, tagLink, tagMeta,
-      tagParam, tagSource, tagTrack, tagWbr]
+    const voidHtmlElements* = ["area", "base", "br", "col",
+      "embed", "hr", "img", "input", "link", "meta",
+      "param", "source", "track", "wbr"]
 
     proc newMacro*(children: varargs[Node]): Node =
       ## Construct a new block.
@@ -234,138 +230,15 @@ block extendvancodeAstAndCodeGen:
         attrNode: attrNode
       )
 
-    proc `$`*(tag: HtmlTag): string =
-      result = case tag
-        of tagA: "a"
-        of tagAbbr: "abbr"
-        of tagAddress: "address"
-        of tagArea: "area"
-        of tagArticle: "article"
-        of tagAside: "aside"
-        of tagAudio: "audio"
-        of tagB: "b"
-        of tagBase: "base"
-        of tagBdi: "bdi"
-        of tagBdo: "bdo"
-        of tagBlockquote: "blockquote"
-        of tagBody: "body"
-        of tagBr: "br"
-        of tagButton: "button"
-        of tagCanvas: "canvas"
-        of tagCaption: "caption"
-        of tagCite: "cite"
-        of tagCode: "code"
-        of tagCol: "col"
-        of tagColgroup: "colgroup"
-        of tagData: "data"
-        of tagDatalist: "datalist"
-        of tagDd: "dd"
-        of tagDel: "del"
-        of tagDetails: "details"
-        of tagDfn: "dfn"
-        of tagDialog: "dialog"
-        of tagDiv: "div"
-        of tagDl: "dl"
-        of tagDt: "dt"
-        of tagEm: "em"
-        of tagEmbed: "embed"
-        of tagFieldset: "fieldset"
-        of tagFigcaption: "figcaption"
-        of tagFigure: "figure"
-        of tagFooter: "footer"
-        of tagForm: "form"
-        of tagH1: "h1"
-        of tagH2: "h2"
-        of tagH3: "h3"
-        of tagH4: "h4"
-        of tagH5: "h5"
-        of tagH6: "h6"
-        of tagHead: "head"
-        of tagHeader: "header"
-        of tagHtml: "html"
-        of tagHr: "hr"
-        of tagI: "i"
-        of tagIframe: "iframe"
-        of tagImg: "img"
-        of tagInput: "input"
-        of tagIns: "ins"
-        of tagKbd: "kbd"
-        of tagLabel: "label"
-        of tagLegend: "legend"
-        of tagLi: "li"
-        of tagLink: "link"
-        of tagMain: "main"
-        of tagMap: "map"
-        of tagMark: "mark"
-        of tagMeta: "meta"
-        of tagMeter: "meter"
-        of tagNav: "nav"
-        of tagNoscript: "noscript"
-        of tagObject: "object"
-        of tagOl: "ol"
-        of tagOptgroup: "optgroup"
-        of tagOption: "option"
-        of tagOutput: "output"
-        of tagP: "p"
-        of tagParam: "param"
-        of tagPicture: "picture"
-        of tagPre: "pre"
-        of tagProgress: "progress"
-        of tagQ: "q"
-        of tagRp: "rp"
-        of tagRt: "rt"
-        of tagRuby: "ruby"
-        of tagS: "s"
-        of tagSamp: "samp"
-        of tagScript: "script"
-        of tagSection: "section"
-        of tagSelect: "select"
-        of tagSmall: "small"
-        of tagSource: "source"
-        of tagSpan: "span"
-        of tagStrong: "strong"
-        of tagStyle: "style"
-        of tagSub: "sub"
-        of tagSummary: "summary"
-        of tagSup: "sup"
-        of tagTable: "table"
-        of tagTbody: "tbody"
-        of tagTd: "td"
-        of tagTemplate: "template"
-        of tagTextarea: "textarea"
-        of tagTfoot: "tfoot"
-        of tagTh: "th"
-        of tagThead: "thead"
-        of tagTime: "time"
-        of tagTitle: "title"
-        of tagTr: "tr"
-        of tagTrack: "track"
-        of tagU: "u"
-        of tagUl: "ul"
-        of tagVar: "var"
-        of tagVideo: "video"
-        of tagWbr: "wbr"
-        of tagSlot: "slot"
-        else: "" # non-standard HTML tag / custom tag
-      
-    proc newHtmlElement*(tag: HtmlTag, tagStr: string): Node =
+    proc newHtmlElement*(tag: string): Node =
       ## Construct a new HTML element node.
-      case tag
-      of tagUnknown:
-        result = Node(kind: nkHtmlElement, tag: tagUnknown, tagCustom: tagStr)
-      else:
-        result = Node(kind: nkHtmlElement, tag: tag)
+      result = Node(kind: nkHtmlElement, tag: tag)
 
     proc getTag*(node: Node): string =
       # Retrieves the HTML tag name from an HTML element node
-      case node.tag
-      of tagUnknown:
-        result = node.tagCustom
-      else:
-        result = $node.tag
+      result = node.tag
 
   extendModule "vancode" / "interpreter" / "codegen.nim":
-
     proc jsDocify*(js: string): string =
       result = newStringOfCap(js.len)
       for line in js.splitLines:

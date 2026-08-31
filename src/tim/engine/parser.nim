@@ -6,6 +6,7 @@
 
 import std/[macros, tables, strutils, critbits, options, memfiles]
 import pkg/vancode/interpreter/[errors, ast]
+import pkg/openparser/html
 
 from ./transpilers/private import minifyInlineJs, minifyRawHtml, minifyInlineCSS
 import ./lexer
@@ -427,8 +428,9 @@ prefixHandle parseElement:
   # parse an HTML element
   let tk = p.curr
   var multiplier: Node
-  let tag = getHtmlTag(tk.value)
-  result = ast.newHtmlElement(tag, tk.value)
+  let tagEnum = getHtmlTag(tk.value)
+  let tagStr = if tagEnum == tagUnknown: tk.value else: $tagEnum
+  result = ast.newHtmlElement(tagStr)
   result.ln = p.curr.line
   result.col = p.curr.col
   walk p
@@ -453,7 +455,7 @@ prefixHandle parseElement:
       p.parseAttributes(result.attributes, tk)
     else: discard
   of tkColon:
-    if tag == tagInput and p.curr.wsno == 0 and
+    if tagEnum == tagInput and p.curr.wsno == 0 and
        p.curr.line == tk.line and p.next.kind == tkIdentifier:
       walk p
       let typeVal = ast.newStringLit(p.curr.value)
@@ -497,7 +499,7 @@ prefixHandle parseElement:
   case p.curr.kind
   of tkColon:
     walk p
-    if tag == tagScript:
+    if tagEnum == tagScript:
       let js = minifyInlineJs(p.curr.value)
       result.childElements.add(ast.newStringLit(js))
       walk p

@@ -1,7 +1,8 @@
 import std/[os, tables, net, strutils, sequtils, options]
 
 import pkg/openparser/json
-import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver, manager, policy]
+import pkg/vancode/interpreter/[ast, codegen, chunk, sym,
+                        vm, value, resolver, manager, policy]
 import pkg/vancode/manager/configurator # shim for ConfigType/CompilationSettings
 import pkg/kapsis/interactive/prompts
 
@@ -607,7 +608,7 @@ var
   browserSyncThemeWatcher: Watchout
 
 proc interpret*(view, layout: TimTemplate, localData,
-        globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
+        globalData: JsonNode): Value =
   ## Evaluate a view within a layout and return the final HTML output.
   ## 
   ## Templates are evaluated in the context of the provided `localData` and `globalData`, which are
@@ -629,7 +630,7 @@ proc interpret*(view, layout: TimTemplate, localData,
     result = initValue("")
 
 proc interpret*(view: TimTemplate, localData,
-      globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
+      globalData: JsonNode): Value =
   ## Evaluate a view without a layout and return the final HTML output. 
   ## This can be used for rendering partials or standalone views.
   assert view.script != nil, "View script is not initialized"
@@ -639,14 +640,13 @@ proc interpret*(view: TimTemplate, localData,
                   localData = localData)
 
 proc compileCode*(view, layout: TimTemplate,
-                localData, globalData: JsonNode): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
+                localData, globalData: JsonNode): Value =
   ## Compile a view and layout into HTML without evaluating them.
   ## This can be used for debugging or for generating the HTML output
   ## without executing any code in the templates.
   interpret(view, layout, localData, globalData)
 
-proc compileCode*(view: TimTemplate, localData, globalData: JsonNode
-  ): Value {.raises: [IndexDefect, ValueError, KeyError, TimEngineError, Exception].} =
+proc compileCode*(view: TimTemplate, localData, globalData: JsonNode): Value =
   ## Compile a view into HTML without evaluating it.
   interpret(view, localData, globalData)
 

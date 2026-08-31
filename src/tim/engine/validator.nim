@@ -15,11 +15,9 @@
 
 import std/[strutils, tables, sets, hashes, math]
 import pkg/vancode/interpreter/ast
-import pkg/openparser/html/ast as htmlAst
 import pkg/openparser/json as ojson
 
 export ast
-export htmlAst
 
 type
   TimAstValidationError* = object of CatchableError
@@ -59,13 +57,15 @@ proc isValidIdent*(s: string): bool =
       return false
   true
 
-proc isValidTagCustom(s: string): bool =
+proc isValidTag*(s: string): bool =
   if s.len == 0 or s.len > 128: return false
   if not s[0].isAlphaAscii: return false
   for c in s:
     if c notin {'A'..'Z', 'a'..'z', '0'..'9', '-', ':', '_'}:
       return false
   true
+
+proc isValidTagCustom(s: string): bool = isValidTag(s)
 
 proc checkStringLen(path: string, node: Node, s: string, field: string) =
   if s.len > MaxStringLength:
@@ -188,15 +188,11 @@ when compiles(NodeKind.nkHtmlElement):
   proc validateHtmlElement(node: Node, path: string, depth: int, visited: var HashSet[pointer], total: var int) =
     if node.kind != nkHtmlElement:
       fail(path, node, "expected nkHtmlElement")
-    if ord(node.tag) < ord(low(HtmlTag)) or ord(node.tag) > ord(high(HtmlTag)):
-      fail(path, node, "invalid HtmlTag ord " & $ord(node.tag))
-    if node.tag == tagUnknown:
-      if not isValidTagCustom(node.tagCustom):
-        fail(path, node, "tagUnknown requires valid tagCustom, got: " & node.tagCustom.escape)
-      checkStringLen(path, node, node.tagCustom, "tagCustom")
-    else:
-      if node.tagCustom.len > 0:
-        fail(path, node, "non-unknown tag should not have tagCustom")
+    if node.tag.len == 0:
+      fail(path, node, "tag must not be empty")
+    checkStringLen(path, node, node.tag, "tag")
+    if not isValidTag(node.tag):
+      fail(path, node, "invalid tag: " & node.tag.escape)
     for i, attr in node.attributes:
       ensureNotNil(path & ".attributes[" & $i & "]", attr, "attribute")
       if attr.kind != nkHtmlAttribute:

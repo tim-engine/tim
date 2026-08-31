@@ -56,7 +56,7 @@ div
     check ast2.nodes.len == ast1.nodes.len
 
   test "modern tagMain valid":
-    var n = ast.newHtmlElement(tagMain, "")
+    var n = ast.newHtmlElement("main")
     var astM = Ast(nodes: @[n])
     check isValidAst(astM)
 
@@ -103,8 +103,8 @@ suite "Validator - invalid AST":
     expect TimAstValidationError:
       validateAst(ast2)
 
-  test "HTML invalid tagCustom empty":
-    var htmlNode = ast.newHtmlElement(tagUnknown, "")
+  test "HTML invalid tag empty":
+    var htmlNode = ast.newHtmlElement("")
     var ast5 = Ast(nodes: @[htmlNode])
     expect TimAstValidationError:
       validateAst(ast5)
