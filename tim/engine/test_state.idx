@@ -1,0 +1,4 @@
+nimTitle	test_state	tim/engine/test_state.html	module tim/engine/test_state		0
+nim	gTestFailed	tim/engine/test_state.html#gTestFailed	var gTestFailed		2
+nim	gTestLabel	tim/engine/test_state.html#gTestLabel	var gTestLabel		3
+nim	gTestMsg	tim/engine/test_state.html#gTestMsg	var gTestMsg		4

@@ -1,0 +1,13 @@
+nimTitle	validator	tim/engine/validator.html	module tim/engine/validator		0
+nim	TimAstValidationError	tim/engine/validator.html#TimAstValidationError	object TimAstValidationError		23
+nim	MaxAstDepth	tim/engine/validator.html#MaxAstDepth	const MaxAstDepth		29
+nim	MaxAstNodes	tim/engine/validator.html#MaxAstNodes	const MaxAstNodes		30
+nim	MaxStringLength	tim/engine/validator.html#MaxStringLength	const MaxStringLength		31
+nim	isValidIdent	tim/engine/validator.html#isValidIdent,string	proc isValidIdent(s: string): bool		46
+nim	isValidTag	tim/engine/validator.html#isValidTag,string	proc isValidTag(s: string): bool		60
+nim	validateAst	tim/engine/validator.html#validateAst,Ast	proc validateAst(ast: Ast)		492
+nim	validateAst	tim/engine/validator.html#validateAst,Ast,seq[ref.TimAstValidationError]	proc validateAst(ast: Ast; errors: var seq[ref TimAstValidationError]): bool		523
+nim	isValidAst	tim/engine/validator.html#isValidAst,Ast	proc isValidAst(ast: Ast): bool		536
+nim	loadValidatedAst	tim/engine/validator.html#loadValidatedAst,string,string	proc loadValidatedAst(jsonStr: string; sourcePath: string = ""): Ast		543
+nim	loadValidatedAstFile	tim/engine/validator.html#loadValidatedAstFile,string	proc loadValidatedAstFile(path: string): Ast		554
+nimgrp	validateast	tim/engine/validator.html#validateAst-procs-all	proc		492

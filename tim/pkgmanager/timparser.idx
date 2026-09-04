@@ -1,0 +1,6 @@
+nimTitle	timparser	tim/pkgmanager/timparser.html	module tim/pkgmanager/timparser		0
+nim	parseRequiresArg	tim/pkgmanager/timparser.html#parseRequiresArg,string	proc parseRequiresArg(arg: string): dt.PkgDependency		27
+nim	timManifestParser	tim/pkgmanager/timparser.html#timManifestParser,string,string	proc timManifestParser(content: string; path: string): dt.Manifest		157
+nim	timManifestFinder	tim/pkgmanager/timparser.html#timManifestFinder,string	proc timManifestFinder(dir: string): string		186
+nim	timManifestFileName	tim/pkgmanager/timparser.html#timManifestFileName,string	proc timManifestFileName(pkgName: string): string		202
+nim	withTimSupport	tim/pkgmanager/timparser.html#withTimSupport,,	proc withTimSupport(cfg: dc.DatpkgrConfig; parser: dt.ManifestParser)		205

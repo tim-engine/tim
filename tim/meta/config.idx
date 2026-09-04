@@ -16,3 +16,5 @@ nim	TimConfig	tim/meta/config.html#TimConfig	type TimConfig		64
 nim	generateYaml	tim/meta/config.html#generateYaml,TimConfig	proc generateYaml(c: TimConfig): string		89
 nim	`$`	tim/meta/config.html#$,TimConfig	proc `$`(c: TimConfig): string		101
 nim	getBasePath	tim/meta/config.html#getBasePath,TimConfig	proc getBasePath(config: TimConfig): string		104
+nim	semverToFbeVersion	tim/meta/config.html#semverToFbeVersion,Version	proc semverToFbeVersion(v: Version): uint32		109
+nim	TimFbeVersion	tim/meta/config.html#TimFbeVersion	const TimFbeVersion		114

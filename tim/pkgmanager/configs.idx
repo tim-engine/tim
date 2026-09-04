@@ -1,0 +1,36 @@
+nimTitle	configs	tim/pkgmanager/configs.html	module tim/pkgmanager/configs		0
+nim	getTimCfg	tim/pkgmanager/configs.html#getTimCfg	proc getTimCfg(): DatpkgrConfig		20
+nim	timCfg	tim/pkgmanager/configs.html#timCfg.t	template timCfg(): DatpkgrConfig		26
+nim	timPath	tim/pkgmanager/configs.html#timPath.t	template timPath(): string		28
+nim	timDBPath	tim/pkgmanager/configs.html#timDBPath.t	template timDBPath(): string		29
+nim	versionsDBPath	tim/pkgmanager/configs.html#versionsDBPath.t	template versionsDBPath(): string		30
+nim	timPkgsPath	tim/pkgmanager/configs.html#timPkgsPath.t	template timPkgsPath(): string		31
+nim	timPkgsCachePath	tim/pkgmanager/configs.html#timPkgsCachePath.t	template timPkgsCachePath(): string		32
+nim	timBinPath	tim/pkgmanager/configs.html#timBinPath.t	template timBinPath(): string		33
+nim	timBuildTempPath	tim/pkgmanager/configs.html#timBuildTempPath.t	template timBuildTempPath(): string		34
+nim	timDevelopPath	tim/pkgmanager/configs.html#timDevelopPath.t	template timDevelopPath(): string		35
+nim	timSourcesPath	tim/pkgmanager/configs.html#timSourcesPath.t	template timSourcesPath(): string		36
+nim	timRegistriesDir	tim/pkgmanager/configs.html#timRegistriesDir.t	template timRegistriesDir(): string		37
+nim	timPackagesUrl	tim/pkgmanager/configs.html#timPackagesUrl.t	template timPackagesUrl(): string		38
+nim	defaultSourceName	tim/pkgmanager/configs.html#defaultSourceName.t	template defaultSourceName(): string		39
+nim	timDB	tim/pkgmanager/configs.html#timDB.t	template timDB(): Store		41
+nim	versionsDB	tim/pkgmanager/configs.html#versionsDB.t	template versionsDB(): Store		42
+nim	debugEnabled	tim/pkgmanager/configs.html#debugEnabled.t	template debugEnabled(): untyped		44
+nim	debugLog	tim/pkgmanager/configs.html#debugLog,string	proc debugLog(msg: string)		46
+nim	isInsidePkgs	tim/pkgmanager/configs.html#isInsidePkgs,string	proc isInsidePkgs(dir: string): bool		50
+nim	safeRemoveDir	tim/pkgmanager/configs.html#safeRemoveDir,string	proc safeRemoveDir(dir: string)		51
+nim	safeRemoveSymlink	tim/pkgmanager/configs.html#safeRemoveSymlink,string	proc safeRemoveSymlink(p: string)		52
+nim	isValidSourceName	tim/pkgmanager/configs.html#isValidSourceName,string	proc isValidSourceName(s: string): bool		54
+nim	sourceCachePath	tim/pkgmanager/configs.html#sourceCachePath,string	proc sourceCachePath(name: string): string		55
+nim	ensureSourcesFile	tim/pkgmanager/configs.html#ensureSourcesFile	proc ensureSourcesFile()		56
+nim	loadSources	tim/pkgmanager/configs.html#loadSources	proc loadSources(): seq[Source]		57
+nim	saveSources	tim/pkgmanager/configs.html#saveSources,seq[Source]	proc saveSources(sources: seq[Source])		58
+nim	resetTimForTests	tim/pkgmanager/configs.html#resetTimForTests	proc resetTimForTests()		60
+nim	seedPackagesTable	tim/pkgmanager/configs.html#seedPackagesTable,JsonNode,string	proc seedPackagesTable(packages: JsonNode; source: string = defaultSourceName): int		61
+nim	initTim	tim/pkgmanager/configs.html#initTim	proc initTim()		64
+nim	refreshSource	tim/pkgmanager/configs.html#refreshSource,string	proc refreshSource(sourceName: string): bool		66
+nim	refreshAllSources	tim/pkgmanager/configs.html#refreshAllSources	proc refreshAllSources(): bool		67
+nim	refreshRegistry	tim/pkgmanager/configs.html#refreshRegistry	proc refreshRegistry(): bool		68
+nim	withTimDB	tim/pkgmanager/configs.html#withTimDB.t,untyped	template withTimDB(body: untyped)		70
+nim	fetchPkgMeta	tim/pkgmanager/configs.html#fetchPkgMeta,string,string	proc fetchPkgMeta(pkgName: string; sourceFilter: string = ""): Option[PkgRef]		74
+nim	fetchAllPkgMetas	tim/pkgmanager/configs.html#fetchAllPkgMetas,string	proc fetchAllPkgMetas(pkgName: string): seq[PkgRef]		77
