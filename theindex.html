@@ -111,6 +111,10 @@
 <li><a class="reference external"
           data-doc-search-tag="config: type EmbeddedTemplates" href="tim/meta/config.html#EmbeddedTemplates">config: type EmbeddedTemplates</a></li>
           </ul></dd>
+<dt><a name="EmbeddedTheme" href="#EmbeddedTheme"><span>EmbeddedTheme:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="initializer: tuple EmbeddedTheme" href="tim/meta/initializer.html#EmbeddedTheme">initializer: tuple EmbeddedTheme</a></li>
+          </ul></dd>
 <dt><a name="ensureSourcesFile" href="#ensureSourcesFile"><span>ensureSourcesFile:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: proc ensureSourcesFile()" href="tim/pkgmanager/configs.html#ensureSourcesFile">configs: proc ensureSourcesFile()</a></li>
@@ -195,6 +199,10 @@
 <li><a class="reference external"
           data-doc-search-tag="config: proc getBasePath(config: TimConfig): string" href="tim/meta/config.html#getBasePath%2CTimConfig">config: proc getBasePath(config: TimConfig): string</a></li>
           </ul></dd>
+<dt><a name="getFallbackTheme" href="#getFallbackTheme"><span>getFallbackTheme:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="initializer: proc getFallbackTheme(engine: TimEngine): Theme" href="tim/meta/initializer.html#getFallbackTheme%2CTimEngine">initializer: proc getFallbackTheme(engine: TimEngine): Theme</a></li>
+          </ul></dd>
 <dt><a name="getLayout" href="#getLayout"><span>getLayout:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc getLayout(engine: TimEngine; key: string): TimTemplate" href="tim/meta/initializer.html#getLayout%2CTimEngine%2Cstring">initializer: proc getLayout(engine: TimEngine; key: string): TimTemplate</a></li>
@@ -202,6 +210,8 @@
 <dt><a name="getLayouts" href="#getLayouts"><span>getLayouts:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: iterator getLayouts(engine: TimEngine): TimTemplate" href="tim/meta/initializer.html#getLayouts.i%2CTimEngine">initializer: iterator getLayouts(engine: TimEngine): TimTemplate</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="initializer: iterator getLayouts(engine: TimEngine; theme: string): TimTemplate" href="tim/meta/initializer.html#getLayouts.i%2CTimEngine%2Cstring">initializer: iterator getLayouts(engine: TimEngine; theme: string): TimTemplate</a></li>
           </ul></dd>
 <dt><a name="getPartial" href="#getPartial"><span>getPartial:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -210,10 +220,16 @@
 <dt><a name="getPartials" href="#getPartials"><span>getPartials:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: iterator getPartials(engine: TimEngine): TimTemplate" href="tim/meta/initializer.html#getPartials.i%2CTimEngine">initializer: iterator getPartials(engine: TimEngine): TimTemplate</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="initializer: iterator getPartials(engine: TimEngine; theme: string): TimTemplate" href="tim/meta/initializer.html#getPartials.i%2CTimEngine%2Cstring">initializer: iterator getPartials(engine: TimEngine; theme: string): TimTemplate</a></li>
           </ul></dd>
 <dt><a name="getTemplateByPath" href="#getTemplateByPath"><span>getTemplateByPath:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc getTemplateByPath(engine: TimEngine; path: string): TimTemplate" href="tim/meta/initializer.html#getTemplateByPath%2CTimEngine%2Cstring">initializer: proc getTemplateByPath(engine: TimEngine; path: string): TimTemplate</a></li>
+          </ul></dd>
+<dt><a name="getTheme" href="#getTheme"><span>getTheme:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="initializer: proc getTheme(engine: TimEngine; name: string): Theme" href="tim/meta/initializer.html#getTheme%2CTimEngine%2Cstring">initializer: proc getTheme(engine: TimEngine; name: string): Theme</a></li>
           </ul></dd>
 <dt><a name="getThemeLayout" href="#getThemeLayout"><span>getThemeLayout:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -242,6 +258,8 @@
 <dt><a name="getViews" href="#getViews"><span>getViews:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: iterator getViews(engine: TimEngine): TimTemplate" href="tim/meta/initializer.html#getViews.i%2CTimEngine">initializer: iterator getViews(engine: TimEngine): TimTemplate</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="initializer: iterator getViews(engine: TimEngine; theme: string): TimTemplate" href="tim/meta/initializer.html#getViews.i%2CTimEngine%2Cstring">initializer: iterator getViews(engine: TimEngine; theme: string): TimTemplate</a></li>
           </ul></dd>
 <dt><a name="GreetingProc" href="#GreetingProc"><span>GreetingProc:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -349,6 +367,10 @@
 <li><a class="reference external"
           data-doc-search-tag="lexer: object Lexer" href="tim/engine/lexer.html#Lexer">lexer: object Lexer</a></li>
           </ul></dd>
+<dt><a name="listThemes" href="#listThemes"><span>listThemes:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="initializer: proc listThemes(engine: TimEngine): seq[string]" href="tim/meta/initializer.html#listThemes%2CTimEngine">initializer: proc listThemes(engine: TimEngine): seq[string]</a></li>
+          </ul></dd>
 <dt><a name="loadFFI" href="#loadFFI"><span>loadFFI:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="libffi: proc loadFFI(script: Script; systemModule: Module): Module" href="tim/engine/stdlib/libffi.html#loadFFI%2CScript%2CModule">libffi: proc loadFFI(script: Script; systemModule: Module): Module</a></li>
@@ -443,13 +465,15 @@
           </ul></dd>
 <dt><a name="newTim" href="#newTim"><span>newTim:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="initializer: proc newTim(globalData: JsonNode = nil): TimEngine" href="tim/meta/initializer.html#newTim%2CJsonNode">initializer: proc newTim(globalData: JsonNode = nil): TimEngine</a></li>
+          data-doc-search-tag="initializer: proc newTim(globalData: JsonNode = nil; enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine" href="tim/meta/initializer.html#newTim%2CJsonNode%2Cbool%2Cstring%2Cstring">initializer: proc newTim(globalData: JsonNode = nil; enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine</a></li>
           <li><a class="reference external"
           data-doc-search-tag="initializer: proc newTim(src, output, basepath: string; target = TargetSource.tsHtml;
-       globalData: JsonNode = newJObject(); enableThemes: static bool = false;
-       activeThemeName: string = &quot;&quot;): TimEngine" href="tim/meta/initializer.html#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cstaticbool%2Cstring">initializer: proc newTim(src, output, basepath: string; target = TargetSource.tsHtml;
-       globalData: JsonNode = newJObject(); enableThemes: static bool = false;
-       activeThemeName: string = &quot;&quot;): TimEngine</a></li>
+       globalData: JsonNode = newJObject(); enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine" href="tim/meta/initializer.html#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cbool%2Cstring%2Cstring">initializer: proc newTim(src, output, basepath: string; target = TargetSource.tsHtml;
+       globalData: JsonNode = newJObject(); enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine</a></li>
           </ul></dd>
 <dt><a name="nextToken" href="#nextToken"><span>nextToken:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -482,6 +506,10 @@
           data-doc-search-tag="initializer: proc precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;
            globalData: JsonNode = nil)" href="tim/meta/initializer.html#precompile%2CTimEngine%2CEmbeddedTemplates%2CEmbeddedTemplates%2CEmbeddedTemplates%2CJsonNode">initializer: proc precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;
            globalData: JsonNode = nil)</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="initializer: proc precompile(engine: TimEngine; themes: Table[string, EmbeddedTheme];
+           globalData: JsonNode = nil)" href="tim/meta/initializer.html#precompile%2CTimEngine%2CTable%5Bstring%2CEmbeddedTheme%5D%2CJsonNode">initializer: proc precompile(engine: TimEngine; themes: Table[string, EmbeddedTheme];
+           globalData: JsonNode = nil)</a></li>
           </ul></dd>
 <dt><a name="precompileEmbeddedTemplate" href="#precompileEmbeddedTemplate"><span>precompileEmbeddedTemplate:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -494,8 +522,8 @@
 <dt><a name="precompileTemplate" href="#precompileTemplate"><span>precompileTemplate:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
-                   data: JsonNode = nil): bool" href="tim/meta/initializer.html#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode">initializer: proc precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
-                   data: JsonNode = nil): bool</a></li>
+                   data: JsonNode = nil; force: bool = false): bool" href="tim/meta/initializer.html#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode%2Cbool">initializer: proc precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
+                   data: JsonNode = nil; force: bool = false): bool</a></li>
           </ul></dd>
 <dt><a name="PrefixFunction" href="#PrefixFunction"><span>PrefixFunction:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -548,6 +576,10 @@
 <dt><a name="serveCommand" href="#serveCommand"><span>serveCommand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="serve: proc serveCommand(v: Values)" href="tim/app/serve.html#serveCommand%2CValues">serve: proc serveCommand(v: Values)</a></li>
+          </ul></dd>
+<dt><a name="setActiveTheme" href="#setActiveTheme"><span>setActiveTheme:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="initializer: proc setActiveTheme(engine: TimEngine; name: string)" href="tim/meta/initializer.html#setActiveTheme%2CTimEngine%2Cstring">initializer: proc setActiveTheme(engine: TimEngine; name: string)</a></li>
           </ul></dd>
 <dt><a name="sourceCachePath" href="#sourceCachePath"><span>sourceCachePath:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -1147,7 +1179,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-04 09:07:42 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-08 12:49:07 UTC</small>
       </div>
     </div>
   </div>

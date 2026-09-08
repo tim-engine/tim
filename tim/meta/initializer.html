@@ -61,7 +61,8 @@
   <details open>
     <summary><a class="reference reference-toplevel" href="#7" id="57">Types</a></summary>
     <ul class="simple simple-toc-section">
-      <li><a class="reference" href="#TemplateSources" title="TemplateSources = tuple[src: string, ast: string, html: string, opcache: string]">TemplateSources</a></li>
+      <li><a class="reference" href="#EmbeddedTheme" title="EmbeddedTheme = tuple[views, layouts, partials: EmbeddedTemplates]">EmbeddedTheme</a></li>
+<li><a class="reference" href="#TemplateSources" title="TemplateSources = tuple[src: string, ast: string, html: string, opcache: string]">TemplateSources</a></li>
 <li><a class="reference" href="#Theme" title="Theme {.acyclic.} = ref object
   manifest*: ThemeManifest
   path*: string
@@ -107,6 +108,9 @@
       (0, &quot;&quot;, nil), (0, &quot;&quot;, nil)], counter: 0) ## A table to store themes by their name
   activeTheme*: Theme        ## The currently active theme, if any
   activeThemeName*: string   ## The name of the currently active theme, used for initialization before loading themes
+  fallbackThemeName*: string ## The name of the fallback theme, used when a template is missing
+                             ## from the active theme. When empty, no fallback is applied and
+                             ## missing templates raise a `TimEngineError`.
   views*, layouts*, partials*: TableRef[string, TimTemplate] = (data: [
       (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil),
       (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil), (0, &quot;&quot;, nil),
@@ -157,6 +161,10 @@
   <li><a class="reference" href="#declareGlobals%2CCodeGen" title="declareGlobals(compiler: CodeGen)">declareGlobals(compiler: CodeGen)</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">getFallbackTheme
+  <li><a class="reference" href="#getFallbackTheme%2CTimEngine" title="getFallbackTheme(engine: TimEngine): Theme">getFallbackTheme(engine: TimEngine): Theme</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">getLayout
   <li><a class="reference" href="#getLayout%2CTimEngine%2Cstring" title="getLayout(engine: TimEngine; key: string): TimTemplate">getLayout(engine: TimEngine; key: string): TimTemplate</a></li>
 
@@ -167,6 +175,10 @@
 </ul>
 <ul class="simple nested-toc-section">getTemplateByPath
   <li><a class="reference" href="#getTemplateByPath%2CTimEngine%2Cstring" title="getTemplateByPath(engine: TimEngine; path: string): TimTemplate">getTemplateByPath(engine: TimEngine; path: string): TimTemplate</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">getTheme
+  <li><a class="reference" href="#getTheme%2CTimEngine%2Cstring" title="getTheme(engine: TimEngine; name: string): Theme">getTheme(engine: TimEngine; name: string): Theme</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">getThemeLayout
@@ -194,17 +206,23 @@
 <li><a class="reference" href="#interpret%2CTimTemplate%2CJsonNode%2CJsonNode" title="interpret(view: TimTemplate; localData, globalData: JsonNode): Value">interpret(view: TimTemplate; localData, globalData: JsonNode): Value</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">listThemes
+  <li><a class="reference" href="#listThemes%2CTimEngine" title="listThemes(engine: TimEngine): seq[string]">listThemes(engine: TimEngine): seq[string]</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">newTemplate
   <li><a class="reference" href="#newTemplate%2Cstring%2CTimTemplateType%2CTemplateSources" title="newTemplate(id: string; templateType: TimTemplateType; sources: TemplateSources): TimTemplate">newTemplate(id: string; templateType: TimTemplateType; sources: TemplateSources): TimTemplate</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">newTim
-  <li><a class="reference" href="#newTim%2CJsonNode" title="newTim(globalData: JsonNode = nil): TimEngine">newTim(globalData: JsonNode = nil): TimEngine</a></li>
-<li><a class="reference" href="#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cstaticbool%2Cstring" title="newTim(src, output, basepath: string; target = TargetSource.tsHtml;
-       globalData: JsonNode = newJObject(); enableThemes: static bool = false;
-       activeThemeName: string = &quot;&quot;): TimEngine">newTim(src, output, basepath: string; target = TargetSource.tsHtml;
-       globalData: JsonNode = newJObject(); enableThemes: static bool = false;
-       activeThemeName: string = &quot;&quot;): TimEngine</a></li>
+  <li><a class="reference" href="#newTim%2CJsonNode%2Cbool%2Cstring%2Cstring" title="newTim(globalData: JsonNode = nil; enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine">newTim(globalData: JsonNode = nil; enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine</a></li>
+<li><a class="reference" href="#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cbool%2Cstring%2Cstring" title="newTim(src, output, basepath: string; target = TargetSource.tsHtml;
+       globalData: JsonNode = newJObject(); enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine">newTim(src, output, basepath: string; target = TargetSource.tsHtml;
+       globalData: JsonNode = newJObject(); enableThemes: bool = false;
+       activeThemeName: string = &quot;&quot;; fallbackThemeName: string = &quot;&quot;): TimEngine</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">parseHook
@@ -213,6 +231,9 @@
 </ul>
 <ul class="simple nested-toc-section">precompile
   <li><a class="reference" href="#precompile%2CTimEngine" title="precompile(engine: TimEngine)">precompile(engine: TimEngine)</a></li>
+<li><a class="reference" href="#precompile%2CTimEngine%2CTable%5Bstring%2CEmbeddedTheme%5D%2CJsonNode" title="precompile(engine: TimEngine; themes: Table[string, EmbeddedTheme];
+           globalData: JsonNode = nil)">precompile(engine: TimEngine; themes: Table[string, EmbeddedTheme];
+           globalData: JsonNode = nil)</a></li>
 <li><a class="reference" href="#precompile%2CTimEngine%2CEmbeddedTemplates%2CEmbeddedTemplates%2CEmbeddedTemplates%2CJsonNode" title="precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;
            globalData: JsonNode = nil)">precompile(engine: TimEngine; views, layouts, partials: EmbeddedTemplates;
            globalData: JsonNode = nil)</a></li>
@@ -227,13 +248,17 @@
 
 </ul>
 <ul class="simple nested-toc-section">precompileTemplate
-  <li><a class="reference" href="#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode" title="precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
-                   data: JsonNode = nil): bool">precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
-                   data: JsonNode = nil): bool</a></li>
+  <li><a class="reference" href="#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode%2Cbool" title="precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
+                   data: JsonNode = nil; force: bool = false): bool">precompileTemplate(engine: TimEngine; tpl: TimTemplate; manager: ModuleManager;
+                   data: JsonNode = nil; force: bool = false): bool</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">registerTemplate
   <li><a class="reference" href="#registerTemplate%2CTimEngine%2Cstring" title="registerTemplate(engine: TimEngine; src: string): TimTemplate">registerTemplate(engine: TimEngine; src: string): TimTemplate</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">setActiveTheme
+  <li><a class="reference" href="#setActiveTheme%2CTimEngine%2Cstring" title="setActiveTheme(engine: TimEngine; name: string)">setActiveTheme(engine: TimEngine; name: string)</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">tryLoadValidatedAst
@@ -250,14 +275,17 @@
     <ul class="simple simple-toc-section">
       <ul class="simple nested-toc-section">getLayouts
   <li><a class="reference" href="#getLayouts.i%2CTimEngine" title="getLayouts(engine: TimEngine): TimTemplate">getLayouts(engine: TimEngine): TimTemplate</a></li>
+<li><a class="reference" href="#getLayouts.i%2CTimEngine%2Cstring" title="getLayouts(engine: TimEngine; theme: string): TimTemplate">getLayouts(engine: TimEngine; theme: string): TimTemplate</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">getPartials
   <li><a class="reference" href="#getPartials.i%2CTimEngine" title="getPartials(engine: TimEngine): TimTemplate">getPartials(engine: TimEngine): TimTemplate</a></li>
+<li><a class="reference" href="#getPartials.i%2CTimEngine%2Cstring" title="getPartials(engine: TimEngine; theme: string): TimTemplate">getPartials(engine: TimEngine; theme: string): TimTemplate</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">getViews
   <li><a class="reference" href="#getViews.i%2CTimEngine" title="getViews(engine: TimEngine): TimTemplate">getViews(engine: TimEngine): TimTemplate</a></li>
+<li><a class="reference" href="#getViews.i%2CTimEngine%2Cstring" title="getViews(engine: TimEngine; theme: string): TimTemplate">getViews(engine: TimEngine; theme: string): TimTemplate</a></li>
 
 </ul>
 
@@ -285,7 +313,15 @@
 <div class="section" id="7">
   <h1><a class="toc-backref" href="#7">Types</a></h1>
   <dl class="item">
-    <div id="TemplateSources">
+    <div id="EmbeddedTheme">
+  <dt><pre><a href="#EmbeddedTheme"><span class="Identifier">EmbeddedTheme</span></a> <span class="Other">=</span> <span class="Keyword">tuple</span><span class="Other">[</span><span class="Identifier">views</span><span class="Other">,</span> <span class="Identifier">layouts</span><span class="Other">,</span> <span class="Identifier">partials</span><span class="Other">:</span> <a href="config.html#EmbeddedTemplates"><span class="Identifier">EmbeddedTemplates</span></a><span class="Other">]</span></pre></dt>
+  <dd>
+    
+    An embedded theme bundle: template contents keyed by template name, as produced by <tt class="docutils literal"><span class="pre"><span class="Identifier">supra</span> <span class="Identifier">bundle</span><span class="Operator">.</span><span class="Identifier">assets</span></span></tt> per theme directory.
+    
+  </dd>
+</div>
+<div id="TemplateSources">
   <dt><pre><a href="#TemplateSources"><span class="Identifier">TemplateSources</span></a> <span class="Other">=</span> <span class="Keyword">tuple</span><span class="Other">[</span><span class="Identifier">src</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">ast</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">html</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">,</span> <span class="Identifier">opcache</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">]</span></pre></dt>
   <dd>
     
@@ -353,6 +389,9 @@
       <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">counter</span><span class="Other">:</span> <span class="DecNumber">0</span><span class="Other">)</span> <span class="Comment">## A table to store themes by their name</span>
   <span class="Identifier">activeTheme</span><span class="Operator">*</span><span class="Other">:</span> <a href="#Theme"><span class="Identifier">Theme</span></a>        <span class="Comment">## The currently active theme, if any</span>
   <span class="Identifier">activeThemeName</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>   <span class="Comment">## The name of the currently active theme, used for initialization before loading themes</span>
+  <span class="Identifier">fallbackThemeName</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Comment">## The name of the fallback theme, used when a template is missing</span>
+                             <span class="Comment">## from the active theme. When empty, no fallback is applied and</span>
+                             <span class="Comment">## missing templates raise a `TimEngineError`.</span>
   <span class="Identifier">views</span><span class="Operator">*</span><span class="Other">,</span> <span class="Identifier">layouts</span><span class="Operator">*</span><span class="Other">,</span> <span class="Identifier">partials</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TableRef</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a><span class="Other">]</span> <span class="Other">=</span> <span class="Other">(</span><span class="Identifier">data</span><span class="Other">:</span> <span class="Other">[</span>
       <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span>
       <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span> <span class="Other">(</span><span class="DecNumber">0</span><span class="Other">,</span> <span class="StringLit">&quot;&quot;</span><span class="Other">,</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">,</span>
@@ -476,13 +515,25 @@
 </div>
 
 </div>
-<div id="getLayout-procs-all">
-  <div id="getLayout,TimEngine,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#getLayout%2CTimEngine%2Cstring"><span class="Identifier">getLayout</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<div id="getFallbackTheme-procs-all">
+  <div id="getFallbackTheme,TimEngine">
+  <dt><pre><span class="Keyword">proc</span> <a href="#getFallbackTheme%2CTimEngine"><span class="Identifier">getFallbackTheme</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">)</span><span class="Other">:</span> <a href="#Theme"><span class="Identifier">Theme</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a layout template by its name (with/without extension).
+    Get the fallback theme, if one is configured and loaded. Returns nil when no fallback is configured or found.
+    
+  </dd>
+</div>
+
+</div>
+<div id="getLayout-procs-all">
+  <div id="getLayout,TimEngine,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#getLayout%2CTimEngine%2Cstring"><span class="Identifier">getLayout</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Get a layout template by its name (with/without extension). When themes are enabled, looks in the active theme first, then in the fallback theme (if configured).
     
   </dd>
 </div>
@@ -490,11 +541,11 @@
 </div>
 <div id="getPartial-procs-all">
   <div id="getPartial,TimEngine,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#getPartial%2CTimEngine%2Cstring"><span class="Identifier">getPartial</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#getPartial%2CTimEngine%2Cstring"><span class="Identifier">getPartial</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a partial template by its name (with/without extension).
+    Get a partial template by its name (with/without extension). When themes are enabled, looks in the active theme first, then in the fallback theme (if configured).
     
   </dd>
 </div>
@@ -512,13 +563,25 @@
 </div>
 
 </div>
+<div id="getTheme-procs-all">
+  <div id="getTheme,TimEngine,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#getTheme%2CTimEngine%2Cstring"><span class="Identifier">getTheme</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#Theme"><span class="Identifier">Theme</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Get a loaded theme by its manifest name. Returns nil if not found.
+    
+  </dd>
+</div>
+
+</div>
 <div id="getThemeLayout-procs-all">
   <div id="getThemeLayout,TimEngine,string">
   <dt><pre><span class="Keyword">proc</span> <a href="#getThemeLayout%2CTimEngine%2Cstring"><span class="Identifier">getThemeLayout</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a layout template from the active theme by its name (with/without extension).
+    
     
   </dd>
 </div>
@@ -530,7 +593,7 @@
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a partial template from the active theme by its name (with/without extension).
+    
     
   </dd>
 </div>
@@ -542,7 +605,7 @@
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a view template from the active theme by its name (with/without extension).
+    
     
   </dd>
 </div>
@@ -550,11 +613,11 @@
 </div>
 <div id="getView-procs-all">
   <div id="getView,TimEngine,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#getView%2CTimEngine%2Cstring"><span class="Identifier">getView</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#getView%2CTimEngine%2Cstring"><span class="Identifier">getView</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">key</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Get a view template by its name (with/without extension).
+    Get a view template by its name (with/without extension). When themes are enabled, looks in the active theme first, then in the fallback theme (if configured).
     
   </dd>
 </div>
@@ -596,6 +659,18 @@
 </div>
 
 </div>
+<div id="listThemes-procs-all">
+  <div id="listThemes,TimEngine">
+  <dt><pre><span class="Keyword">proc</span> <a href="#listThemes%2CTimEngine"><span class="Identifier">listThemes</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">]</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    List the names of all discovered themes.
+    
+  </dd>
+</div>
+
+</div>
 <div id="newTemplate-procs-all">
   <div id="newTemplate,string,TimTemplateType,TemplateSources">
   <dt><pre><span class="Keyword">proc</span> <a href="#newTemplate%2Cstring%2CTimTemplateType%2CTemplateSources"><span class="Identifier">newTemplate</span></a><span class="Other">(</span><span class="Identifier">id</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">templateType</span><span class="Other">:</span> <a href="#TimTemplateType"><span class="Identifier">TimTemplateType</span></a><span class="Other">;</span>
@@ -610,9 +685,10 @@
 
 </div>
 <div id="newTim-procs-all">
-  <div id="newTim,JsonNode">
-  <dt><pre><span class="Keyword">proc</span> <a href="#newTim%2CJsonNode"><span class="Identifier">newTim</span></a><span class="Other">(</span><span class="Identifier">globalData</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <div id="newTim,JsonNode,bool,string,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#newTim%2CJsonNode%2Cbool%2Cstring%2Cstring"><span class="Identifier">newTim</span></a><span class="Other">(</span><span class="Identifier">globalData</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Keyword">nil</span><span class="Other">;</span> <span class="Identifier">enableThemes</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+            <span class="Identifier">activeThemeName</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">fallbackThemeName</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Initialize a new Tim Engine instance from a preloaded table of templates.</p>
@@ -621,10 +697,11 @@
     
   </dd>
 </div>
-<div id="newTim,string,string,string,JsonNode,staticbool,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cstaticbool%2Cstring"><span class="Identifier">newTim</span></a><span class="Other">(</span><span class="Identifier">src</span><span class="Other">,</span> <span class="Identifier">output</span><span class="Other">,</span> <span class="Identifier">basepath</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">target</span> <span class="Other">=</span> <a href="config.html#TargetSource"><span class="Identifier">TargetSource</span></a><span class="Other">.</span><span class="Identifier">tsHtml</span><span class="Other">;</span>
-            <span class="Identifier">globalData</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Identifier">newJObject</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span>
-            <span class="Identifier">enableThemes</span><span class="Other">:</span> <span class="Keyword">static</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span> <span class="Identifier">activeThemeName</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a></pre></dt>
+<div id="newTim,string,string,string,JsonNode,bool,string,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#newTim%2Cstring%2Cstring%2Cstring%2CJsonNode%2Cbool%2Cstring%2Cstring"><span class="Identifier">newTim</span></a><span class="Other">(</span><span class="Identifier">src</span><span class="Other">,</span> <span class="Identifier">output</span><span class="Other">,</span> <span class="Identifier">basepath</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">target</span> <span class="Other">=</span> <a href="config.html#TargetSource"><span class="Identifier">TargetSource</span></a><span class="Other">.</span><span class="Identifier">tsHtml</span><span class="Other">;</span>
+            <span class="Identifier">globalData</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Identifier">newJObject</span><span class="Other">(</span><span class="Other">)</span><span class="Other">;</span> <span class="Identifier">enableThemes</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span>
+            <span class="Identifier">activeThemeName</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">fallbackThemeName</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     Initialize a new Tim Engine instance.<ul class="simple"><li><tt class="docutils literal"><span class="pre"><span class="Identifier">src</span></span></tt>: the source directory containing the templates</li>
@@ -655,12 +732,27 @@
   <div id="precompile,TimEngine">
   <dt><pre><span class="Keyword">proc</span> <a href="#precompile%2CTimEngine"><span class="Identifier">precompile</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span>
     <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">OpenParserJsonError</span><span class="Other">,</span>
-    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">TimEngineError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
     <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span>
     <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     
+    
+  </dd>
+</div>
+<div id="precompile,TimEngine,Table[string,EmbeddedTheme],JsonNode">
+  <dt><pre><span class="Keyword">proc</span> <a href="#precompile%2CTimEngine%2CTable%5Bstring%2CEmbeddedTheme%5D%2CJsonNode"><span class="Identifier">precompile</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">themes</span><span class="Other">:</span> <span class="Identifier">Table</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <a href="#EmbeddedTheme"><span class="Identifier">EmbeddedTheme</span></a><span class="Other">]</span><span class="Other">;</span>
+                <span class="Identifier">globalData</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Keyword">nil</span><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">,</span>
+    <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span>
+    <span class="Identifier">CodeGenError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span>
+                          <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    <p>Precompile embedded theme bundles and activate one of them.</p>
+<p>The engine must have been created with <tt class="docutils literal"><span class="pre"><span class="Identifier">enableThemes</span> <span class="Operator">=</span> <span class="Identifier">true</span></span></tt> and an <tt class="docutils literal"><span class="pre"><span class="Identifier">activeThemeName</span></span></tt> matching one of the keys in <tt class="docutils literal"><span class="pre"><span class="Identifier">themes</span></span></tt>. When a <tt class="docutils literal"><span class="pre"><span class="Identifier">fallbackThemeName</span></span></tt> is set, that bundle is compiled as well and used for templates missing from the active theme.</p>
+
     
   </dd>
 </div>
@@ -696,12 +788,12 @@
 
 </div>
 <div id="precompileTemplate-procs-all">
-  <div id="precompileTemplate,TimEngine,TimTemplate,ModuleManager,JsonNode">
-  <dt><pre><span class="Keyword">proc</span> <a href="#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode"><span class="Identifier">precompileTemplate</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">tpl</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a><span class="Other">;</span>
-                        <span class="Identifier">manager</span><span class="Other">:</span> <span class="Identifier">ModuleManager</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Keyword">nil</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.
-    <span class="Identifier">discardable</span><span class="Other">,</span> <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span>
-                          <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span>
-                          <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span>
+  <div id="precompileTemplate,TimEngine,TimTemplate,ModuleManager,JsonNode,bool">
+  <dt><pre><span class="Keyword">proc</span> <a href="#precompileTemplate%2CTimEngine%2CTimTemplate%2CModuleManager%2CJsonNode%2Cbool"><span class="Identifier">precompileTemplate</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">tpl</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a><span class="Other">;</span>
+                        <span class="Identifier">manager</span><span class="Other">:</span> <span class="Identifier">ModuleManager</span><span class="Other">;</span> <span class="Identifier">data</span><span class="Other">:</span> <span class="Identifier">JsonNode</span> <span class="Other">=</span> <span class="Keyword">nil</span><span class="Other">;</span>
+                        <span class="Identifier">force</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span class="Identifier">discardable</span><span class="Other">,</span> <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span>
+    <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
@@ -713,13 +805,25 @@
 </div>
 <div id="registerTemplate-procs-all">
   <div id="registerTemplate,TimEngine,string">
-  <dt><pre><span class="Keyword">proc</span> <a href="#registerTemplate%2CTimEngine%2Cstring"><span class="Identifier">registerTemplate</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">src</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">proc</span> <a href="#registerTemplate%2CTimEngine%2Cstring"><span class="Identifier">registerTemplate</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">src</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Register a new Tim template by its source path.</p>
-<p>This is used during the precompilation process to create a new Tim template and register it in the engine's tables based on its type (view, layout or partial)</p>
+<p>This is used during the precompilation process to create a new Tim template and register it in the engine's tables based on its type (view, layout or partial). When themes are enabled and <tt class="docutils literal"><span class="pre"><span class="Identifier">src</span></span></tt> lives inside a discovered theme directory, the template is registered in that theme's tables with per-theme cache paths.</p>
 
+    
+  </dd>
+</div>
+
+</div>
+<div id="setActiveTheme-procs-all">
+  <div id="setActiveTheme,TimEngine,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#setActiveTheme%2CTimEngine%2Cstring"><span class="Identifier">setActiveTheme</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Switch the active theme at runtime. Raises <tt class="docutils literal"><span class="pre"><span class="Identifier">TimEngineError</span></span></tt> if no theme with the given name has been discovered.
     
   </dd>
 </div>
@@ -753,6 +857,15 @@
     
   </dd>
 </div>
+<div id="getLayouts.i,TimEngine,string">
+  <dt><pre><span class="Keyword">iterator</span> <a href="#getLayouts.i%2CTimEngine%2Cstring"><span class="Identifier">getLayouts</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">theme</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Iterator to get all layout templates of the given theme
+    
+  </dd>
+</div>
 
 </div>
 <div id="getPartials-iterators-all">
@@ -765,6 +878,15 @@
     
   </dd>
 </div>
+<div id="getPartials.i,TimEngine,string">
+  <dt><pre><span class="Keyword">iterator</span> <a href="#getPartials.i%2CTimEngine%2Cstring"><span class="Identifier">getPartials</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">theme</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Iterator to get all partial templates of the given theme
+    
+  </dd>
+</div>
 
 </div>
 <div id="getViews-iterators-all">
@@ -774,6 +896,15 @@
   <dd>
     
     Iterator to get all view templates
+    
+  </dd>
+</div>
+<div id="getViews.i,TimEngine,string">
+  <dt><pre><span class="Keyword">iterator</span> <a href="#getViews.i%2CTimEngine%2Cstring"><span class="Identifier">getViews</span></a><span class="Other">(</span><span class="Identifier">engine</span><span class="Other">:</span> <a href="#TimEngine"><span class="Identifier">TimEngine</span></a><span class="Other">;</span> <span class="Identifier">theme</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="#TimTemplate"><span class="Identifier">TimTemplate</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Iterator to get all view templates of the given theme
     
   </dd>
 </div>
@@ -795,7 +926,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-04 09:07:42 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-08 12:49:07 UTC</small>
       </div>
     </div>
   </div>
