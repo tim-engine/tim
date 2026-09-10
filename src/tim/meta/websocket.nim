@@ -4,7 +4,7 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim
 
-import std/[net, strutils, base64, tables, os, nativesockets, selectors]
+import std/[net, strutils, base64, tables, os, nativesockets, selectors, locks]
 import pkg/checksums/sha1
 
 ## This module implements a very basic websocket server that can be used 
@@ -31,6 +31,7 @@ type
   WebSocketServer* = ref object
     port: Port
     connections: seq[Socket]
+    lock: Lock
     thread: Thread[tuple[server: WebSocketServer]]
 
 proc acceptWebSocket(client: Socket, key: string) =
@@ -77,25 +78,35 @@ proc wsSendText*(client: Socket, data: string) =
 
 proc notifyAllClients*(server: WebSocketServer) =
   ## Notify all connected WebSocket clients for this server
-  for client in server.connections:
+  if server == nil: return
+  var conns: seq[Socket]
+  withLock server.lock:
+    conns = server.connections
+  for client in conns:
     if client != nil:
-      client.wsSendText("1")
+      try:
+        client.wsSendText("1")
+      except OSError, ValueError:
+        discard
 
 proc onMessage(server: WebSocketServer, client: Socket, data: seq[byte]) =
   discard
 
 proc onConnect(server: WebSocketServer, client: Socket) =
-  server.connections.add(client)
+  withLock server.lock:
+    server.connections.add(client)
 
 proc onClose(server: WebSocketServer, client: Socket) =
-  while true:
-    let idx = server.connections.find(client)
-    if idx == -1: break
-    server.connections.delete(idx)
+  withLock server.lock:
+    while true:
+      let idx = server.connections.find(client)
+      if idx == -1: break
+      server.connections.delete(idx)
 
 proc startWebSocket*(port: Port = Port(9000)): WebSocketServer =
   ## Start a new WebSocket server instance on the given port
   let server = WebSocketServer(port: port, connections: @[])
+  initLock(server.lock)
   proc run(args: tuple[server: WebSocketServer]) {.thread.} =
     {.gcsafe.}:
       let ws = args.server

@@ -166,6 +166,21 @@ proc serveCommand*(v: Values) =
 
   timEngine.precompile()
 
+  # Start WebSocket first so watcher callbacks can safely notify.
+  # Previously watcher.start() ran before wsServer was assigned,
+  # causing handleEvent's initial scan (onChange -> notifyAllClients(nil))
+  # to SIGSEGV at websocket.nim:80.
+  let wsPort =
+    if config.browser_sync != nil:
+      config.browser_sync.port
+    else:
+      config.browser_sync = BrowserSync(port: Port(9000), delay: 300)
+      config.browser_sync.port
+
+  let wsServer = startWebSocket(wsPort)
+  # tiny delay to let WS thread bind before FSEvents fire
+  sleep(100)
+
   webapp = WebApp(
     server: newWebServer(
       port = config.server.port,
@@ -173,7 +188,8 @@ proc serveCommand*(v: Values) =
     ),
     engine: timEngine,
     configInstance: config,
-    baseDir: baseDir
+    baseDir: baseDir,
+    wsServer: wsServer
   )
 
   let manager = sharedManager()
@@ -207,7 +223,8 @@ proc serveCommand*(v: Values) =
     let tpl = webapp.engine.getTemplateByPath(fpath)
     if tpl != nil and tpl.templateType in {ttView, ttLayout}:
       if webapp.engine.precompileTemplate(tpl, manager):
-        notifyAllClients(webapp.wsServer)
+        if webapp.wsServer != nil:
+          notifyAllClients(webapp.wsServer)
     release(templateLock)
 
   webapp.watcher.onDelete = proc(file: watchout.File) =
@@ -225,12 +242,4 @@ proc serveCommand*(v: Values) =
 
   webapp.watcher.start()
 
-  let wsPort =
-    if config.browser_sync != nil:
-      config.browser_sync.port
-    else:
-      config.browser_sync = BrowserSync(port: Port(9000), delay: 300)
-      config.browser_sync.port
-
-  webapp.wsServer = startWebSocket(wsPort)
   webapp.server.start(onRequest)
