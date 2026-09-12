@@ -266,41 +266,21 @@ else:
 
   proc themeRender*(engine: TimEngine, view: string, layout: string = "base",
               data: JsonNode): string =
-    ## Render a Tim Engine template based on the view and layout templates.
-    ## This is used for rendering frontend views that are part of the active theme.
-    ## 
-    ## Optionally, you can pass a `JsonNode` object as data to be used
-    ## within the template as local data available under the `$this` variable.
-    ## 
-    ## If no layout is provided, the default `base` layout will be used.
-    ## 
-    ## Raises a `TimEngineError` if the view or layout templates are not found.
-    ## Ensure to handle these exceptions in your web server to respond
-    ## with appropriate HTTP status codes (e.g., 404 or 500).
-    let
-      viewTpl: TimTemplate = engine.getThemeView(view.replace(".", "/"))
-      layoutTpl: TimTemplate = engine.getThemeLayout(layout)
-    if viewTpl == nil:
-      raise newException(TimEngineError, "View template not found in active theme: " & view)
-    if layoutTpl == nil:
-      raise newException(TimEngineError, "Layout template not found in active theme: " & layout)
-    result.add("<!DOCTYPE html>")    # Add DOCTYPE declaration at the beginning of the output
-    result.add($interpret(viewTpl, layoutTpl, data, engine.globalData))
+    ## Render a Tim Engine template from the active theme.
+    ##
+    ## Requires an engine created with `enableThemes = true`.
+    ## Falls back to the fallback theme (when configured) for templates
+    ## missing from the active theme.
+    if not engine.enableThemes:
+      raise newException(TimEngineError,
+        "Theme rendering requires an engine created with `enableThemes = true`")
+    render(engine, view, layout, data)
 
   proc themeRenderView*(engine: TimEngine, view: string, data: JsonNode): string =
-    ## Render a Tim Engine template based on the view and layout templates.
-    ## This is used for rendering frontend views that are part of the active theme.
-    ## 
-    ## Optionally, you can pass a `JsonNode` object as data to be used
-    ## within the template as local data available under the `$this` variable.
-    ## 
-    ## If no layout is provided, the default `base` layout will be used.
-    ## 
-    ## Raises a `TimEngineError` if the view or layout templates are not found.
-    ## Ensure to handle these exceptions in your web server to respond
-    ## with appropriate HTTP status codes (e.g., 404 or 500).
-    let viewTpl: TimTemplate = engine.getThemeView(view.replace(".", "/"))
-    if viewTpl == nil:
-      raise newException(TimEngineError, "View template not found in active theme: " & view)
-    result.add($interpret(viewTpl, data, engine.globalData))
+    ## Render a Tim Engine view from the active theme, without a layout.
+    ## Requires an engine created with `enableThemes = true`.
+    if not engine.enableThemes:
+      raise newException(TimEngineError,
+        "Theme rendering requires an engine created with `enableThemes = true`")
+    renderView(engine, view, data)
     
