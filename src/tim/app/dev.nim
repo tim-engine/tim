@@ -22,6 +22,18 @@ import ../pkgmanager/timparser
 #
 # CLI command `init` a new package
 #
+const baseLayout = """
+html
+  head
+    meta charset="utf-8"
+    meta name="viewport" content="width=device-width, initial-scale=1"
+    title: "Tim Engine is Awesome!"
+  body
+    @view
+"""
+const baseView = """
+h1: "Thanks for trying Tim Engine!
+"""
 proc initCommand*(v: Values) =
   ## Initializes a new Tim Engine package at the current working directory
 
@@ -66,10 +78,14 @@ var hello = "Tim Engine is Awesome"
 echo $hello"""
     writeFile(currDirPath / pkgName / "src" / pkgName & ".timl", sampleCode)
   else:
-    createDir(currDirPath / pkgName / "src" / "templates")
-    createDir(currDirPath / pkgName / "src" / "templates" / "layouts")
-    createDir(currDirPath / pkgName / "src" / "templates" / "views")
-    createDir(currDirPath / pkgName / "src" / "templates" / "partials")
+    let templatesPath = currDirPath / pkgName / "src" / "templates"
+    createDir(templatesPath)
+    createDir(templatesPath / "layouts")
+    createDir(templatesPath / "views")
+    createDir(templatesPath / "partials")
+
+    writeFile(templatesPath / "views" / "index.timl", baseView)
+    writeFile(templatesPath / "layouts" / "base.timl", baseLayout)
 
   # TODO @ pkg/openparser/yaml advanced dump features to
   # allow for adding extra spaces, exclude fields and more.
