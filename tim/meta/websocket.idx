@@ -1,5 +1,5 @@
 nimTitle	websocket	tim/meta/websocket.html	module tim/meta/websocket		0
 nim	WebSocketServer	tim/meta/websocket.html#WebSocketServer	type WebSocketServer		31
-nim	wsSendText	tim/meta/websocket.html#wsSendText,Socket,string	proc wsSendText(client: Socket; data: string)		75
-nim	notifyAllClients	tim/meta/websocket.html#notifyAllClients,WebSocketServer	proc notifyAllClients(server: WebSocketServer)		78
-nim	startWebSocket	tim/meta/websocket.html#startWebSocket,Port	proc startWebSocket(port: Port = Port(9000)): WebSocketServer		96
+nim	wsSendText	tim/meta/websocket.html#wsSendText,Socket,string	proc wsSendText(client: Socket; data: string)		76
+nim	notifyAllClients	tim/meta/websocket.html#notifyAllClients,WebSocketServer	proc notifyAllClients(server: WebSocketServer)		79
+nim	startWebSocket	tim/meta/websocket.html#startWebSocket,Port	proc startWebSocket(port: Port = Port(9000)): WebSocketServer		106
