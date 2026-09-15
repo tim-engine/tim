@@ -1,4 +1,4 @@
-import std/[os, tables, net, strutils, sequtils, options]
+import std/[os, tables, net, strutils, sequtils, options, times]
 
 import pkg/openparser/json
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym,
@@ -628,6 +628,16 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
   block tryCache:
     if force: break tryCache
     if fileExists(tpl.sources.ast):
+      # If source is newer than cache, cache is stale (edited while serve
+      # was not running, or restored after our stale-test). Force re-parse.
+      if fileExists(tpl.sources.src):
+        try:
+          let srcTime = getFileInfo(tpl.sources.src).lastWriteTime
+          let cacheTime = getFileInfo(tpl.sources.ast).lastWriteTime
+          if srcTime.toUnixFloat > cacheTime.toUnixFloat:
+            break tryCache
+        except OSError:
+          discard
       let (cached, ok) = tryLoadValidatedAst(tpl.sources.ast, tpl.sources.src)
       if ok and cached != nil:
         # If the original .timl is missing (packed distribution), accept cache directly.

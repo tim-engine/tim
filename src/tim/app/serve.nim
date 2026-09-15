@@ -8,7 +8,7 @@ import std/[tables, httpcore, net, os, strutils, options, locks]
 import pkg/kapsis/runtime
 import pkg/openparser/[yaml, json]
 import pkg/watchout
-import pkg/vancode/interpreter/manager
+import pkg/vancode/interpreter/[manager, codegen, resolver]
 
 import supranim/network/webserver
 from supranim/core/request import getUrl, getAgent
@@ -221,16 +221,47 @@ proc serveCommand*(v: Values) =
       sleep(200)
     acquire(templateLock)
     let tpl = webapp.engine.getTemplateByPath(fpath)
-    if tpl != nil and tpl.templateType in {ttView, ttLayout}:
-      if webapp.engine.precompileTemplate(tpl, manager):
+    if tpl == nil:
+      release(templateLock)
+      return
+    # Drop stale caches before recompile – otherwise precompileTemplate
+    # reuses a stale-but-valid on-disk AST (build/ast/*.json) and the
+    # browser reloads stale content. Mirrors the fixed watcher in
+    # src/tim/meta/initializer.nim (manager.invalidate + cachedAst + force).
+    manager.invalidate(normalizedPath(tpl.sources.src))
+    codegenCache.cachedAst.del(tpl.sources.src)
+    case tpl.templateType
+    of ttView, ttLayout:
+      if webapp.engine.precompileTemplate(tpl, manager, force = true):
         if webapp.wsServer != nil:
           notifyAllClients(webapp.wsServer)
+    of ttPartial:
+      # Partial itself doesn't render; recompile its dependants (views/layouts
+      # that @include it) with force so their cached ASTs are refreshed.
+      # We precompile the partial to update its depResolver entry, then
+      # walk dependants.
+      discard webapp.engine.precompileTemplate(tpl, manager, force = true)
+      for depPath in webapp.engine.depResolver.dependants(normalizedPath(tpl.sources.src)):
+        let depTpl = webapp.engine.getTemplateByPath(depPath)
+        if depTpl == nil: continue
+        manager.invalidate(normalizedPath(depPath))
+        codegenCache.cachedAst.del(depPath)
+        case depTpl.templateType
+        of ttView, ttLayout:
+          discard webapp.engine.precompileTemplate(depTpl, manager, force = true)
+        of ttPartial:
+          discard webapp.engine.precompileTemplate(depTpl, manager, force = true)
+      if webapp.wsServer != nil:
+        notifyAllClients(webapp.wsServer)
     release(templateLock)
 
   webapp.watcher.onDelete = proc(file: watchout.File) =
     acquire(templateLock)
     let tpl = webapp.engine.getTemplateByPath(file.getPath())
     if tpl != nil:
+      webapp.engine.depResolver.clearFile(normalizedPath(tpl.sources.src))
+      manager.invalidate(normalizedPath(tpl.sources.src))
+      codegenCache.cachedAst.del(tpl.sources.src)
       case tpl.templateType
       of ttView:
         webapp.engine.views.del(tpl.sources.src)
