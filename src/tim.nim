@@ -173,8 +173,13 @@ elif isMainModule:
       # Server commands
       #
       -- "Server"
-      serve path(config):
+      serve path(config),
+        ?bool("--sync"):        # enable browser live-reload
         ## Run a built-in server with VM capabilities
+      build ?string(view),
+        ?string("--layout"),   # layout to wrap the view (default `base`)
+        ?string("--out"):      # output file or directory
+          ## Build the project to static HTML
 else:
   # Importing Tim Engine as a Nimble library
   # so it can be used in other Nim projects

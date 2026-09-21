@@ -41,7 +41,6 @@ proc serveTemplate(req: var Request, viewName: string) =
       req.send(200, html)
       return
     except Exception as e:
-      echo e.msg
       release(templateLock)
       req.send(500, "Internal Server Error")
       return
@@ -99,6 +98,10 @@ proc serveCommand*(v: Values) =
     basepath = baseDir
   )
   timEngine.config.compilation.policy = config.compilation.policy
+
+  # `--sync` exposes `$app["enableBrowserSync"]` to templates and
+  # triggers automatic live-reload script injection at render time
+  timEngine.globalData["enableBrowserSync"] = %v.has("--sync")
 
   timEngine.userScript.addProc("getPath", @[paramDef("obj", ttyJson)], ttyString,
     proc (args: StackView; argc: int): value.Value =

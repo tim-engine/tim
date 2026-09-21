@@ -3,6 +3,7 @@ import std/[os, tables, net, strutils, sequtils, options, times]
 import pkg/openparser/json
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym,
                         vm, value, resolver, manager, policy]
+
 import pkg/vancode/manager/configurator # shim for ConfigType/CompilationSettings
 import pkg/kapsis/interactive/prompts
 
@@ -624,28 +625,23 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
   ## would otherwise shadow the edit.
   var astProgram: Ast
   var loadedFromCache = false
-  # Try to reuse validated cached AST (enables packed themes without .timl)
+  # Cached ASTs are only reused for packed distributions without `.timl`
+  # sources. When the source exists, parsing it is both cheaper than the
+  # JSON load + validation round-trip (bench on zaiku preview: 769ms cold
+  # vs 1277ms warm for `tim build index`) and always current, so the
+  # mtime heuristics are unnecessary.
   block tryCache:
     if force: break tryCache
+    if fileExists(tpl.sources.src):
+      break tryCache
     if fileExists(tpl.sources.ast):
-      # If source is newer than cache, cache is stale (edited while serve
-      # was not running, or restored after our stale-test). Force re-parse.
-      if fileExists(tpl.sources.src):
-        try:
-          let srcTime = getFileInfo(tpl.sources.src).lastWriteTime
-          let cacheTime = getFileInfo(tpl.sources.ast).lastWriteTime
-          if srcTime.toUnixFloat > cacheTime.toUnixFloat:
-            break tryCache
-        except OSError:
-          discard
       let (cached, ok) = tryLoadValidatedAst(tpl.sources.ast, tpl.sources.src)
       if ok and cached != nil:
-        # If the original .timl is missing (packed distribution), accept cache directly.
-        # If .timl exists, still prefer cache if newer? For now prefer cache when valid.
+        # Packed mode: no `.timl` source, accept the cached AST directly.
         astProgram = cached
         loadedFromCache = true
         break tryCache
-      elif not fileExists(tpl.sources.src):
+      else:
         # Packed mode: we have no source, cache is corrupt -> cannot proceed
         displayError("Tim Engine –– Cached AST invalid and no source at " & tpl.sources.src)
         return
@@ -834,6 +830,40 @@ var
   browserSyncWatcher: Watchout
   browserSyncThemeWatcher: Watchout
 
+const
+  LiveReloadSnippet* = """<script>
+function connectLiveReload() {
+  const ws = new WebSocket("ws://" + location.hostname + ":3500");
+  ws.addEventListener('message', (e) => {
+    if(e.data == '1') location.reload()
+  });
+  ws.addEventListener('close', () => {
+    setTimeout(() => {
+      console.log('Live-reload WebSocket closed. Reconnecting...')
+      connectLiveReload()
+    }, 300)
+  })
+}
+connectLiveReload()
+</script>"""
+
+proc browserSyncEnabled*(globalData: JsonNode): bool =
+  ## Whether `$app["enableBrowserSync"]` is set (via the `--sync` CLI flag).
+  ## Templates can also branch on it directly: `if $app["enableBrowserSync"]`.
+  globalData != nil and globalData.kind == JObject and
+    globalData.hasKey("enableBrowserSync") and
+    globalData["enableBrowserSync"].kind == JBool and
+    globalData["enableBrowserSync"].getBool()
+
+proc injectLiveReload*(html: string): string =
+  ## Insert the live-reload `<script>` before `</body>` so it runs after
+  ## page content; appended at the end when there is no body tag.
+  let idx = html.rfind("</body>")
+  if idx >= 0:
+    html[0 ..< idx] & LiveReloadSnippet & html[idx .. ^1]
+  else:
+    html & LiveReloadSnippet
+
 proc interpret*(view, layout: TimTemplate, localData,
         globalData: JsonNode): Value =
   ## Evaluate a view within a layout and return the final HTML output.
@@ -855,6 +885,11 @@ proc interpret*(view, layout: TimTemplate, localData,
                   localData = localData)
   if result == nil:
     result = initValue("")
+  elif browserSyncEnabled(globalData):
+    # Automatic live-reload injection (`--sync` flag): no need to paste
+    # the snippet into `base.timl` by hand. Templates that need custom
+    # placement can branch on `$app["enableBrowserSync"]` instead.
+    result = initValue(injectLiveReload($result))
 
 proc interpret*(view: TimTemplate, localData,
       globalData: JsonNode): Value =

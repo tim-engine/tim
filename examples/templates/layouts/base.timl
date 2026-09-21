@@ -245,19 +245,5 @@ body:before {
     yoyo: true,
     repeat: -1
   });
-
-  function connectLiveReload() {
-    const ws = new WebSocket("ws://" + location.hostname + ":3500");
-    ws.addEventListener('message', (e) => {
-      if(e.data == '1') location.reload()
-    });
-    ws.addEventListener('close', () => {
-      setTimeout(() => {
-        console.log('Live-reload WebSocket closed. Reconnecting...')
-        connectLiveReload()
-      }, 300)
-    })
-  }
-  connectLiveReload()
 }
     @end
