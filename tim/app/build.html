@@ -65,6 +65,10 @@
   <li><a class="reference" href="#astCommand%2CValues" title="astCommand(v: Values)">astCommand(v: Values)</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">buildCommand
+  <li><a class="reference" href="#buildCommand%2CValues" title="buildCommand(v: Values)">buildCommand(v: Values)</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">srcCommand
   <li><a class="reference" href="#srcCommand%2CValues" title="srcCommand(v: Values)">srcCommand(v: Values)</a></li>
 
@@ -85,7 +89,7 @@
     <div class="section" id="6">
   <h1><a class="toc-backref" href="#6">Imports</a></h1>
   <dl class="item">
-    <a class="reference external" href="../engine/parser.html">../engine/parser</a>, <a class="reference external" href="../engine/stdlib/libsystem.html">../engine/stdlib/libsystem</a>, <a class="reference external" href="../engine/stdlib/libstrings.html">../engine/stdlib/libstrings</a>, <a class="reference external" href="../engine/stdlib/libarrays.html">../engine/stdlib/libarrays</a>, <a class="reference external" href="../engine/stdlib/libjson.html">../engine/stdlib/libjson</a>, <a class="reference external" href="../engine/stdlib/libobjects.html">../engine/stdlib/libobjects</a>, <a class="reference external" href="../engine/transpilers/jsgen.html">../engine/transpilers/jsgen</a>, <a class="reference external" href="../engine/transpilers/pygen.html">../engine/transpilers/pygen</a>, <a class="reference external" href="../engine/transpilers/rbgen.html">../engine/transpilers/rbgen</a>, <a class="reference external" href="../engine/transpilers/phpgen.html">../engine/transpilers/phpgen</a>, <a class="reference external" href="../engine/transpilers/luagen.html">../engine/transpilers/luagen</a>, <a class="reference external" href="../engine/transpilers/nimgen.html">../engine/transpilers/nimgen</a>, <a class="reference external" href="../meta/config.html">../meta/config</a>
+    <a class="reference external" href="../engine/parser.html">../engine/parser</a>, <a class="reference external" href="../engine/stdlib/libsystem.html">../engine/stdlib/libsystem</a>, <a class="reference external" href="../engine/stdlib/libstrings.html">../engine/stdlib/libstrings</a>, <a class="reference external" href="../engine/stdlib/libarrays.html">../engine/stdlib/libarrays</a>, <a class="reference external" href="../engine/stdlib/libjson.html">../engine/stdlib/libjson</a>, <a class="reference external" href="../engine/stdlib/libobjects.html">../engine/stdlib/libobjects</a>, <a class="reference external" href="../engine/transpilers/jsgen.html">../engine/transpilers/jsgen</a>, <a class="reference external" href="../engine/transpilers/pygen.html">../engine/transpilers/pygen</a>, <a class="reference external" href="../engine/transpilers/rbgen.html">../engine/transpilers/rbgen</a>, <a class="reference external" href="../engine/transpilers/phpgen.html">../engine/transpilers/phpgen</a>, <a class="reference external" href="../engine/transpilers/luagen.html">../engine/transpilers/luagen</a>, <a class="reference external" href="../engine/transpilers/nimgen.html">../engine/transpilers/nimgen</a>, <a class="reference external" href="../meta/config.html">../meta/config</a>, <a class="reference external" href="../meta/initializer.html">../meta/initializer</a>
   </dl>
 </div>
 <div class="section" id="12">
@@ -101,6 +105,22 @@
   <dd>
     
     Generate the AST representation of a <tt class="docutils literal"><span class="pre"><span class="Identifier">timl</span></span></tt> script
+    
+  </dd>
+</div>
+
+</div>
+<div id="buildCommand-procs-all">
+  <div id="buildCommand,Values">
+  <dt><pre><span class="Keyword">proc</span> <a href="#buildCommand%2CValues"><span class="Identifier">buildCommand</span></a><span class="Other">(</span><span class="Identifier">v</span><span class="Other">:</span> <span class="Identifier">Values</span><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OpenParserYamlError</span><span class="Other">,</span>
+                                        <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span>
+                                        <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span>
+                                        <span class="Identifier">OpenParserJsonError</span><span class="Other">,</span> <span class="Identifier">TimEngineError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span>
+    <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Build the Tim project in the current directory to static HTML. With a <tt class="docutils literal"><span class="pre"><span class="Identifier">view</span></span></tt> renders a single page (<tt class="docutils literal"><span class="pre"><span class="Operator">--</span><span class="Identifier">layout</span></span></tt>, default <tt class="docutils literal"><span class="pre"><span class="Identifier">base</span></span></tt>; <tt class="docutils literal"><span class="pre"><span class="Operator">--</span><span class="Keyword">out</span></span></tt> file or directory, default <tt class="docutils literal"><span class="pre"><span class="Identifier">CWD</span><span class="Operator">/&lt;</span><span class="Identifier">unixtime</span><span class="Operator">&gt;.</span><span class="Identifier">html</span></span></tt>). Without a <tt class="docutils literal"><span class="pre"><span class="Identifier">view</span></span></tt> renders every view into <tt class="docutils literal"><span class="pre"><span class="Operator">--</span><span class="Keyword">out</span></span></tt> (default <tt class="docutils literal"><span class="pre"><span class="Identifier">CWD</span><span class="Operator">/</span><span class="Identifier">dist</span></span></tt>).
     
   </dd>
 </div>
@@ -132,7 +152,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-12 20:19:16 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-21 10:33:39 UTC</small>
       </div>
     </div>
   </div>
