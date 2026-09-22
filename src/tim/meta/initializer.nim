@@ -1,4 +1,4 @@
-import std/[os, tables, net, strutils, sequtils, options]
+import std/[os, tables, net, strutils, sequtils, options, times]
 
 import pkg/openparser/json
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym,
@@ -184,6 +184,40 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
 proc getHashedPath(path: string): string =
   # Get a SHA1 hash of the given path.
   toLowerAscii($(sha1.secureHash(path)))
+
+proc waitFileSettled(path: string, settleMs = 75, timeoutMs = 1000): bool =
+  ## Wait until `path` stops changing (mtime + size stable), then return true.
+  ## Returns false if the file disappeared.
+  ##
+  ## Editors save via truncate-then-write: recompiling on the first write
+  ## event can read a torn (often empty) file, and an empty source compiles
+  ## cleanly into an empty script — rendering a page without the view itself.
+  ## Files idle for a while return immediately, so the watcher's initial
+  ## scan (old mtimes) stays fast.
+  proc sig(path: string): tuple[mtime: Time, size: int64] =
+    let info = getFileInfo(path)
+    (info.lastWriteTime, info.size)
+  var prev: tuple[mtime: Time, size: int64]
+  try:
+    prev = sig(path)
+  except OSError:
+    return false
+  if getTime() - prev.mtime > initDuration(milliseconds = 1000):
+    return true # idle for a while: already settled
+  let
+    settleFor = initDuration(milliseconds = settleMs)
+    deadline = getTime() + initDuration(milliseconds = timeoutMs)
+  while getTime() < deadline:
+    sleep(25)
+    var cur: tuple[mtime: Time, size: int64]
+    try:
+      cur = sig(path)
+    except OSError:
+      return false
+    if cur == prev and getTime() - cur.mtime >= settleFor:
+      return true
+    prev = cur
+  return true # timed out: proceed anyway, a later event will converge
 
 proc newTemplate*(id: string, templateType: TimTemplateType, sources: TemplateSources): TimTemplate =
   ## Create a half-initialized `TimTemplate` object with
@@ -1079,6 +1113,8 @@ proc precompile*(engine: TimEngine) =
       engine.compileTheme(fallbackTheme, manager)
           
     # set up file watcher for the active theme (and fallback, when configured)
+    # Note: watchout watches recursively, so nested template dirs
+    # (e.g. `views/errors/`) are covered by the top-level roots.
     when defined timHotCode:
       var themeWatchPaths = @[
         engine.activeTheme.path / "layouts",
@@ -1099,7 +1135,9 @@ proc precompile*(engine: TimEngine) =
 
       # Callback `onFound`
       proc onFound(file: watchout.File) =
-        # Runs when detecting a new template.
+        # Runs when detecting a new template. Settle first, a new file may
+        # still be written (created empty, then filled).
+        if not waitFileSettled(file.getPath()): return
         let tpl: TimTemplate = engine.getTemplateByPath(file.getPath())
         if tpl != nil:
           case tpl.templateType
@@ -1120,7 +1158,10 @@ proc precompile*(engine: TimEngine) =
 
       # Callback `onChange`
       proc onChange(file: watchout.File) =
-        # Runs when detecting changes
+        # Runs when detecting changes. Settle first: editors save via
+        # truncate-then-write, and compiling mid-save would publish a
+        # torn (often empty) template.
+        if not waitFileSettled(file.getPath()): return
         let tpl: TimTemplate = engine.getTemplateByPath(file.getPath())
         if tpl == nil: return # template not found, ignore
         # Drop stale caches for the changed file first. `@include` resolution
@@ -1226,7 +1267,9 @@ proc precompile*(engine: TimEngine) =
 
       # Callback `onFound`
       proc onFound(file: watchout.File) =
-        # Runs when detecting a new template.
+        # Runs when detecting a new template. Settle first, a new file may
+        # still be written (created empty, then filled).
+        if not waitFileSettled(file.getPath()): return
         let tpl: TimTemplate = engine.getTemplateByPath(file.getPath())
         if tpl != nil:
           case tpl.templateType
@@ -1247,7 +1290,10 @@ proc precompile*(engine: TimEngine) =
 
       # Callback `onChange`
       proc onChange(file: watchout.File) =
-        # Runs when detecting changes
+        # Runs when detecting changes. Settle first: editors save via
+        # truncate-then-write, and compiling mid-save would publish a
+        # torn (often empty) template.
+        if not waitFileSettled(file.getPath()): return
         let tpl: TimTemplate = engine.getTemplateByPath(file.getPath())
         if tpl == nil: return # template not found, ignore
         # Drop stale caches for the changed file first. `@include` resolution
