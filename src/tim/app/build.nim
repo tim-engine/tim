@@ -12,11 +12,14 @@ import pkg/kapsis/interactive/prompts
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver, manager, policy]
 import pkg/vancode/interpreter/cache/fbe as fbeCache
 import pkg/vancode/manager/configurator # shim
+import pkg/openparser/yaml
 
 import ../engine/parser
 import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
 import ../meta/config
+from ../meta/initializer import TimEngine, TimEngineError, newTim, precompile,
+  precompileTemplate, registerTemplate, getView, getLayout, interpret
 
 proc parserCallback(astProgram: var Ast, path: string, resolver: FileResolver) =
   parser.parseScript(astProgram, readFile(path), path)
@@ -161,3 +164,150 @@ proc astCommand*(v: Values) =
   var program: Ast # the AST representation of the script
   parser.parseScript(program, timlCode, srcPath)
   writeFile(srcPath.changeFileExt("ast"), fbeCache.toFbe(program, TimFbeVersion))
+
+#
+# Static HTML builder
+#
+proc normalizeViewKey(key: string): string =
+  ## Normalize a user-provided view reference to a `getView` lookup key.
+  ## Accepts dotted (`blog.post`), slash (`blog/post`), with or without
+  ## the `.timl` extension, and tolerates a leading `/` or `views/` prefix.
+  var k = key.strip()
+  if k.startsWith("/"):
+    k = k[1..^1]
+  if k.startsWith("views/"):
+    k = k["views/".len..^1]
+  if k.endsWith(".timl"):
+    k = k[0..^6]
+  if "/" notin k and "." in k:
+    k = k.replace(".", "/")
+  k
+
+proc buildSingleView(timEngine: TimEngine, viewKey, layoutName, outArg: string) =
+  ## Render one view + layout pair and save it to a single `.html` file
+  let viewTpl = timEngine.getView(viewKey)
+  if viewTpl == nil:
+    displayError("View template not found: " & viewKey, quitProcess = true)
+  let layoutTpl = timEngine.getLayout(layoutName)
+  if layoutTpl == nil:
+    displayError("Layout template not found: " & layoutName, quitProcess = true)
+  let html = "<!DOCTYPE html>" &
+    $interpret(viewTpl, layoutTpl, newJObject(), timEngine.globalData)
+  let tsName = $toUnix(getTime()) & ".html"
+  var outFile: string
+  if outArg.len == 0:
+    outFile = getCurrentDir() / tsName
+  elif dirExists(outArg) or outArg.endsWith("/") or outArg.splitFile().ext.len == 0:
+    # A directory (existing, trailing slash, or extensionless path):
+    # save the timestamped file inside it
+    discard existsOrCreateDir(outArg)
+    outFile = outArg / tsName
+  else:
+    let parent = outArg.parentDir()
+    if parent.len > 0:
+      discard existsOrCreateDir(parent)
+    outFile = outArg
+  writeFile(outFile, html)
+  displaySuccess("Statically built " & outFile.extractFilename())
+
+proc buildAllViews(timEngine: TimEngine, layoutName, outArg: string) =
+  ## Render every view with the given layout, mirroring the
+  ## `views/` tree as `.html` files inside the output directory
+  let layoutTpl = timEngine.getLayout(layoutName)
+  if layoutTpl == nil:
+    displayError("Layout template not found: " & layoutName, quitProcess = true)
+  let outDir =
+    if outArg.len == 0: getCurrentDir() / "dist"
+    else: outArg
+  discard existsOrCreateDir(outDir)
+  let viewsPath = timEngine.config.compilation.viewsPath
+  var count = 0
+  for srcPath, viewTpl in timEngine.views:
+    let rel = relativePath(srcPath, viewsPath).changeFileExt("html")
+    let dest = outDir / rel
+    discard existsOrCreateDir(dest.parentDir())
+    try:
+      let html = "<!DOCTYPE html>" &
+        $interpret(viewTpl, layoutTpl, newJObject(), timEngine.globalData)
+      writeFile(dest, html)
+      inc count
+    except CatchableError as e:
+      displayWarning("Skipping " & rel & ": " & e.msg)
+  displaySuccess("Statically built " & $count & " views to " & outDir)
+
+proc precompileLazy(timEngine: TimEngine, viewKey, layoutName: string) =
+  ## Precompile only the requested view, its layout and their transitive
+  ## dependencies (partials). A single page needs a handful of templates,
+  ## not the whole project — full `precompile()` dominates `build <view>`
+  ## wall time (bench: 1.28s single vs 1.31s all-views on zaiku preview).
+  let manager = sharedManager()
+  let
+    viewsPath = timEngine.config.compilation.viewsPath
+    layoutsPath = timEngine.config.compilation.layoutsPath
+    viewSrc = viewsPath / viewKey & ".timl"
+    layoutSrc =
+      if layoutName.endsWith(".timl"): layoutsPath / layoutName
+      else: layoutsPath / layoutName & ".timl"
+  if not fileExists(viewSrc):
+    displayError("View template not found: " & viewKey, quitProcess = true)
+  if not fileExists(layoutSrc):
+    displayError("Layout template not found: " & layoutName, quitProcess = true)
+  # BFS over template sources: each compiled template reports its
+  # dependencies, which are registered and compiled in turn.
+  var
+    queue = @[viewSrc, layoutSrc]
+    seen: seq[string] = @[]
+  while queue.len > 0:
+    let src = queue.pop()
+    if src in seen:
+      continue
+    seen.add(src)
+    if not fileExists(src):
+      displayWarning("Skipping missing template: " & src)
+      continue
+    try:
+      let tpl = timEngine.registerTemplate(src)
+      if timEngine.precompileTemplate(tpl, manager):
+        for dep in tpl.dependencies:
+          if dep notin seen:
+            queue.add(dep)
+    except TimEngineError as e:
+      displayWarning("Skipping template " & src & ": " & e.msg)
+
+proc buildCommand*(v: Values) =
+  ## Build the Tim project in the current directory to static HTML.
+  ## With a `view` renders a single page (`--layout`, default `base`;
+  ## `--out` file or directory, default `CWD/<unixtime>.html`).
+  ## Without a `view` renders every view into `--out` (default `CWD/dist`).
+  let timConfigPath = getCurrentDir() / "tim.config.yml"
+  if not fileExists(timConfigPath):
+    displayError("tim.config.yml not found in the current directory", quitProcess = true)
+
+  let config: TimConfig = parseYaml(readFile(timConfigPath), TimConfig)
+  let baseDir = getCurrentDir()
+  # Ensure the compilation output path exists (recursive — the engine's
+  # precompile only creates a single level and fails on nested paths)
+  createDir(normalizedPath(baseDir / config.compilation.output))
+  let timEngine = newTim(
+    src = config.compilation.source,
+    output = config.compilation.output,
+    basepath = baseDir
+  )
+  timEngine.config.compilation.policy = config.compilation.policy
+  # Static builds never carry the live-reload snippet: `enableBrowserSync`
+  # stays unset so `interpret` renders plain HTML (see `serve --sync`).
+
+  let layoutName =
+    if v.has("--layout"): v.get("--layout").getStr
+    else: "base"
+  let outArg =
+    if v.has("--out"): v.get("--out").getStr
+    else: ""
+
+  if v.has("view"):
+    let viewKey = normalizeViewKey(v.get("view").getStr)
+    timEngine.precompileLazy(viewKey, layoutName)
+    buildSingleView(timEngine, viewKey, layoutName, outArg)
+  else:
+    timEngine.precompile()
+    buildAllViews(timEngine, layoutName, outArg)

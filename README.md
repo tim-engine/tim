@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <code>nimble install tim</code> / <code>npm install @openpeeps/tim</code>
+  <code>nimble install tim</code> / <code>clue install tim --build</code> / <code>npm install @openpeeps/tim</code>
 </p>
 
 <p align="center">
