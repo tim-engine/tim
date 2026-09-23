@@ -746,8 +746,10 @@ proc precompileTemplate*(engine: TimEngine, tpl: TimTemplate,
     let prefs = VMPreferences(enableHotCodeDetection: true, hotProcThreshold: 5)
     tpl.vmInstance = newVirtualMachine(prefs)
     
-    writeFile(tpl.sources.ast, toJson(astProgram))
-    writeFile(tpl.sources.opcache, tpl.mainChunk.code)
+    # On-disk template cache (ast/opcache/html) is disabled: parsing
+    # from source is faster than the JSON load + validation round-trip
+    # and always current, so nothing is written to the output directory.
+    # (Cached ASTs are still read when shipped without `.timl` sources.)
     return true # marks the template as successfully precompiled
   except CodeGenError as e:
     displayError("Code generation error in template: " & tpl.sources.src)
@@ -1077,15 +1079,7 @@ proc precompile*(engine: TimEngine) =
       # a subset of templates (e.g. just `views/index.timl`); anything missing
       # resolves via the fallback theme at render time (see `getView`,
       # `getLayout`, `getPartial`).
-      let cachedOutputPath = engine.config.compilation.output / theme.manifest.name
-      try:
-        createDir(cachedOutputPath)
-        createDir(cachedOutputPath / "ast")
-        createDir(cachedOutputPath / "html")
-        createDir(cachedOutputPath / "opcache")
-      except OSError as e:
-        raise newException(TimEngineError,
-          "Cannot create theme cache directory " & cachedOutputPath & ": " & e.msg)
+      # (no on-disk cache dirs: templates compile straight from source)
       for sourceDir in [ttLayout, ttView, ttPartial]:
         let themeSourcePath = theme.path / $sourceDir
         if not dirExists(themeSourcePath):
@@ -1224,10 +1218,6 @@ proc precompile*(engine: TimEngine) =
       browserSyncThemeWatcher.start()
   else:
     # for non-theme mode, we load all templates from the source directory and compile them
-    discard existsOrCreateDir(engine.config.compilation.output)
-    discard existsOrCreateDir(engine.config.compilation.output / "ast")
-    discard existsOrCreateDir(engine.config.compilation.output / "html")
-    discard existsOrCreateDir(engine.config.compilation.output / "opcache")
     let srcDir = engine.config.compilation.source
     for sourceDir in [ttLayout, ttView, ttPartial]:
       if not dirExists(srcDir / $sourceDir):
