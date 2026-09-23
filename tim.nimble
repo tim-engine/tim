@@ -26,8 +26,8 @@ requires "openparser >= 0.2.0"
 requires "semver >= 1.2.3"
 requires "pkginfo >= 0.1.4"
 requires "bag >= 0.1.0"
-requires "boogie >= 0.1.2"
-requires "supranim >= 0.1.9[powpow]"
+requires "boogie >= 0.2.1"
+requires "supranim >= 0.1.11"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):

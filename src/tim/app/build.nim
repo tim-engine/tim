@@ -285,9 +285,6 @@ proc buildCommand*(v: Values) =
 
   let config: TimConfig = parseYaml(readFile(timConfigPath), TimConfig)
   let baseDir = getCurrentDir()
-  # Ensure the compilation output path exists (recursive — the engine's
-  # precompile only creates a single level and fails on nested paths)
-  createDir(normalizedPath(baseDir / config.compilation.output))
   let timEngine = newTim(
     src = config.compilation.source,
     output = config.compilation.output,
