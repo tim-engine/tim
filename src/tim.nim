@@ -155,6 +155,11 @@ elif isMainModule:
       ast path(timl):
         ## Transpile timl code to AST representation
 
+      h2t path(input),
+        ?string("--out"),   # save TIML output to file
+        ?string("-o"):      # short output option
+          ## Convert HTML to TIML
+
       #
       # Development commands
       # Used to manage Tim Engine packages locally

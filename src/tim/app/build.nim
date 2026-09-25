@@ -15,6 +15,8 @@ import pkg/vancode/manager/configurator # shim
 import pkg/openparser/yaml
 
 import ../engine/parser
+import ../engine/validator
+import ../engine/html2timl
 import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
 import ../meta/config
@@ -164,6 +166,52 @@ proc astCommand*(v: Values) =
   var program: Ast # the AST representation of the script
   parser.parseScript(program, timlCode, srcPath)
   writeFile(srcPath.changeFileExt("ast"), fbeCache.toFbe(program, TimFbeVersion))
+
+#
+# HTML to TIML
+#
+proc htCommand*(v: Values) =
+  ## Convert static HTML to TIML (`tim h2t`: Kapsis derives `htCommand`
+  ## from `h2t` by dropping digits). Writes to `--out`/`-o` when present,
+  ## otherwise prints the generated TIML to stdout.
+  var inputPath = $(v.get("input").getPath)
+  if not inputPath.isAbsolute:
+    inputPath = getCurrentDir() / inputPath
+  let outputPath =
+    if v.has("--out"): v.get("--out").getStr
+    elif v.has("-o"): v.get("-o").getStr
+    else: ""
+  var timl: string
+  try:
+    timl = parseHtmlFileToTiml(inputPath)
+  except Html2TimlError as e:
+    displayError(e.msg, quitProcess = true)
+
+  var program: Ast
+  try:
+    parser.parseScript(program, timl, inputPath)
+    validateAst(program)
+  except TimParserError as e:
+    displayError(e.msg, quitProcess = true)
+  except TimAstValidationError as e:
+    displayError("Generated TIML failed validation: " & e.msg, quitProcess = true)
+  except CatchableError as e:
+    displayError(e.msg, quitProcess = true)
+
+  if outputPath.len == 0:
+    echo timl
+    return
+  try:
+    let parent = outputPath.parentDir()
+    if parent.len > 0 and parent != ".":
+      discard existsOrCreateDir(parent)
+    writeFile(outputPath, timl)
+  except IOError as e:
+    displayError("Cannot write TIML file: " & e.msg, quitProcess = true)
+  except OSError as e:
+    displayError("Cannot write TIML file: " & e.msg, quitProcess = true)
+  displaySuccess("Converted " & inputPath.extractFilename() &
+    " to " & outputPath.extractFilename())
 
 #
 # Static HTML builder

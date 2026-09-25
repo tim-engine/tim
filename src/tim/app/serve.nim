@@ -275,5 +275,4 @@ proc serveCommand*(v: Values) =
     release(templateLock)
 
   webapp.watcher.start()
-
   webapp.server.start(onRequest)
