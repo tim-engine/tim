@@ -1,0 +1,8 @@
+nimTitle	html2timl	tim/engine/html2timl.html	module tim/engine/html2timl		0
+nim	Html2TimlError	tim/engine/html2timl.html#Html2TimlError	object Html2TimlError		11
+nim	TimlIndent	tim/engine/html2timl.html#TimlIndent	const TimlIndent		15
+nim	MaxHtml2TimlDepth	tim/engine/html2timl.html#MaxHtml2TimlDepth	const MaxHtml2TimlDepth		16
+nim	defaultHtml2TimlPolicy	tim/engine/html2timl.html#defaultHtml2TimlPolicy	proc defaultHtml2TimlPolicy(): HtmlParserPolicy		28
+nim	htmlToTiml	tim/engine/html2timl.html#htmlToTiml,HtmlDocument,string	proc htmlToTiml(doc: HtmlDocument; sourcePath = ""): string		369
+nim	parseHtmlToTiml	tim/engine/html2timl.html#parseHtmlToTiml,string,string,HtmlParserPolicy	proc parseHtmlToTiml(source: string; sourcePath = "";\n                policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string		380
+nim	parseHtmlFileToTiml	tim/engine/html2timl.html#parseHtmlFileToTiml,string,HtmlParserPolicy	proc parseHtmlFileToTiml(path: string;\n                    policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string		391

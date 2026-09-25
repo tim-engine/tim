@@ -28,7 +28,7 @@
     <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">Index</h1>
-      Modules: <a href="index.html">tim</a>, <a href="tim/app/build.html">tim/app/build</a>, <a href="tim/app/dev.html">tim/app/dev</a>, <a href="tim/app/serve.html">tim/app/serve</a>, <a href="tim/engine/lexer.html">tim/engine/lexer</a>, <a href="tim/engine/parser.html">tim/engine/parser</a>, <a href="tim/engine/stdlib/inliner.html">tim/engine/stdlib/inliner</a>, <a href="tim/engine/stdlib/libarrays.html">tim/engine/stdlib/libarrays</a>, <a href="tim/engine/stdlib/libffi.html">tim/engine/stdlib/libffi</a>, <a href="tim/engine/stdlib/libjson.html">tim/engine/stdlib/libjson</a>, <a href="tim/engine/stdlib/libobjects.html">tim/engine/stdlib/libobjects</a>, <a href="tim/engine/stdlib/libstrings.html">tim/engine/stdlib/libstrings</a>, <a href="tim/engine/stdlib/libsystem.html">tim/engine/stdlib/libsystem</a>, <a href="tim/engine/stdlib/libtimes.html">tim/engine/stdlib/libtimes</a>, <a href="tim/engine/test_state.html">tim/engine/test_state</a>, <a href="tim/engine/transpilers/jsgen.html">tim/engine/transpilers/jsgen</a>, <a href="tim/engine/transpilers/luagen.html">tim/engine/transpilers/luagen</a>, <a href="tim/engine/transpilers/nimgen.html">tim/engine/transpilers/nimgen</a>, <a href="tim/engine/transpilers/phpgen.html">tim/engine/transpilers/phpgen</a>, <a href="tim/engine/transpilers/private.html">tim/engine/transpilers/private</a>, <a href="tim/engine/transpilers/pygen.html">tim/engine/transpilers/pygen</a>, <a href="tim/engine/transpilers/rbgen.html">tim/engine/transpilers/rbgen</a>, <a href="tim/engine/validator.html">tim/engine/validator</a>, <a href="tim/meta/cache.html">tim/meta/cache</a>, <a href="tim/meta/config.html">tim/meta/config</a>, <a href="tim/meta/initializer.html">tim/meta/initializer</a>, <a href="tim/meta/websocket.html">tim/meta/websocket</a>, <a href="tim/pkgmanager/configs.html">tim/pkgmanager/configs</a>, <a href="tim/pkgmanager/resolver.html">tim/pkgmanager/resolver</a>, <a href="tim/pkgmanager/timparser.html">tim/pkgmanager/timparser</a>.<br/><p /><h2>API symbols</h2>
+      Modules: <a href="index.html">tim</a>, <a href="tim/app/build.html">tim/app/build</a>, <a href="tim/app/dev.html">tim/app/dev</a>, <a href="tim/app/serve.html">tim/app/serve</a>, <a href="tim/engine/html2timl.html">tim/engine/html2timl</a>, <a href="tim/engine/lexer.html">tim/engine/lexer</a>, <a href="tim/engine/parser.html">tim/engine/parser</a>, <a href="tim/engine/stdlib/inliner.html">tim/engine/stdlib/inliner</a>, <a href="tim/engine/stdlib/libarrays.html">tim/engine/stdlib/libarrays</a>, <a href="tim/engine/stdlib/libffi.html">tim/engine/stdlib/libffi</a>, <a href="tim/engine/stdlib/libjson.html">tim/engine/stdlib/libjson</a>, <a href="tim/engine/stdlib/libobjects.html">tim/engine/stdlib/libobjects</a>, <a href="tim/engine/stdlib/libstrings.html">tim/engine/stdlib/libstrings</a>, <a href="tim/engine/stdlib/libsystem.html">tim/engine/stdlib/libsystem</a>, <a href="tim/engine/stdlib/libtimes.html">tim/engine/stdlib/libtimes</a>, <a href="tim/engine/test_state.html">tim/engine/test_state</a>, <a href="tim/engine/transpilers/jsgen.html">tim/engine/transpilers/jsgen</a>, <a href="tim/engine/transpilers/luagen.html">tim/engine/transpilers/luagen</a>, <a href="tim/engine/transpilers/nimgen.html">tim/engine/transpilers/nimgen</a>, <a href="tim/engine/transpilers/phpgen.html">tim/engine/transpilers/phpgen</a>, <a href="tim/engine/transpilers/private.html">tim/engine/transpilers/private</a>, <a href="tim/engine/transpilers/pygen.html">tim/engine/transpilers/pygen</a>, <a href="tim/engine/transpilers/rbgen.html">tim/engine/transpilers/rbgen</a>, <a href="tim/engine/validator.html">tim/engine/validator</a>, <a href="tim/meta/cache.html">tim/meta/cache</a>, <a href="tim/meta/config.html">tim/meta/config</a>, <a href="tim/meta/initializer.html">tim/meta/initializer</a>, <a href="tim/meta/websocket.html">tim/meta/websocket</a>, <a href="tim/pkgmanager/configs.html">tim/pkgmanager/configs</a>, <a href="tim/pkgmanager/resolver.html">tim/pkgmanager/resolver</a>, <a href="tim/pkgmanager/timparser.html">tim/pkgmanager/timparser</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="%60%24%60" href="#%60%24%60"><span>`$`:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="config: proc `$`(c: TimConfig): string" href="tim/meta/config.html#%24%2CTimConfig">config: proc `$`(c: TimConfig): string</a></li>
@@ -106,6 +106,10 @@
 <dt><a name="declareGlobals" href="#declareGlobals"><span>declareGlobals:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc declareGlobals(compiler: CodeGen)" href="tim/meta/initializer.html#declareGlobals%2CCodeGen">initializer: proc declareGlobals(compiler: CodeGen)</a></li>
+          </ul></dd>
+<dt><a name="defaultHtml2TimlPolicy" href="#defaultHtml2TimlPolicy"><span>defaultHtml2TimlPolicy:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: proc defaultHtml2TimlPolicy(): HtmlParserPolicy" href="tim/engine/html2timl.html#defaultHtml2TimlPolicy">html2timl: proc defaultHtml2TimlPolicy(): HtmlParserPolicy</a></li>
           </ul></dd>
 <dt><a name="defaultSourceName" href="#defaultSourceName"><span>defaultSourceName:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -289,6 +293,18 @@
 <li><a class="reference external"
           data-doc-search-tag="libffi: type HelloWorldProc" href="tim/engine/stdlib/libffi.html#HelloWorldProc">libffi: type HelloWorldProc</a></li>
           </ul></dd>
+<dt><a name="htCommand" href="#htCommand"><span>htCommand:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="build: proc htCommand(v: Values)" href="tim/app/build.html#htCommand%2CValues">build: proc htCommand(v: Values)</a></li>
+          </ul></dd>
+<dt><a name="Html2TimlError" href="#Html2TimlError"><span>Html2TimlError:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: object Html2TimlError" href="tim/engine/html2timl.html#Html2TimlError">html2timl: object Html2TimlError</a></li>
+          </ul></dd>
+<dt><a name="htmlToTiml" href="#htmlToTiml"><span>htmlToTiml:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: proc htmlToTiml(doc: HtmlDocument; sourcePath = &quot;&quot;): string" href="tim/engine/html2timl.html#htmlToTiml%2CHtmlDocument%2Cstring">html2timl: proc htmlToTiml(doc: HtmlDocument; sourcePath = &quot;&quot;): string</a></li>
+          </ul></dd>
 <dt><a name="initArrays" href="#initArrays"><span>initArrays:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="libarrays: proc initArrays(script: Script; systemModule: Module): Module" href="tim/engine/stdlib/libarrays.html#initArrays%2CScript%2CModule">libarrays: proc initArrays(script: Script; systemModule: Module): Module</a></li>
@@ -419,6 +435,10 @@
 <li><a class="reference external"
           data-doc-search-tag="validator: const MaxAstNodes" href="tim/engine/validator.html#MaxAstNodes">validator: const MaxAstNodes</a></li>
           </ul></dd>
+<dt><a name="MaxHtml2TimlDepth" href="#MaxHtml2TimlDepth"><span>MaxHtml2TimlDepth:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: const MaxHtml2TimlDepth" href="tim/engine/html2timl.html#MaxHtml2TimlDepth">html2timl: const MaxHtml2TimlDepth</a></li>
+          </ul></dd>
 <dt><a name="MaxStringLength" href="#MaxStringLength"><span>MaxStringLength:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="validator: const MaxStringLength" href="tim/engine/validator.html#MaxStringLength">validator: const MaxStringLength</a></li>
@@ -502,6 +522,18 @@
 <dt><a name="parseHook" href="#parseHook"><span>parseHook:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc parseHook(p: var YamlParser; v: var semver.Version)" href="tim/meta/initializer.html#parseHook%2CYamlParser%2C">initializer: proc parseHook(p: var YamlParser; v: var semver.Version)</a></li>
+          </ul></dd>
+<dt><a name="parseHtmlFileToTiml" href="#parseHtmlFileToTiml"><span>parseHtmlFileToTiml:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: proc parseHtmlFileToTiml(path: string;
+                    policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string" href="tim/engine/html2timl.html#parseHtmlFileToTiml%2Cstring%2CHtmlParserPolicy">html2timl: proc parseHtmlFileToTiml(path: string;
+                    policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string</a></li>
+          </ul></dd>
+<dt><a name="parseHtmlToTiml" href="#parseHtmlToTiml"><span>parseHtmlToTiml:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: proc parseHtmlToTiml(source: string; sourcePath = &quot;&quot;;
+                policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string" href="tim/engine/html2timl.html#parseHtmlToTiml%2Cstring%2Cstring%2CHtmlParserPolicy">html2timl: proc parseHtmlToTiml(source: string; sourcePath = &quot;&quot;;
+                policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string</a></li>
           </ul></dd>
 <dt><a name="Parser" href="#Parser"><span>Parser:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -684,6 +716,10 @@
 <dt><a name="TimLexerError" href="#TimLexerError"><span>TimLexerError:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="lexer: object TimLexerError" href="tim/engine/lexer.html#TimLexerError">lexer: object TimLexerError</a></li>
+          </ul></dd>
+<dt><a name="TimlIndent" href="#TimlIndent"><span>TimlIndent:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="html2timl: const TimlIndent" href="tim/engine/html2timl.html#TimlIndent">html2timl: const TimlIndent</a></li>
           </ul></dd>
 <dt><a name="timManifestFileName" href="#timManifestFileName"><span>timManifestFileName:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -1195,7 +1231,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-21 10:33:41 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-25 12:47:27 UTC</small>
       </div>
     </div>
   </div>
