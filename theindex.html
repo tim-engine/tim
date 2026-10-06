@@ -28,7 +28,7 @@
     <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">Index</h1>
-      Modules: <a href="index.html">tim</a>, <a href="tim/app/build.html">tim/app/build</a>, <a href="tim/app/dev.html">tim/app/dev</a>, <a href="tim/app/serve.html">tim/app/serve</a>, <a href="tim/engine/html2timl.html">tim/engine/html2timl</a>, <a href="tim/engine/lexer.html">tim/engine/lexer</a>, <a href="tim/engine/parser.html">tim/engine/parser</a>, <a href="tim/engine/stdlib/inliner.html">tim/engine/stdlib/inliner</a>, <a href="tim/engine/stdlib/libarrays.html">tim/engine/stdlib/libarrays</a>, <a href="tim/engine/stdlib/libffi.html">tim/engine/stdlib/libffi</a>, <a href="tim/engine/stdlib/libjson.html">tim/engine/stdlib/libjson</a>, <a href="tim/engine/stdlib/libobjects.html">tim/engine/stdlib/libobjects</a>, <a href="tim/engine/stdlib/libstrings.html">tim/engine/stdlib/libstrings</a>, <a href="tim/engine/stdlib/libsystem.html">tim/engine/stdlib/libsystem</a>, <a href="tim/engine/stdlib/libtimes.html">tim/engine/stdlib/libtimes</a>, <a href="tim/engine/test_state.html">tim/engine/test_state</a>, <a href="tim/engine/transpilers/jsgen.html">tim/engine/transpilers/jsgen</a>, <a href="tim/engine/transpilers/luagen.html">tim/engine/transpilers/luagen</a>, <a href="tim/engine/transpilers/nimgen.html">tim/engine/transpilers/nimgen</a>, <a href="tim/engine/transpilers/phpgen.html">tim/engine/transpilers/phpgen</a>, <a href="tim/engine/transpilers/private.html">tim/engine/transpilers/private</a>, <a href="tim/engine/transpilers/pygen.html">tim/engine/transpilers/pygen</a>, <a href="tim/engine/transpilers/rbgen.html">tim/engine/transpilers/rbgen</a>, <a href="tim/engine/validator.html">tim/engine/validator</a>, <a href="tim/meta/cache.html">tim/meta/cache</a>, <a href="tim/meta/config.html">tim/meta/config</a>, <a href="tim/meta/initializer.html">tim/meta/initializer</a>, <a href="tim/meta/websocket.html">tim/meta/websocket</a>, <a href="tim/pkgmanager/configs.html">tim/pkgmanager/configs</a>, <a href="tim/pkgmanager/resolver.html">tim/pkgmanager/resolver</a>, <a href="tim/pkgmanager/timparser.html">tim/pkgmanager/timparser</a>.<br/><p /><h2>API symbols</h2>
+      Modules: <a href="index.html">tim</a>, <a href="tim/app/build.html">tim/app/build</a>, <a href="tim/app/dev.html">tim/app/dev</a>, <a href="tim/app/publish.html">tim/app/publish</a>, <a href="tim/app/serve.html">tim/app/serve</a>, <a href="tim/engine/html2timl.html">tim/engine/html2timl</a>, <a href="tim/engine/lexer.html">tim/engine/lexer</a>, <a href="tim/engine/parser.html">tim/engine/parser</a>, <a href="tim/engine/stdlib/inliner.html">tim/engine/stdlib/inliner</a>, <a href="tim/engine/stdlib/libarrays.html">tim/engine/stdlib/libarrays</a>, <a href="tim/engine/stdlib/libffi.html">tim/engine/stdlib/libffi</a>, <a href="tim/engine/stdlib/libjson.html">tim/engine/stdlib/libjson</a>, <a href="tim/engine/stdlib/libobjects.html">tim/engine/stdlib/libobjects</a>, <a href="tim/engine/stdlib/libstrings.html">tim/engine/stdlib/libstrings</a>, <a href="tim/engine/stdlib/libsystem.html">tim/engine/stdlib/libsystem</a>, <a href="tim/engine/stdlib/libtimes.html">tim/engine/stdlib/libtimes</a>, <a href="tim/engine/test_state.html">tim/engine/test_state</a>, <a href="tim/engine/transpilers/jsgen.html">tim/engine/transpilers/jsgen</a>, <a href="tim/engine/transpilers/luagen.html">tim/engine/transpilers/luagen</a>, <a href="tim/engine/transpilers/nimgen.html">tim/engine/transpilers/nimgen</a>, <a href="tim/engine/transpilers/phpgen.html">tim/engine/transpilers/phpgen</a>, <a href="tim/engine/transpilers/private.html">tim/engine/transpilers/private</a>, <a href="tim/engine/transpilers/pygen.html">tim/engine/transpilers/pygen</a>, <a href="tim/engine/transpilers/rbgen.html">tim/engine/transpilers/rbgen</a>, <a href="tim/engine/validator.html">tim/engine/validator</a>, <a href="tim/meta/cache.html">tim/meta/cache</a>, <a href="tim/meta/config.html">tim/meta/config</a>, <a href="tim/meta/initializer.html">tim/meta/initializer</a>, <a href="tim/meta/websocket.html">tim/meta/websocket</a>, <a href="tim/pkgmanager/configs.html">tim/pkgmanager/configs</a>, <a href="tim/pkgmanager/resolver.html">tim/pkgmanager/resolver</a>, <a href="tim/pkgmanager/secrets.html">tim/pkgmanager/secrets</a>, <a href="tim/pkgmanager/timparser.html">tim/pkgmanager/timparser</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="%60%24%60" href="#%60%24%60"><span>`$`:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="config: proc `$`(c: TimConfig): string" href="tim/meta/config.html#%24%2CTimConfig">config: proc `$`(c: TimConfig): string</a></li>
@@ -95,6 +95,10 @@
           <li><a class="reference external"
           data-doc-search-tag="initializer: proc compileCode(view, layout: TimTemplate; localData, globalData: JsonNode): Value" href="tim/meta/initializer.html#compileCode%2CTimTemplate%2CTimTemplate%2CJsonNode%2CJsonNode">initializer: proc compileCode(view, layout: TimTemplate; localData, globalData: JsonNode): Value</a></li>
           </ul></dd>
+<dt><a name="createPullRequest" href="#createPullRequest"><span>createPullRequest:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc createPullRequest(token, headOwner, branch, title, body: string): string" href="tim/app/publish.html#createPullRequest%2Cstring%2Cstring%2Cstring%2Cstring%2Cstring">publish: proc createPullRequest(token, headOwner, branch, title, body: string): string</a></li>
+          </ul></dd>
 <dt><a name="debugEnabled" href="#debugEnabled"><span>debugEnabled:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: template debugEnabled(): untyped" href="tim/pkgmanager/configs.html#debugEnabled.t">configs: template debugEnabled(): untyped</a></li>
@@ -115,6 +119,14 @@
 <li><a class="reference external"
           data-doc-search-tag="configs: template defaultSourceName(): string" href="tim/pkgmanager/configs.html#defaultSourceName.t">configs: template defaultSourceName(): string</a></li>
           </ul></dd>
+<dt><a name="deleteSecretFile" href="#deleteSecretFile"><span>deleteSecretFile:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: proc deleteSecretFile(rootPath: string)" href="tim/pkgmanager/secrets.html#deleteSecretFile%2Cstring">secrets: proc deleteSecretFile(rootPath: string)</a></li>
+          </ul></dd>
+<dt><a name="detectRepoUrl" href="#detectRepoUrl"><span>detectRepoUrl:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc detectRepoUrl(dir: string): string" href="tim/app/publish.html#detectRepoUrl%2Cstring">publish: proc detectRepoUrl(dir: string): string</a></li>
+          </ul></dd>
 <dt><a name="developCommand" href="#developCommand"><span>developCommand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="dev: proc developCommand(v: Values)" href="tim/app/dev.html#developCommand%2CValues">dev: proc developCommand(v: Values)</a></li>
@@ -127,15 +139,27 @@
 <li><a class="reference external"
           data-doc-search-tag="initializer: tuple EmbeddedTheme" href="tim/meta/initializer.html#EmbeddedTheme">initializer: tuple EmbeddedTheme</a></li>
           </ul></dd>
+<dt><a name="ensureFork" href="#ensureFork"><span>ensureFork:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc ensureFork(user, token: string): bool" href="tim/app/publish.html#ensureFork%2Cstring%2Cstring">publish: proc ensureFork(user, token: string): bool</a></li>
+          </ul></dd>
 <dt><a name="ensureSourcesFile" href="#ensureSourcesFile"><span>ensureSourcesFile:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: proc ensureSourcesFile()" href="tim/pkgmanager/configs.html#ensureSourcesFile">configs: proc ensureSourcesFile()</a></li>
+          </ul></dd>
+<dt><a name="entryExists" href="#entryExists"><span>entryExists:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc entryExists(packagesJson: JsonNode; name: string): bool" href="tim/app/publish.html#entryExists%2CJsonNode%2Cstring">publish: proc entryExists(packagesJson: JsonNode; name: string): bool</a></li>
           </ul></dd>
 <dt><a name="error" href="#error"><span>error:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="lexer: proc error(l: var Lexer; msg: string)" href="tim/engine/lexer.html#error%2CLexer%2Cstring">lexer: proc error(l: var Lexer; msg: string)</a></li>
           <li><a class="reference external"
           data-doc-search-tag="nimgen: proc error(node: Node; msg: string)" href="tim/engine/transpilers/nimgen.html#error%2CNode%2Cstring">nimgen: proc error(node: Node; msg: string)</a></li>
+          </ul></dd>
+<dt><a name="extraStr" href="#extraStr"><span>extraStr:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc extraStr(m: Manifest; key: string): string" href="tim/app/publish.html#extraStr%2CManifest%2Cstring">publish: proc extraStr(m: Manifest; key: string): string</a></li>
           </ul></dd>
 <dt><a name="fetchAllPkgMetas" href="#fetchAllPkgMetas"><span>fetchAllPkgMetas:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -168,6 +192,10 @@
 <dt><a name="fetchPkgMeta" href="#fetchPkgMeta"><span>fetchPkgMeta:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: proc fetchPkgMeta(pkgName: string; sourceFilter: string = &quot;&quot;): Option[PkgRef]" href="tim/pkgmanager/configs.html#fetchPkgMeta%2Cstring%2Cstring">configs: proc fetchPkgMeta(pkgName: string; sourceFilter: string = &quot;&quot;): Option[PkgRef]</a></li>
+          </ul></dd>
+<dt><a name="fetchUrl" href="#fetchUrl"><span>fetchUrl:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc fetchUrl(url: string): tuple[output: string, code: int]" href="tim/app/publish.html#fetchUrl%2Cstring">publish: proc fetchUrl(url: string): tuple[output: string, code: int]</a></li>
           </ul></dd>
 <dt><a name="generateYaml" href="#generateYaml"><span>generateYaml:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -273,6 +301,18 @@
           <li><a class="reference external"
           data-doc-search-tag="initializer: iterator getViews(engine: TimEngine; theme: string): TimTemplate" href="tim/meta/initializer.html#getViews.i%2CTimEngine%2Cstring">initializer: iterator getViews(engine: TimEngine; theme: string): TimTemplate</a></li>
           </ul></dd>
+<dt><a name="ghApi" href="#ghApi"><span>ghApi:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc ghApi(url, token: string; payload = &quot;&quot;): tuple[output: string, code: int]" href="tim/app/publish.html#ghApi%2Cstring%2Cstring%2Cstring">publish: proc ghApi(url, token: string; payload = &quot;&quot;): tuple[output: string, code: int]</a></li>
+          </ul></dd>
+<dt><a name="githubUser" href="#githubUser"><span>githubUser:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc githubUser(token: string): string" href="tim/app/publish.html#githubUser%2Cstring">publish: proc githubUser(token: string): string</a></li>
+          </ul></dd>
+<dt><a name="gitIdentity" href="#gitIdentity"><span>gitIdentity:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc gitIdentity(): tuple[name, email: string]" href="tim/app/publish.html#gitIdentity">publish: proc gitIdentity(): tuple[name, email: string]</a></li>
+          </ul></dd>
 <dt><a name="GreetingProc" href="#GreetingProc"><span>GreetingProc:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="libffi: type GreetingProc" href="tim/engine/stdlib/libffi.html#GreetingProc">libffi: type GreetingProc</a></li>
@@ -288,6 +328,14 @@
 <dt><a name="gTestMsg" href="#gTestMsg"><span>gTestMsg:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="test_state: var gTestMsg" href="tim/engine/test_state.html#gTestMsg">test_state: var gTestMsg</a></li>
+          </ul></dd>
+<dt><a name="hasSecretFile" href="#hasSecretFile"><span>hasSecretFile:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: proc hasSecretFile(rootPath: string): bool" href="tim/pkgmanager/secrets.html#hasSecretFile%2Cstring">secrets: proc hasSecretFile(rootPath: string): bool</a></li>
+          </ul></dd>
+<dt><a name="hasVersionTag" href="#hasVersionTag"><span>hasVersionTag:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc hasVersionTag(dir, version: string): bool" href="tim/app/publish.html#hasVersionTag%2Cstring%2Cstring">publish: proc hasVersionTag(dir, version: string): bool</a></li>
           </ul></dd>
 <dt><a name="HelloWorldProc" href="#HelloWorldProc"><span>HelloWorldProc:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -361,6 +409,10 @@
 <li><a class="reference external"
           data-doc-search-tag="inliner: const InlineCode" href="tim/engine/stdlib/inliner.html#InlineCode">inliner: const InlineCode</a></li>
           </ul></dd>
+<dt><a name="insertEntrySorted" href="#insertEntrySorted"><span>insertEntrySorted:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc insertEntrySorted(packagesJson: JsonNode; entry: JsonNode): JsonNode" href="tim/app/publish.html#insertEntrySorted%2CJsonNode%2CJsonNode">publish: proc insertEntrySorted(packagesJson: JsonNode; entry: JsonNode): JsonNode</a></li>
+          </ul></dd>
 <dt><a name="installCommand" href="#installCommand"><span>installCommand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="dev: proc installCommand(v: Values)" href="tim/app/dev.html#installCommand%2CValues">dev: proc installCommand(v: Values)</a></li>
@@ -370,6 +422,10 @@
           data-doc-search-tag="initializer: proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value" href="tim/meta/initializer.html#interpret%2CTimTemplate%2CJsonNode%2CJsonNode">initializer: proc interpret(view: TimTemplate; localData, globalData: JsonNode): Value</a></li>
           <li><a class="reference external"
           data-doc-search-tag="initializer: proc interpret(view, layout: TimTemplate; localData, globalData: JsonNode): Value" href="tim/meta/initializer.html#interpret%2CTimTemplate%2CTimTemplate%2CJsonNode%2CJsonNode">initializer: proc interpret(view, layout: TimTemplate; localData, globalData: JsonNode): Value</a></li>
+          </ul></dd>
+<dt><a name="isCleanTree" href="#isCleanTree"><span>isCleanTree:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc isCleanTree(dir: string): bool" href="tim/app/publish.html#isCleanTree%2Cstring">publish: proc isCleanTree(dir: string): bool</a></li>
           </ul></dd>
 <dt><a name="isInsidePkgs" href="#isInsidePkgs"><span>isInsidePkgs:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -406,6 +462,10 @@
 <dt><a name="loadFFI" href="#loadFFI"><span>loadFFI:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="libffi: proc loadFFI(script: Script; systemModule: Module): Module" href="tim/engine/stdlib/libffi.html#loadFFI%2CScript%2CModule">libffi: proc loadFFI(script: Script; systemModule: Module): Module</a></li>
+          </ul></dd>
+<dt><a name="loadGithubToken" href="#loadGithubToken"><span>loadGithubToken:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: proc loadGithubToken(rootPath, password: string): string" href="tim/pkgmanager/secrets.html#loadGithubToken%2Cstring%2Cstring">secrets: proc loadGithubToken(rootPath, password: string): string</a></li>
           </ul></dd>
 <dt><a name="loadLibrary" href="#loadLibrary"><span>loadLibrary:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -515,6 +575,10 @@
 <li><a class="reference external"
           data-doc-search-tag="lexer: proc nextToken(lex: var Lexer): TokenTuple" href="tim/engine/lexer.html#nextToken%2CLexer">lexer: proc nextToken(lex: var Lexer): TokenTuple</a></li>
           </ul></dd>
+<dt><a name="normalizePublishUrl" href="#normalizePublishUrl"><span>normalizePublishUrl:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc normalizePublishUrl(url: string): string" href="tim/app/publish.html#normalizePublishUrl%2Cstring">publish: proc normalizePublishUrl(url: string): string</a></li>
+          </ul></dd>
 <dt><a name="notifyAllClients" href="#notifyAllClients"><span>notifyAllClients:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="websocket: proc notifyAllClients(server: WebSocketServer)" href="tim/meta/websocket.html#notifyAllClients%2CWebSocketServer">websocket: proc notifyAllClients(server: WebSocketServer)</a></li>
@@ -547,6 +611,34 @@
 <li><a class="reference external"
           data-doc-search-tag="parser: proc parseScript(astProgram: var Ast; code: string; sourcePath: string)" href="tim/engine/parser.html#parseScript%2CAst%2Cstring%2Cstring">parser: proc parseScript(astProgram: var Ast; code: string; sourcePath: string)</a></li>
           </ul></dd>
+<dt><a name="pkgsApiBase" href="#pkgsApiBase"><span>pkgsApiBase:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsApiBase" href="tim/app/publish.html#pkgsApiBase">publish: const pkgsApiBase</a></li>
+          </ul></dd>
+<dt><a name="pkgsApiRoot" href="#pkgsApiRoot"><span>pkgsApiRoot:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsApiRoot" href="tim/app/publish.html#pkgsApiRoot">publish: const pkgsApiRoot</a></li>
+          </ul></dd>
+<dt><a name="pkgsDefaultBranch" href="#pkgsDefaultBranch"><span>pkgsDefaultBranch:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsDefaultBranch" href="tim/app/publish.html#pkgsDefaultBranch">publish: const pkgsDefaultBranch</a></li>
+          </ul></dd>
+<dt><a name="pkgsRegistryRaw" href="#pkgsRegistryRaw"><span>pkgsRegistryRaw:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsRegistryRaw" href="tim/app/publish.html#pkgsRegistryRaw">publish: const pkgsRegistryRaw</a></li>
+          </ul></dd>
+<dt><a name="pkgsUpstream" href="#pkgsUpstream"><span>pkgsUpstream:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsUpstream" href="tim/app/publish.html#pkgsUpstream">publish: const pkgsUpstream</a></li>
+          </ul></dd>
+<dt><a name="pkgsUpstreamUrl" href="#pkgsUpstreamUrl"><span>pkgsUpstreamUrl:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: const pkgsUpstreamUrl" href="tim/app/publish.html#pkgsUpstreamUrl">publish: const pkgsUpstreamUrl</a></li>
+          </ul></dd>
+<dt><a name="prBody" href="#prBody"><span>prBody:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc prBody(pkgName, version, url, description, extra: string; hasTag: bool): string" href="tim/app/publish.html#prBody%2Cstring%2Cstring%2Cstring%2Cstring%2Cstring%2Cbool">publish: proc prBody(pkgName, version, url, description, extra: string; hasTag: bool): string</a></li>
+          </ul></dd>
 <dt><a name="precompile" href="#precompile"><span>precompile:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc precompile(engine: TimEngine)" href="tim/meta/initializer.html#precompile%2CTimEngine">initializer: proc precompile(engine: TimEngine)</a></li>
@@ -577,6 +669,26 @@
 <li><a class="reference external"
           data-doc-search-tag="parser: type PrefixFunction" href="tim/engine/parser.html#PrefixFunction">parser: type PrefixFunction</a></li>
           </ul></dd>
+<dt><a name="prTitle" href="#prTitle"><span>prTitle:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc prTitle(pkgName, version: string): string" href="tim/app/publish.html#prTitle%2Cstring%2Cstring">publish: proc prTitle(pkgName, version: string): string</a></li>
+          </ul></dd>
+<dt><a name="publishBranchName" href="#publishBranchName"><span>publishBranchName:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc publishBranchName(pkgName: string): string" href="tim/app/publish.html#publishBranchName%2Cstring">publish: proc publishBranchName(pkgName: string): string</a></li>
+          </ul></dd>
+<dt><a name="publishCommand" href="#publishCommand"><span>publishCommand:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc publishCommand(v: Values)" href="tim/app/publish.html#publishCommand%2CValues">publish: proc publishCommand(v: Values)</a></li>
+          </ul></dd>
+<dt><a name="publishEntry" href="#publishEntry"><span>publishEntry:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc publishEntry(name, url, description, license, web: string; tags: seq[string]): JsonNode" href="tim/app/publish.html#publishEntry%2Cstring%2Cstring%2Cstring%2Cstring%2Cstring%2Cseq%5Bstring%5D">publish: proc publishEntry(name, url, description, license, web: string; tags: seq[string]): JsonNode</a></li>
+          </ul></dd>
+<dt><a name="pushBranch" href="#pushBranch"><span>pushBranch:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc pushBranch(workdir, remoteUrl, branch, token: string): bool" href="tim/app/publish.html#pushBranch%2Cstring%2Cstring%2Cstring%2Cstring">publish: proc pushBranch(workdir, remoteUrl, branch, token: string): bool</a></li>
+          </ul></dd>
 <dt><a name="refreshAllSources" href="#refreshAllSources"><span>refreshAllSources:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: proc refreshAllSources(): bool" href="tim/pkgmanager/configs.html#refreshAllSources">configs: proc refreshAllSources(): bool</a></li>
@@ -592,6 +704,10 @@
 <dt><a name="registerTemplate" href="#registerTemplate"><span>registerTemplate:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: proc registerTemplate(engine: TimEngine; src: string): TimTemplate" href="tim/meta/initializer.html#registerTemplate%2CTimEngine%2Cstring">initializer: proc registerTemplate(engine: TimEngine; src: string): TimTemplate</a></li>
+          </ul></dd>
+<dt><a name="remoteReachable" href="#remoteReachable"><span>remoteReachable:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc remoteReachable(url: string): bool" href="tim/app/publish.html#remoteReachable%2Cstring">publish: proc remoteReachable(url: string): bool</a></li>
           </ul></dd>
 <dt><a name="removeCommand" href="#removeCommand"><span>removeCommand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -612,6 +728,22 @@
 <dt><a name="saveSources" href="#saveSources"><span>saveSources:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="configs: proc saveSources(sources: seq[Source])" href="tim/pkgmanager/configs.html#saveSources%2Cseq%5BSource%5D">configs: proc saveSources(sources: seq[Source])</a></li>
+          </ul></dd>
+<dt><a name="SecretError" href="#SecretError"><span>SecretError:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: object SecretError" href="tim/pkgmanager/secrets.html#SecretError">secrets: object SecretError</a></li>
+          </ul></dd>
+<dt><a name="secretFileName" href="#secretFileName"><span>secretFileName:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: const secretFileName" href="tim/pkgmanager/secrets.html#secretFileName">secrets: const secretFileName</a></li>
+          </ul></dd>
+<dt><a name="secretFilePath" href="#secretFilePath"><span>secretFilePath:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: proc secretFilePath(rootPath: string): string" href="tim/pkgmanager/secrets.html#secretFilePath%2Cstring">secrets: proc secretFilePath(rootPath: string): string</a></li>
+          </ul></dd>
+<dt><a name="secretPayloadVersion" href="#secretPayloadVersion"><span>secretPayloadVersion:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: const secretPayloadVersion" href="tim/pkgmanager/secrets.html#secretPayloadVersion">secrets: const secretPayloadVersion</a></li>
           </ul></dd>
 <dt><a name="seedPackagesTable" href="#seedPackagesTable"><span>seedPackagesTable:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -645,6 +777,10 @@
 <li><a class="reference external"
           data-doc-search-tag="config: enum SourceType" href="tim/meta/config.html#SourceType">config: enum SourceType</a></li>
           </ul></dd>
+<dt><a name="splitPublishTags" href="#splitPublishTags"><span>splitPublishTags:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc splitPublishTags(s: string): seq[string]" href="tim/app/publish.html#splitPublishTags%2Cstring">publish: proc splitPublishTags(s: string): seq[string]</a></li>
+          </ul></dd>
 <dt><a name="srcCommand" href="#srcCommand"><span>srcCommand:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="build: proc srcCommand(v: Values)" href="tim/app/build.html#srcCommand%2CValues">build: proc srcCommand(v: Values)</a></li>
@@ -652,6 +788,10 @@
 <dt><a name="startWebSocket" href="#startWebSocket"><span>startWebSocket:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="websocket: proc startWebSocket(port: Port = Port(9000)): WebSocketServer" href="tim/meta/websocket.html#startWebSocket%2CPort">websocket: proc startWebSocket(port: Port = Port(9000)): WebSocketServer</a></li>
+          </ul></dd>
+<dt><a name="storeGithubToken" href="#storeGithubToken"><span>storeGithubToken:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="secrets: proc storeGithubToken(rootPath, token, password: string)" href="tim/pkgmanager/secrets.html#storeGithubToken%2Cstring%2Cstring%2Cstring">secrets: proc storeGithubToken(rootPath, token, password: string)</a></li>
           </ul></dd>
 <dt><a name="TargetSource" href="#TargetSource"><span>TargetSource:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -1177,6 +1317,10 @@
 <li><a class="reference external"
           data-doc-search-tag="initializer: TimTemplateType.ttView" href="tim/meta/initializer.html#ttView">initializer: TimTemplateType.ttView</a></li>
           </ul></dd>
+<dt><a name="unlockToken" href="#unlockToken"><span>unlockToken:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="publish: proc unlockToken(homeRoot: string; reset: bool): string" href="tim/app/publish.html#unlockToken%2Cstring%2Cbool">publish: proc unlockToken(homeRoot: string; reset: bool): string</a></li>
+          </ul></dd>
 <dt><a name="UserScript" href="#UserScript"><span>UserScript:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="initializer: type UserScript" href="tim/meta/initializer.html#UserScript">initializer: type UserScript</a></li>
@@ -1231,7 +1375,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-25 12:47:27 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-06 10:48:49 UTC</small>
       </div>
     </div>
   </div>

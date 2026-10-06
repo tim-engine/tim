@@ -1,0 +1,29 @@
+nimTitle	publish	tim/app/publish.html	module tim/app/publish		0
+nim	pkgsUpstream	tim/app/publish.html#pkgsUpstream	const pkgsUpstream		23
+nim	pkgsUpstreamUrl	tim/app/publish.html#pkgsUpstreamUrl	const pkgsUpstreamUrl		24
+nim	pkgsRegistryRaw	tim/app/publish.html#pkgsRegistryRaw	const pkgsRegistryRaw		25
+nim	pkgsDefaultBranch	tim/app/publish.html#pkgsDefaultBranch	const pkgsDefaultBranch		26
+nim	pkgsApiBase	tim/app/publish.html#pkgsApiBase	const pkgsApiBase		27
+nim	pkgsApiRoot	tim/app/publish.html#pkgsApiRoot	const pkgsApiRoot		28
+nim	splitPublishTags	tim/app/publish.html#splitPublishTags,string	proc splitPublishTags(s: string): seq[string]		34
+nim	normalizePublishUrl	tim/app/publish.html#normalizePublishUrl,string	proc normalizePublishUrl(url: string): string		42
+nim	publishEntry	tim/app/publish.html#publishEntry,string,string,string,string,string,seq[string]	proc publishEntry(name, url, description, license, web: string; tags: seq[string]): JsonNode		87
+nim	entryExists	tim/app/publish.html#entryExists,JsonNode,string	proc entryExists(packagesJson: JsonNode; name: string): bool		103
+nim	insertEntrySorted	tim/app/publish.html#insertEntrySorted,JsonNode,JsonNode	proc insertEntrySorted(packagesJson: JsonNode; entry: JsonNode): JsonNode		113
+nim	publishBranchName	tim/app/publish.html#publishBranchName,string	proc publishBranchName(pkgName: string): string		128
+nim	prTitle	tim/app/publish.html#prTitle,string,string	proc prTitle(pkgName, version: string): string		131
+nim	prBody	tim/app/publish.html#prBody,string,string,string,string,string,bool	proc prBody(pkgName, version, url, description, extra: string; hasTag: bool): string		134
+nim	extraStr	tim/app/publish.html#extraStr,Manifest,string	proc extraStr(m: Manifest; key: string): string		147
+nim	fetchUrl	tim/app/publish.html#fetchUrl,string	proc fetchUrl(url: string): tuple[output: string, code: int]		179
+nim	ghApi	tim/app/publish.html#ghApi,string,string,string	proc ghApi(url, token: string; payload = ""): tuple[output: string, code: int]		186
+nim	githubUser	tim/app/publish.html#githubUser,string	proc githubUser(token: string): string		213
+nim	ensureFork	tim/app/publish.html#ensureFork,string,string	proc ensureFork(user, token: string): bool		238
+nim	createPullRequest	tim/app/publish.html#createPullRequest,string,string,string,string,string	proc createPullRequest(token, headOwner, branch, title, body: string): string		254
+nim	detectRepoUrl	tim/app/publish.html#detectRepoUrl,string	proc detectRepoUrl(dir: string): string		279
+nim	isCleanTree	tim/app/publish.html#isCleanTree,string	proc isCleanTree(dir: string): bool		288
+nim	remoteReachable	tim/app/publish.html#remoteReachable,string	proc remoteReachable(url: string): bool		292
+nim	hasVersionTag	tim/app/publish.html#hasVersionTag,string,string	proc hasVersionTag(dir, version: string): bool		297
+nim	gitIdentity	tim/app/publish.html#gitIdentity	proc gitIdentity(): tuple[name, email: string]		303
+nim	pushBranch	tim/app/publish.html#pushBranch,string,string,string,string	proc pushBranch(workdir, remoteUrl, branch, token: string): bool		315
+nim	unlockToken	tim/app/publish.html#unlockToken,string,bool	proc unlockToken(homeRoot: string; reset: bool): string		326
+nim	publishCommand	tim/app/publish.html#publishCommand,Values	proc publishCommand(v: Values)		367
