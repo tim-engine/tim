@@ -132,7 +132,7 @@ elif isMainModule:
   import pkg/kapsis
   import pkg/kapsis/runtime
   import pkg/kapsis/interactive/prompts
-  import ./tim/app/[build, dev, serve]
+  import ./tim/app/[build, dev, serve, publish]
 
   initKapsis do:
     defaultCommand: "src"
@@ -173,6 +173,15 @@ elif isMainModule:
         ## Create a symlink to a package in local source
       remove string(pkg):
         ## Remove a package from local source
+      publish ?string("--path"),
+        ?string("--tags"),
+        ?string("--web"),
+        ?string("--message"),
+        ?bool("--dry-run"),
+        ?bool("--direct"),
+        ?bool("--reset-token"),
+        ?bool("--yes"):
+        ## Publish the current package to the tim-engine/pkgs registry
 
       #
       # Server commands

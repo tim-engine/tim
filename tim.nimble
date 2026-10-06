@@ -17,7 +17,6 @@ requires "nim >= 2.2.10"
 
 requires "kapsis >= 0.4.9"
 requires "datpkgr >= 0.1.5"
-
 requires "vancode >= 0.2.9"
 requires "checksums >= 0.2.2"
 requires "voodoo >= 0.2.1"
@@ -27,6 +26,7 @@ requires "semver >= 1.2.3"
 requires "bag >= 0.1.0"
 requires "boogie >= 0.2.1"
 requires "supranim >= 0.1.11"
+requires "nimcypher >= 0.2.5"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):

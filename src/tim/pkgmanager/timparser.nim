@@ -79,13 +79,15 @@ type TimRawManifest = object
   version: string
   description: string
   license: string
+  pkgType: string
   requires: seq[string]
 
-proc extractTimManifest(content: string, path: string): tuple[name, version, description, license: string, requires: seq[string]] =
+proc extractTimManifest(content: string, path: string): tuple[name, version, description, license, pkgType: string, requires: seq[string]] =
   var name = ""
   var version = ""
   var description = ""
   var license = ""
+  var pkgType = ""
   var reqs: seq[string] = @[]
   # Try JSON first (tim.json)
   var triedJson = false
@@ -97,6 +99,7 @@ proc extractTimManifest(content: string, path: string): tuple[name, version, des
         if j.hasKey("version"): version = j["version"].getStr
         if j.hasKey("description"): description = j["description"].getStr
         if j.hasKey("license"): license = j["license"].getStr
+        if j.hasKey("type"): pkgType = j["type"].getStr
         if j.hasKey("requires") and j["requires"].kind == JArray:
           for item in j["requires"]:
             if item.kind == JString: reqs.add(item.getStr)
@@ -121,6 +124,9 @@ proc extractTimManifest(content: string, path: string): tuple[name, version, des
       elif trimmed.startsWith("license:"):
         if license.len == 0:
           license = trimmed[8..^1].strip().stripQuotes()
+      elif trimmed.startsWith("type:"):
+        if pkgType.len == 0:
+          pkgType = trimmed[5..^1].strip().stripQuotes()
       elif trimmed.startsWith("requires:"):
         inRequires = true
         let after = trimmed[9..^1].strip()
@@ -152,12 +158,12 @@ proc extractTimManifest(content: string, path: string): tuple[name, version, des
       let dirName = path.parentDir().extractFilename()
       if dirName.len > 0 and dirName != ".":
         name = dirName
-  result = (name, version, description, license, reqs)
+  result = (name, version, description, license, pkgType, reqs)
 
 proc timManifestParser*(content: string, path: string): dt.Manifest =
   ## Pluggable parser for datpkgr — converts tim.config.yml/json to generic Manifest
   try:
-    let (name, version, description, license, reqs) = extractTimManifest(content, path)
+    let (name, version, description, license, pkgType, reqs) = extractTimManifest(content, path)
     var deps: seq[dt.PkgDependency] = @[]
     for r in reqs:
       if r.strip().len == 0: continue
@@ -178,7 +184,7 @@ proc timManifestParser*(content: string, path: string): dt.Manifest =
       dependencies: deps,
       features: initTable[string, seq[dt.PkgDependency]](),
       devDependencies: @[],
-      extra: %*{"srcDir": "", "installDirs": newJArray(), "installFiles": newJArray()}
+      extra: %*{"srcDir": "", "installDirs": newJArray(), "installFiles": newJArray(), "pkgType": pkgType}
     )
   except CatchableError:
     result = dt.Manifest(path: path, extra: newJObject())
@@ -187,7 +193,7 @@ proc timManifestFinder*(dir: string): string =
   var cur = dir
   var depth = 0
   while depth < 15:
-    for cand in [cur / "tim.config.yml", cur / "tim.yml", cur / "tim.json", cur / "tim.nimble"]:
+    for cand in [cur / "tim.config.yml", cur / "tim.config.yaml", cur / "tim.yml", cur / "tim.json", cur / "tim.nimble"]:
       if fileExists(cand):
         return cand
     for f in walkFiles(cur / "*.nimble"):
