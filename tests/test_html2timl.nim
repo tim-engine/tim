@@ -68,15 +68,14 @@ suite "HTML to TIML":
       """<form><label>Email</label><input id="email" type="email"></form>"""
 
   test "mixed text and elements":
-    # Note: OpenParser strips whitespace adjacent to tags, so the space
-    # before `<a>` is normalized away (documented converter limitation).
+    # Text is preserved exactly, including the trailing space before `<a>`.
     let timl = parseHtmlToTiml(
       """<p>Welcome to <a href="/">Tim</a>.</p>""",
       "mixed.html")
     check timl ==
-      "p\n  \"Welcome to\"\n  a href=\"/\": \"Tim\"\n  \".\""
+      "p\n  \"Welcome to \"\n  a href=\"/\": \"Tim\"\n  \".\""
     check renderTiml(timl) ==
-      """<p>Welcome to<a href="/">Tim</a>.</p>"""
+      """<p>Welcome to <a href="/">Tim</a>.</p>"""
 
   test "comments and entities are preserved":
     let timl = parseHtmlToTiml(
@@ -112,41 +111,50 @@ suite "HTML to TIML":
     writeFile(path, """<main><p>From file</p></main>""")
     check parseHtmlFileToTiml(path) == "main\n  p: \"From file\""
 
+  test "full documents and wild HTML are supported":
+    check parseHtmlToTiml("<!DOCTYPE html><p>Hi</p>", "doctype.html") ==
+      "p: \"Hi\""
+    check parseHtmlToTiml("<my-card>Hi</my-card>", "custom.html") ==
+      "my-card: \"Hi\""
+    check parseHtmlToTiml("<label for=\"email\">Email</label>",
+      "keyword-attr.html") == "label for=\"email\": \"Email\""
+    check parseHtmlToTiml("<p>and/or</p>", "slash-text.html") ==
+      "p: \"and/or\""
+    check parseHtmlToTiml("<p>a=b</p>", "equals-text.html") ==
+      "p: \"a=b\""
+    check parseHtmlToTiml("<p>a > b</p>", "bracket-text.html") ==
+      "p: \"a > b\""
+    check parseHtmlToTiml("<a href=/go>Go</a>", "unquoted-slash.html") ==
+      "a href=\"/go\": \"Go\""
+    check parseHtmlToTiml("<p title=\"a<b\">Hi</p>", "bracket-attr.html") ==
+      "p title=\"a<b\": \"Hi\""
+    check parseHtmlToTiml("<div/><p>Hi</p>", "self-close.html") ==
+      "div\np: \"Hi\""
+    check renderTiml(parseHtmlToTiml(
+      "<script>alert(1);</script>", "script.html")) ==
+      """<script>alert(1);</script>"""
+    check renderTiml(parseHtmlToTiml(
+      "<style>p { color: red; }</style>", "style.html")) ==
+      """<style>p { color: red; }</style>"""
+    check renderTiml(parseHtmlToTiml(
+      "<pre>  spaced</pre>", "pre.html")) ==
+      """<pre>  spaced</pre>"""
+    check renderTiml(parseHtmlToTiml(
+      """<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>""",
+      "svg.html")) ==
+      """<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"></path></svg>"""
+
   test "unsupported constructs are rejected":
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<my-card>Hi</my-card>", "custom.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<script>alert(1);</script>", "script.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<style>p { color: red; }</style>", "style.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<pre>  spaced</pre>", "pre.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<!DOCTYPE html><p>Hi</p>", "doctype.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("<p>Hello {{name}}</p>", "template.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("<button @click=\"go\">Go</button>", "framework.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<label for=\"email\">Email</label>", "keyword-attr.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("<div><p>Hi", "unclosed.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("<div><p>Hi</div></p>", "mismatch.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("<div class=\"x\" <p>Hi</p></div>", "missing-bracket.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<p>and/or</p>", "slash-text.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<p>a=b</p>", "equals-text.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<p>a > b</p>", "bracket-text.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<a href=/go>Go</a>", "unquoted-slash.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<p title=\"a<b\">Hi</p>", "bracket-attr.html")
-    expect Html2TimlError:
-      discard parseHtmlToTiml("<div/><p>Hi</p>", "self-close.html")
     expect Html2TimlError:
       discard parseHtmlToTiml("Hello", "text.html")
     expect Html2TimlError:

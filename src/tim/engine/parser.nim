@@ -444,14 +444,14 @@ prefixHandle parseElement:
 
   # parse the attributes
   case p.curr.kind
-  of tkDot, tkID, tkIdentifier, tkType:
+  of tkDot, tkID, tkIdentifier, tkType, tkIf, tkFor, tkElif, tkElse, tkOr, tkIn:
     p.parseAttributes(result.attributes, tk)
   of tkIdentVar, tkIdentVarSafe:
     let x = p.parseIdent()
     caseNotNil x:
       add result.attributes, x
     case p.curr.kind
-    of tkDot, tkID, tkIdentifier, tkType:
+    of tkDot, tkID, tkIdentifier, tkType, tkIf, tkFor, tkElif, tkElse, tkOr, tkIn:
       p.parseAttributes(result.attributes, tk)
     else: discard
   of tkColon:
@@ -462,7 +462,8 @@ prefixHandle parseElement:
       let infixNode = ast.newInfix(nil, ast.newStringLit("type"), typeVal)
       result.attributes.add(newHtmlAttribute(htmlAttr, infixNode))
       walk p
-      if p.curr.kind in {tkDot, tkID, tkIdentifier, tkType}:
+      if p.curr.kind in {tkDot, tkID, tkIdentifier, tkType, tkIf, tkFor,
+          tkElif, tkElse, tkOr, tkIn}:
         p.parseAttributes(result.attributes, tk)
     else:
       discard

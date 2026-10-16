@@ -214,6 +214,10 @@ proc validateNode(node: Node, path: string, depth: int, visited: var HashSet[poi
   if ptrVal in visited:
     fail(path, node, "cycle detected at " & path)
   visited.incl(ptrVal)
+  # Path-based cycle detection: shared subtrees (e.g. deduplicated `.class`
+  # attributes reused across elements) are a DAG, not a cycle, so drop the
+  # pointer when leaving this branch instead of keeping it globally.
+  defer: visited.excl(ptrVal)
 
   if node.ln < 0 or node.col < 0:
     fail(path, node, "invalid line/col negative")

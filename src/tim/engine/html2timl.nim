@@ -14,22 +14,22 @@ type
 const
   TimlIndent* = "  "
   MaxHtml2TimlDepth* = 256
-  RawMarkupMarkers = ["<!doctype", "<?", "<![cdata["]
   TemplateMarkers = ["{{", "{%", "{#", "<%", "%>"]
   VoidTagNames = ["area", "base", "br", "col", "embed", "hr", "img",
     "input", "link", "meta", "param", "source", "track", "wbr"]
-  # Attribute names lexed as TIML keywords never reach Tim's attribute parser
-  # (`type` is the verified exception, handled by `parseAttributes`).
-  TimlKeywordAttrNames = ["case", "of", "if", "elif", "else", "and", "for",
-    "while", "in", "or", "fn", "func", "iterator", "macro", "break", "var",
+  # Attribute names lexed as TIML keywords never reach Tim's attribute parser.
+  # `type`, `if`, `for`, `elif`, `else`, `or` and `in` are handled by
+  # `parseAttributes` (including as first attribute), so only the
+  # remaining keywords are rejected here.
+  TimlKeywordAttrNames = ["case", "of", "and",
+    "while", "fn", "func", "iterator", "macro", "break", "var",
     "const", "return", "discard", "continue", "echo", "yield", "nil",
     "object", "true", "false"]
 
 proc defaultHtml2TimlPolicy*(): HtmlParserPolicy =
-  ## Use OpenParser's tolerant policy. Structural errors (unclosed or
-  ## mismatched tags) are enforced separately by `assertBalanced`, because
-  ## OpenParser's own strict unclosed-tag check also fires for correctly
-  ## closed documents ending at EOF.
+  ## Kept for API compatibility. The converter no longer relies on
+  ## OpenParser for parsing (it preserves tag names and text exactly),
+  ## so the policy is accepted but ignored.
   result = defaulHtmlParsingPolicy()
   result.allowComments = true
   result.allowInvalidSyntax = false
@@ -47,142 +47,220 @@ proc failConversion(sourcePath, nodePath, detail: string) {.noreturn.} =
   e.path = sourcePath
   raise e
 
-proc assertSupportedSource(source, sourcePath: string) =
-  if '\0' in source:
-    failConversion(sourcePath, "", "NUL bytes are not supported")
-  let lowered = source.toLowerAscii()
-  for marker in RawMarkupMarkers:
-    if marker in lowered:
-      failConversion(sourcePath, "",
-        "DOCTYPE, processing instructions, and CDATA are not supported")
-
 proc assertNoTemplateSyntax(value, sourcePath, nodePath, field: string) =
   for marker in TemplateMarkers:
     if marker in value:
       failConversion(sourcePath, nodePath,
         "template syntax in " & field & " is not supported: " & marker)
 
+type
+  H2tNodeKind = enum
+    h2tElement, h2tText, h2tComment
+
+  H2tNode = ref object
+    case kind: H2tNodeKind
+    of h2tElement:
+      tag*: string
+      attrs*: TableRef[string, string]
+      children*: seq[H2tNode]
+    of h2tText:
+      text*: string
+    of h2tComment:
+      comment*: string
+
 proc isTagChar(c: char): bool =
   c.isAlphaNumeric() or c in {'-', '_', ':', '.'}
 
-proc skipTagSpaces(source: string, j: var int) =
-  while j < source.len and source[j] in {' ', '\t', '\r', '\n'}:
+proc skipSpaces(s: string, j: var int) =
+  while j < s.len and s[j] in {' ', '\t', '\r', '\n'}:
     inc j
 
-proc parseTagName(source: string, j: var int): string =
+proc parseTagName(s: string, j: var int): string =
   let start = j
-  while j < source.len and isTagChar(source[j]):
+  while j < s.len and isTagChar(s[j]):
     inc j
-  source[start ..< j]
+  s[start ..< j]
 
-proc assertBalanced(source, sourcePath: string) =
-  ## Enforce the strict, well-formed subset of HTML that `h2t` supports.
-  ## OpenParser silently repairs or normalizes malformed input (and drops
-  ## `>`, `/`, `=` inside text), so structural validation happens here on
-  ## the raw source before parsing.
-  var stack: seq[string] = @[]
+proc parseAttrName(s: string, j: var int): string =
+  ## Parse an attribute name liberally (up to `=`, whitespace, `/`, `>`).
+  ## Validity is checked later by `isSupportedAttributeName`, so framework
+  ## syntax like `@click` is captured here and rejected with a clear error.
+  let start = j
+  while j < s.len and s[j] notin {' ', '\t', '\r', '\n', '=', '/', '>',
+      '"', '\'', '<', '`'}:
+    inc j
+  s[start ..< j]
+
+proc findRawClose(source: string, start: int, tagLower: string): int =
+  ## Find `</tag` (case-insensitive) from `start` for script/style bodies.
+  let needle = "</" & tagLower
+  var i = start
+  while i + needle.len <= source.len:
+    if source[i ..< i + needle.len].toLowerAscii() == needle:
+      return i
+    inc i
+  -1
+
+proc parseHtmlSource(source, sourcePath: string): seq[H2tNode] =
+  if '\0' in source:
+    failConversion(sourcePath, "", "NUL bytes are not supported")
+  var top: seq[H2tNode] = @[]
+  var stack: seq[H2tNode] = @[]
   var i = 0
+
+  template addNode(n: H2tNode) =
+    if stack.len > 0:
+      stack[^1].children.add(n)
+    else:
+      top.add(n)
+
   while i < source.len:
     if source[i] != '<':
       let start = i
       while i < source.len and source[i] != '<':
         inc i
-      let text = source[start ..< i]
-      if '>' in text:
-        failConversion(sourcePath, "",
-          "raw `>` in text is not preserved; use `&gt;`")
-      if '/' in text:
-        failConversion(sourcePath, "",
-          "raw `/` in text is not preserved; use `&#47;`")
-      if '=' in text:
-        failConversion(sourcePath, "",
-          "raw `=` in text is not preserved; use `&#61;`")
+      addNode(H2tNode(kind: h2tText, text: source[start ..< i]))
       continue
+    # comments
     if source.continuesWith("<!--", i):
       let close = source.find("-->", i + 4)
       if close < 0:
         failConversion(sourcePath, "", "unclosed comment")
+      addNode(H2tNode(kind: h2tComment,
+        comment: source[i + 4 ..< close]))
       i = close + 3
       continue
+    # CDATA: preserve inner as text
+    if source.len >= i + 9 and source[i ..< i + 9].toLowerAscii() == "<![cdata[":
+      let close = source.find("]]>", i + 9)
+      if close < 0:
+        failConversion(sourcePath, "", "unclosed CDATA section")
+      addNode(H2tNode(kind: h2tText, text: source[i + 9 ..< close]))
+      i = close + 3
+      continue
+    # DOCTYPE: strip (Tim re-adds `<!DOCTYPE html>` at render time)
+    if source.len >= i + 9 and source[i ..< i + 9].toLowerAscii() == "<!doctype":
+      let ge = source.find(">", i + 9)
+      if ge < 0:
+        failConversion(sourcePath, "", "unclosed DOCTYPE declaration")
+      i = ge + 1
+      continue
+    # other markup declarations are not supported
+    if i + 1 < source.len and source[i + 1] == '!':
+      failConversion(sourcePath, "", "unsupported markup declaration")
+    # processing instructions: skip (no TIML representation)
+    if i + 1 < source.len and source[i + 1] == '?':
+      let close = source.find("?>", i + 2)
+      if close < 0:
+        failConversion(sourcePath, "", "unclosed processing instruction")
+      i = close + 2
+      continue
+    # closing tag
     if i + 1 < source.len and source[i + 1] == '/':
       var j = i + 2
-      skipTagSpaces(source, j)
+      skipSpaces(source, j)
       let name = parseTagName(source, j)
       if name.len == 0:
         failConversion(sourcePath, "", "malformed closing tag")
-      skipTagSpaces(source, j)
+      skipSpaces(source, j)
       if j >= source.len or source[j] != '>':
         failConversion(sourcePath, "", "malformed closing tag </" & name & ">")
       if stack.len == 0:
         failConversion(sourcePath, "", "stray closing tag </" & name & ">")
       let open = stack.pop()
-      if open != name.toLowerAscii():
+      if open.tag.toLowerAscii() != name.toLowerAscii():
         failConversion(sourcePath, "",
-          "mismatched tags: <" & open & "> closed by </" & name & ">")
+          "mismatched tags: <" & open.tag & "> closed by </" & name & ">")
       i = j + 1
       continue
-    if i + 1 < source.len and source[i + 1] in {'!', '?'}:
-      failConversion(sourcePath, "", "unsupported markup declaration")
+    # opening tag
     var j = i + 1
     let name = parseTagName(source, j)
     if name.len == 0:
       failConversion(sourcePath, "", "stray `<` in text; escape it as `&lt;`")
     let lowered = name.toLowerAscii()
-    # Scan the tag quote-aware to its closing `>`.
-    var quote = '\0'
-    var inValue = false
+    var attrs = newTable[string, string]()
     var selfClose = false
-    var k = j
-    while k < source.len:
-      let c = source[k]
-      if quote != '\0':
-        if c == quote:
-          quote = '\0'
-        elif c in {'<', '>'}:
-          failConversion(sourcePath, "",
-            "unsupported `<` or `>` inside attribute value")
-      elif c in {'"', '\''}:
-        quote = c
-        inValue = false
-      elif c == '=':
-        inValue = true
-      elif c in {' ', '\t', '\r', '\n'}:
-        inValue = false
-      elif c == '>':
+    var closed = false
+    while true:
+      skipSpaces(source, j)
+      if j >= source.len:
+        failConversion(sourcePath, "", "unclosed tag <" & name & ">")
+      if source[j] == '>':
+        inc j
+        closed = true
         break
-      elif c == '/' and k + 1 < source.len and source[k + 1] == '>':
+      if source[j] == '/' and j + 1 < source.len and source[j + 1] == '>':
         selfClose = true
+        closed = true
+        j += 2
         break
-      elif c == '/' and inValue:
-        failConversion(sourcePath, "",
-          "unquoted `/` in attribute value is not supported; quote the value")
-      k.inc()
-    if k >= source.len:
+      if source[j] == '/':
+        # `/` outside `/>` only valid inside unquoted values (handled
+        # below) or as stray; treat lone `/` before attrs as malformed
+        # to catch `<div class="x" <p>`-style mistakes.
+        if j + 1 < source.len and source[j + 1] notin {' ', '\t', '\r', '\n', '>'}:
+          failConversion(sourcePath, "",
+            "malformed tag <" & name & ">")
+        inc j
+        continue
+      let attrName = parseAttrName(source, j)
+      if attrName.len == 0:
+        failConversion(sourcePath, "", "malformed tag <" & name & ">")
+      skipSpaces(source, j)
+      var attrValue = ""
+      if j < source.len and source[j] == '=':
+        inc j
+        skipSpaces(source, j)
+        if j >= source.len:
+          failConversion(sourcePath, "", "unclosed tag <" & name & ">")
+        if source[j] == '"' or source[j] == '\'':
+          let quote = source[j]
+          inc j
+          let start = j
+          let close = source.find(quote, start)
+          if close < 0:
+            failConversion(sourcePath, "", "unterminated attribute value")
+          attrValue = source[start ..< close]
+          j = close + 1
+        else:
+          let start = j
+          while j < source.len and source[j] notin {' ', '\t', '\r', '\n',
+              '"', '\'', '=', '<', '>', '`'}:
+            inc j
+          attrValue = source[start ..< j]
+      if attrName in attrs:
+        failConversion(sourcePath, "", "duplicate attribute `" &
+          attrName & "` in <" & name & ">")
+      attrs[attrName] = attrValue
+    if not closed:
       failConversion(sourcePath, "", "unclosed tag <" & name & ">")
-    if quote != '\0':
-      failConversion(sourcePath, "", "unterminated attribute value")
-    if selfClose and lowered notin VoidTagNames:
-      failConversion(sourcePath, "",
-        "self-closing syntax on non-void <" & name & "> is ambiguous")
-    if lowered in VoidTagNames or selfClose:
-      i = k + 1
+    let node = H2tNode(kind: h2tElement, tag: name, attrs: attrs,
+      children: @[])
+    if selfClose or lowered in VoidTagNames:
+      addNode(node)
+      i = j
       continue
     if lowered in ["script", "style"]:
-      # Treat the body as raw text up to the matching close tag.
-      let rest = source[k .. ^1].toLowerAscii()
-      let rel = rest.find("</" & lowered)
+      let rel = findRawClose(source, j, lowered)
       if rel < 0:
         failConversion(sourcePath, "", "unclosed tag <" & name & ">")
-      var m = k + rel + lowered.len + 2
-      skipTagSpaces(source, m)
+      let body = source[j ..< rel]
+      var m = rel + lowered.len + 2
+      skipSpaces(source, m)
       if m >= source.len or source[m] != '>':
         failConversion(sourcePath, "", "malformed closing tag </" & name & ">")
+      if body.len > 0:
+        node.children.add(H2tNode(kind: h2tText, text: body))
+      addNode(node)
       i = m + 1
       continue
-    stack.add(lowered)
-    i = k + 1
+    addNode(node)
+    stack.add(node)
+    i = j
   if stack.len > 0:
-    failConversion(sourcePath, "", "unclosed tag <" & stack[^1] & ">")
+    failConversion(sourcePath, "", "unclosed tag <" & stack[^1].tag & ">")
+  result = move(top)
 
 proc isSimpleName(value: string): bool =
   if value.len == 0 or value.len > 128:
@@ -242,14 +320,14 @@ proc appendComment(buf: var string, indent: int, value, sourcePath, nodePath: st
   assertNoTemplateSyntax(value, sourcePath, nodePath, "comment")
   appendLine(buf, indent, "<!-- " & value.strip() & " -->")
 
-proc appendNodes(nodes: seq[HtmlNode], buf: var string,
+proc appendNodes(nodes: seq[H2tNode], buf: var string,
     sourcePath, parentPath: string, indent, depth: int)
 
-proc appendAttributes(buf: var string, node: HtmlNode,
+proc appendAttributes(buf: var string, node: H2tNode,
     sourcePath, nodePath: string) =
-  if node.attributes == nil:
+  if node.attrs == nil:
     return
-  var names = toSeq(node.attributes.keys)
+  var names = toSeq(node.attrs.keys)
   names.sort()
   var classes: seq[string] = @[]
   var classSeen = initHashSet[string]()
@@ -261,10 +339,10 @@ proc appendAttributes(buf: var string, node: HtmlNode,
   for name in names:
     if name.toLowerAscii() == "class":
       hasClass = true
-      classValue = node.attributes[name]
+      classValue = node.attrs[name]
     elif name.toLowerAscii() == "id":
       hasId = true
-      id = node.attributes[name]
+      id = node.attrs[name]
 
   if hasClass:
     assertNoTemplateSyntax(classValue, sourcePath, nodePath, "class attribute")
@@ -294,10 +372,10 @@ proc appendAttributes(buf: var string, node: HtmlNode,
     if not isSupportedAttributeName(name):
       failConversion(sourcePath, nodePath,
         "unsupported attribute name: " & name)
-    if name in TimlKeywordAttrNames:
+    if name in TimlKeywordAttrNames or lowered in TimlKeywordAttrNames:
       failConversion(sourcePath, nodePath,
         "attribute `" & name & "` collides with TIML syntax")
-    let value = node.attributes[name]
+    let value = node.attrs[name]
     assertNoTemplateSyntax(value, sourcePath, nodePath,
       "attribute `" & name & "`")
     buf.add(' ')
@@ -307,26 +385,22 @@ proc appendAttributes(buf: var string, node: HtmlNode,
       buf.add(quoteTiml(value, sourcePath, nodePath,
         "attribute `" & name & "`"))
 
-proc appendElement(buf: var string, node: HtmlNode, indent, depth: int,
+proc appendElement(buf: var string, node: H2tNode, indent, depth: int,
     sourcePath, nodePath: string) =
-  if node.tag == tagUnknown:
-    failConversion(sourcePath, nodePath, "unknown or custom tags are not supported")
-  let tag = $node.tag
-  if node.tag in {tagScript, tagStyle} and node.children.len > 0:
-    failConversion(sourcePath, nodePath,
-      "inline `" & tag & "` content is not supported")
-  if node.tag in {tagPre, tagTextarea}:
-    failConversion(sourcePath, nodePath,
-      "exact whitespace in `" & tag & "` is not preserved")
-
-  var line = tag
+  var line = node.tag
   var attrs = ""
   appendAttributes(attrs, node, sourcePath, nodePath)
   line.add(attrs)
 
   if node.children.len == 1 and node.children[0] != nil and
-      node.children[0].kind == htmlInnerText:
-    let text = node.children[0].value.text
+      node.children[0].kind == h2tText:
+    let text = node.children[0].text
+    # Skip whitespace-only single children (e.g. `<script src=".."></script>`
+    # is parsed as empty; formatting whitespace between tags is dropped).
+    # An element with only whitespace content is emitted bare.
+    if text.strip().len == 0:
+      appendLine(buf, indent, line)
+      return
     assertNoTemplateSyntax(text, sourcePath, nodePath & ".children[0]", "text")
     line.add(": ")
     line.add(quoteTiml(text, sourcePath, nodePath & ".children[0]", "text"))
@@ -336,30 +410,30 @@ proc appendElement(buf: var string, node: HtmlNode, indent, depth: int,
   appendLine(buf, indent, line)
   appendNodes(node.children, buf, sourcePath, nodePath, indent + 1, depth + 1)
 
-proc appendNode(buf: var string, node: HtmlNode, indent, depth: int,
+proc appendNode(buf: var string, node: H2tNode, indent, depth: int,
     sourcePath, nodePath: string) =
   if node == nil:
     failConversion(sourcePath, nodePath, "HTML node is nil")
   if depth > MaxHtml2TimlDepth:
     failConversion(sourcePath, nodePath, "HTML exceeds maximum nesting depth")
   case node.kind
-  of htmlInnerText:
-    if node.value.text.strip().len == 0:
+  of h2tText:
+    if node.text.strip().len == 0:
       return
-    appendText(buf, indent, node.value.text, sourcePath, nodePath)
-  of htmlComment:
+    appendText(buf, indent, node.text, sourcePath, nodePath)
+  of h2tComment:
     appendComment(buf, indent, node.comment, sourcePath, nodePath)
-  of htmlTag:
+  of h2tElement:
     appendElement(buf, node, indent, depth, sourcePath, nodePath)
 
-proc appendNodes(nodes: seq[HtmlNode], buf: var string,
+proc appendNodes(nodes: seq[H2tNode], buf: var string,
     sourcePath, parentPath: string, indent, depth: int) =
   for i, node in nodes:
     let nodePath =
       if parentPath.len > 0: parentPath & ".children[" & $i & "]"
       else: "nodes[" & $i & "]"
-    if node != nil and node.kind == htmlInnerText:
-      if node.value.text.strip().len == 0:
+    if node != nil and node.kind == h2tText:
+      if node.text.strip().len == 0:
         continue
       if parentPath.len == 0:
         failConversion(sourcePath, nodePath,
@@ -369,24 +443,98 @@ proc appendNodes(nodes: seq[HtmlNode], buf: var string,
 proc htmlToTiml*(doc: HtmlDocument, sourcePath = ""): string =
   ## Convert an OpenParser HTML document to TIML source.
   ##
-  ## The conversion is intentionally limited to static, known HTML tags.
-  ## Whitespace is normalized by OpenParser, while entities and attribute
-  ## values are preserved literally.
+  ## Kept for API compatibility. New code parses with the built-in
+  ## whitespace-preserving parser (`parseHtmlToTiml`); this overload
+  ## re-serializes an OpenParser document through the same TIML emitter
+  ## for callers that already have a document. Unknown tags are emitted
+  ## by enum name (`tagUnknown`); prefer `parseHtmlToTiml` for full
+  ## documents (SVG, custom elements) so original tag names are kept.
   result = ""
-  appendNodes(doc.nodes, result, sourcePath, "", 0, 0)
+  proc cvt(nodes: seq[HtmlNode], buf: var string, parentPath: string,
+      indent, depth: int)
+  proc cvtOne(node: HtmlNode, buf: var string, nodePath: string,
+      indent, depth: int) =
+    if node == nil:
+      failConversion(sourcePath, nodePath, "HTML node is nil")
+    if depth > MaxHtml2TimlDepth:
+      failConversion(sourcePath, nodePath, "HTML exceeds maximum nesting depth")
+    case node.kind
+    of htmlInnerText:
+      if node.value.text.strip().len == 0: return
+      assertNoTemplateSyntax(node.value.text, sourcePath, nodePath, "text")
+      appendLine(buf, indent, quoteTiml(node.value.text, sourcePath,
+        nodePath, "text"))
+    of htmlComment:
+      appendComment(buf, indent, node.comment, sourcePath, nodePath)
+    of htmlTag:
+      let tag = $node.tag
+      var line = tag
+      if node.attributes != nil:
+        var names = toSeq(node.attributes.keys)
+        names.sort()
+        for name in names:
+          if not isSupportedAttributeName(name):
+            failConversion(sourcePath, nodePath,
+              "unsupported attribute name: " & name)
+          if name in TimlKeywordAttrNames or
+              name.toLowerAscii() in TimlKeywordAttrNames:
+            failConversion(sourcePath, nodePath,
+              "attribute `" & name & "` collides with TIML syntax")
+          let value = node.attributes[name]
+          assertNoTemplateSyntax(value, sourcePath, nodePath,
+            "attribute `" & name & "`")
+          line.add(' ')
+          line.add(name)
+          if value.len > 0:
+            line.add('=')
+            line.add(quoteTiml(value, sourcePath, nodePath,
+              "attribute `" & name & "`"))
+      if node.children.len == 1 and node.children[0] != nil and
+          node.children[0].kind == htmlInnerText:
+        let text = node.children[0].value.text
+        if text.strip().len == 0:
+          appendLine(buf, indent, line)
+          return
+        assertNoTemplateSyntax(text, sourcePath, nodePath & ".children[0]",
+          "text")
+        line.add(": ")
+        line.add(quoteTiml(text, sourcePath, nodePath & ".children[0]",
+          "text"))
+        appendLine(buf, indent, line)
+        return
+      appendLine(buf, indent, line)
+      cvt(node.children, buf, nodePath, indent + 1, depth + 1)
+  proc cvt(nodes: seq[HtmlNode], buf: var string, parentPath: string,
+      indent, depth: int) =
+    for i, node in nodes:
+      let nodePath =
+        if parentPath.len > 0: parentPath & ".children[" & $i & "]"
+        else: "nodes[" & $i & "]"
+      if node != nil and node.kind == htmlInnerText:
+        if node.value.text.strip().len == 0: continue
+        if parentPath.len == 0:
+          failConversion(sourcePath, nodePath,
+            "top-level text must be wrapped in an HTML element")
+      cvtOne(node, buf, nodePath, indent, depth)
+  cvt(doc.nodes, result, "", 0, 0)
   if result.strip().len == 0:
     failConversion(sourcePath, "", "HTML document contains no convertible nodes")
 
 proc parseHtmlToTiml*(source: string, sourcePath = "",
     policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string =
-  assertSupportedSource(source, sourcePath)
-  assertBalanced(source, sourcePath)
-  var doc: HtmlDocument
-  try:
-    doc = parseHtml(source, policy)
-  except HtmlParserError as e:
-    failConversion(sourcePath, "", "invalid HTML: " & e.msg)
-  htmlToTiml(doc, sourcePath)
+  ## Convert static HTML to TIML source.
+  ##
+  ## Full documents are supported: `<!DOCTYPE ...>` and processing
+  ## instructions are skipped, any tag names (HTML, SVG, custom elements)
+  ## are preserved, and text (including `/`, `=` and `>`) plus inline
+  ## `<script>`/`<style>` bodies are kept exactly. `policy` is accepted
+  ## for compatibility and ignored.
+  discard policy
+  let nodes = parseHtmlSource(source, sourcePath)
+  result = ""
+  appendNodes(nodes, result, sourcePath, "", 0, 0)
+  if result.strip().len == 0:
+    failConversion(sourcePath, "", "HTML document contains no convertible nodes")
 
 proc parseHtmlFileToTiml*(path: string,
     policy: HtmlParserPolicy = defaultHtml2TimlPolicy()): string =
