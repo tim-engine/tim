@@ -157,7 +157,7 @@
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Use OpenParser's tolerant policy. Structural errors (unclosed or mismatched tags) are enforced separately by <tt class="docutils literal"><span class="pre"><span class="Identifier">assertBalanced</span></span></tt>, because OpenParser's own strict unclosed-tag check also fires for correctly closed documents ending at EOF.
+    Kept for API compatibility. The converter no longer relies on OpenParser for parsing (it preserves tag names and text exactly), so the policy is accepted but ignored.
     
   </dd>
 </div>
@@ -171,7 +171,7 @@
   <dd>
     
     <p>Convert an OpenParser HTML document to TIML source.</p>
-<p>The conversion is intentionally limited to static, known HTML tags. Whitespace is normalized by OpenParser, while entities and attribute values are preserved literally.</p>
+<p>Kept for API compatibility. New code parses with the built-in whitespace-preserving parser (<tt class="docutils literal"><span class="pre"><span class="Identifier">parseHtmlToTiml</span></span></tt>); this overload re-serializes an OpenParser document through the same TIML emitter for callers that already have a document. Unknown tags are emitted by enum name (<tt class="docutils literal"><span class="pre"><span class="Identifier">tagUnknown</span></span></tt>); prefer <tt class="docutils literal"><span class="pre"><span class="Identifier">parseHtmlToTiml</span></span></tt> for full documents (SVG, custom elements) so original tag names are kept.</p>
 
     
   </dd>
@@ -182,7 +182,7 @@
   <div id="parseHtmlFileToTiml,string,HtmlParserPolicy">
   <dt><pre><span class="Keyword">proc</span> <a href="#parseHtmlFileToTiml%2Cstring%2CHtmlParserPolicy"><span class="Identifier">parseHtmlFileToTiml</span></a><span class="Other">(</span><span class="Identifier">path</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
                          <span class="Identifier">policy</span><span class="Other">:</span> <span class="Identifier">HtmlParserPolicy</span> <span class="Other">=</span> <span class="Identifier">defaultHtml2TimlPolicy</span><span class="Other">(</span><span class="Other">)</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Html2TimlError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Html2TimlError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
@@ -196,11 +196,13 @@
   <div id="parseHtmlToTiml,string,string,HtmlParserPolicy">
   <dt><pre><span class="Keyword">proc</span> <a href="#parseHtmlToTiml%2Cstring%2Cstring%2CHtmlParserPolicy"><span class="Identifier">parseHtmlToTiml</span></a><span class="Other">(</span><span class="Identifier">source</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sourcePath</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span>
                      <span class="Identifier">policy</span><span class="Other">:</span> <span class="Identifier">HtmlParserPolicy</span> <span class="Other">=</span> <span class="Identifier">defaultHtml2TimlPolicy</span><span class="Other">(</span><span class="Other">)</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Html2TimlError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">Html2TimlError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Html2TimlError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    
+    <p>Convert static HTML to TIML source.</p>
+<p>Full documents are supported: <tt class="docutils literal"><span class="pre"><span class="Operator">&lt;!</span><span class="Identifier">DOCTYPE</span> <span class="Operator">...&gt;</span></span></tt> and processing instructions are skipped, any tag names (HTML, SVG, custom elements) are preserved, and text (including <tt class="docutils literal"><span class="pre"><span class="Operator">/</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Operator">=</span></span></tt> and <tt class="docutils literal"><span class="pre"><span class="Operator">&gt;</span></span></tt>) plus inline <tt class="docutils literal"><span class="pre"><span class="Operator">&lt;</span><span class="Identifier">script</span><span class="Operator">&gt;</span></span></tt>/<tt class="docutils literal"><span class="pre"><span class="Operator">&lt;</span><span class="Identifier">style</span><span class="Operator">&gt;</span></span></tt> bodies are kept exactly. <tt class="docutils literal"><span class="pre"><span class="Identifier">policy</span></span></tt> is accepted for compatibility and ignored.</p>
+
     
   </dd>
 </div>
@@ -216,7 +218,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-06 10:48:47 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-21 12:55:45 UTC</small>
       </div>
     </div>
   </div>

@@ -131,6 +131,10 @@
   <li><a class="reference" href="#prBody%2Cstring%2Cstring%2Cstring%2Cstring%2Cstring%2Cbool" title="prBody(pkgName, version, url, description, extra: string; hasTag: bool): string">prBody(pkgName, version, url, description, extra: string; hasTag: bool): string</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">promptHidden
+  <li><a class="reference" href="#promptHidden%2Cstring" title="promptHidden(label: string): string">promptHidden(label: string): string</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">prTitle
   <li><a class="reference" href="#prTitle%2Cstring%2Cstring" title="prTitle(pkgName, version: string): string">prTitle(pkgName, version: string): string</a></li>
 
@@ -416,6 +420,23 @@
 </div>
 
 </div>
+<div id="promptHidden-procs-all">
+  <div id="promptHidden,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#promptHidden%2Cstring"><span class="Identifier">promptHidden</span></a><span class="Other">(</span><span class="Identifier">label</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    <pre>Print `label` and read one masked line. Unlike kapsis `promptSecret`
+(which appends std's hardcoded `password: ` prompt), this prints nothing
+extra — so a token prompt never reads as a password prompt and vice
+versa. There is no GitHub password anywhere here: the token is pasted
+manually, and the password only encrypts the local secret file.</pre>
+
+    
+  </dd>
+</div>
+
+</div>
 <div id="prTitle-procs-all">
   <div id="prTitle,string,string">
   <dt><pre><span class="Keyword">proc</span> <a href="#prTitle%2Cstring%2Cstring"><span class="Identifier">prTitle</span></a><span class="Other">(</span><span class="Identifier">pkgName</span><span class="Other">,</span> <span class="Identifier">version</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
@@ -443,8 +464,8 @@
 <div id="publishCommand-procs-all">
   <div id="publishCommand,Values">
   <dt><pre><span class="Keyword">proc</span> <a href="#publishCommand%2CValues"><span class="Identifier">publishCommand</span></a><span class="Other">(</span><span class="Identifier">v</span><span class="Other">:</span> <span class="Identifier">Values</span><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span>
-    <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">EOFError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span>
-    <span class="Identifier">SecretError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">StorageError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">EOFError</span><span class="Other">,</span>
+    <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">SecretError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
     <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">,</span>
     <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
@@ -509,9 +530,9 @@
 </div>
 <div id="unlockToken-procs-all">
   <div id="unlockToken,string,bool">
-  <dt><pre><span class="Keyword">proc</span> <a href="#unlockToken%2Cstring%2Cbool"><span class="Identifier">unlockToken</span></a><span class="Other">(</span><span class="Identifier">homeRoot</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">reset</span><span class="Other">:</span> <span class="Identifier">bool</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">OSError</span><span class="Other">,</span>
-    <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">SecretError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
-    <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span>
+  <dt><pre><span class="Keyword">proc</span> <a href="#unlockToken%2Cstring%2Cbool"><span class="Identifier">unlockToken</span></a><span class="Other">(</span><span class="Identifier">homeRoot</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">reset</span><span class="Other">:</span> <span class="Identifier">bool</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span>
+    <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">SecretError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span>
     <span class="Identifier">ExecIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
@@ -531,7 +552,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-06 10:48:49 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-21 12:55:47 UTC</small>
       </div>
     </div>
   </div>

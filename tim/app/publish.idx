@@ -25,5 +25,6 @@ nim	remoteReachable	tim/app/publish.html#remoteReachable,string	proc remoteReach
 nim	hasVersionTag	tim/app/publish.html#hasVersionTag,string,string	proc hasVersionTag(dir, version: string): bool		297
 nim	gitIdentity	tim/app/publish.html#gitIdentity	proc gitIdentity(): tuple[name, email: string]		303
 nim	pushBranch	tim/app/publish.html#pushBranch,string,string,string,string	proc pushBranch(workdir, remoteUrl, branch, token: string): bool		315
-nim	unlockToken	tim/app/publish.html#unlockToken,string,bool	proc unlockToken(homeRoot: string; reset: bool): string		326
-nim	publishCommand	tim/app/publish.html#publishCommand,Values	proc publishCommand(v: Values)		367
+nim	promptHidden	tim/app/publish.html#promptHidden,string	proc promptHidden(label: string): string		326
+nim	unlockToken	tim/app/publish.html#unlockToken,string,bool	proc unlockToken(homeRoot: string; reset: bool): string		336
+nim	publishCommand	tim/app/publish.html#publishCommand,Values	proc publishCommand(v: Values)		381
