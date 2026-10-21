@@ -323,16 +323,30 @@ proc pushBranch*(workdir, remoteUrl, branch, token: string): bool =
     {"GIT_ASKPASS": askFile, "GIT_TERMINAL_PROMPT": "0",
      "TIM_PUBLISH_TOKEN": token})
 
+proc promptHidden*(label: string): string =
+  ## Print `label` and read one masked line. Unlike kapsis `promptSecret`
+  ## (which appends std's hardcoded `password: ` prompt), this prints nothing
+  ## extra — so a token prompt never reads as a password prompt and vice
+  ## versa. There is no GitHub password anywhere here: the token is pasted
+  ## manually, and the password only encrypts the local secret file.
+  stdout.write(label & ": ")
+  stdout.flushFile()
+  result = readPasswordFromStdin("")
+
 proc unlockToken*(homeRoot: string, reset: bool): string =
   ## Return the stored GitHub token: interactive first-time setup when no
   ## secret exists (or `reset` is set), otherwise a masked password prompt
   ## with three attempts. Fatal when setup is declined or fails.
+  if not isatty(stdin):
+    displayError("`tim publish` needs an interactive terminal to read the " &
+      "GitHub token and secret password.", quitProcess = true)
+    return ""
   if reset:
     deleteSecretFile(homeRoot)
   if not hasSecretFile(homeRoot):
     displayInfo("First publish setup: the GitHub token is stored encrypted in " &
       secretFilePath(homeRoot) & ".")
-    let token = promptSecret("GitHub token (needs the `public_repo` scope)").strip()
+    let token = promptHidden("GitHub token (needs the `public_repo` scope)").strip()
     if token.len == 0:
       displayError("Empty token — cancelled.", quitProcess = true)
       return ""
@@ -340,8 +354,8 @@ proc unlockToken*(homeRoot: string, reset: bool): string =
       displayError("Could not verify the token (GET /user failed). " &
         "Check the token and network.", quitProcess = true)
       return ""
-    let pw1 = promptSecret("Choose a password for the secret file")
-    let pw2 = promptSecret("Repeat the password")
+    let pw1 = promptHidden("Choose a secret password (encrypts the token)")
+    let pw2 = promptHidden("Repeat the secret password")
     if pw1 != pw2:
       displayError("Passwords do not match.", quitProcess = true)
       return ""
@@ -352,7 +366,7 @@ proc unlockToken*(homeRoot: string, reset: bool): string =
     displaySuccess("Token stored encrypted in " & secretFilePath(homeRoot))
     return token
   for attempt in 1 .. 3:
-    let pw = promptSecret("Secret password (attempt " & $attempt & "/3)")
+    let pw = promptHidden("Secret password (attempt " & $attempt & "/3)")
     try:
       return loadGithubToken(homeRoot, pw)
     except SecretError as e:
