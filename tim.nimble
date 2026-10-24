@@ -22,10 +22,12 @@ requires "voodoo >= 0.2.1"
 requires "watchout >= 0.3.2"
 requires "openparser >= 0.2.0"
 requires "semver >= 1.2.3"
-requires "bag >= 0.1.0"
-requires "boogie >= 0.2.1"
-requires "supranim >= 0.1.11"
 requires "nimcypher >= 0.2.5"
+
+feature "cli":
+  requires "bag >= 0.1.0"
+  requires "boogie >= 0.2.1"
+  requires "supranim >= 0.1.11"
 
 let arch = staticExec("uname -m").strip()
 when defined(linux):
