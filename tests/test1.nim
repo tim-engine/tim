@@ -269,3 +269,18 @@ macro leaf(content: string = "") =
 """
     assert toHtml("gt-leaves", samplecode) ==
       """<div class="w"><div class="i"><span>one</span><span>two</span></div></div>"""
+
+  test "> stays a comparison in expressions":
+    # `>` is only nesting after `@macro` / element tags; in expression
+    # position (`echo`, `var`, element content) it remains greater-than.
+    let samplecode = """
+fn getNumber(n: int): int =
+  return $n
+var x = getNumber(2) > getNumber(4)
+var y = getNumber(4) > getNumber(2)
+p: $x
+p: $y
+p: getNumber(2) > getNumber(1)
+"""
+    assert toHtml("gt-cmp", samplecode) ==
+      """<p>false</p><p>true</p><p>true</p>"""
