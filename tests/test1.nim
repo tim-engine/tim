@@ -120,3 +120,48 @@ div.container
 """
       let html = toHtml("test8", samplecode)
       doAssert "<!-- This is an HTML comment -->" in html
+
+suite "Named arguments":
+  test "fn call with named args":
+    let samplecode = """
+fn greet(name: string = "Tim", age: int = 30): string =
+  return "hi " & $name & " age " & $age
+p: greet(name="Bob", age=40)
+p: greet(age=50)
+p: greet("Ann")
+"""
+    assert toHtml("named1", samplecode) ==
+      """<p>hi Bob age 40</p><p>hi Tim age 50</p><p>hi Ann age 30</p>"""
+
+  test "macro call with named args":
+    let samplecode = """
+macro card(title: string = "T", color: string = "#fff") =
+  div style="color:" & $color
+    p: $title
+@card($title="Hi", $color="#111")
+@card("Hey")
+"""
+    assert toHtml("named2", samplecode) ==
+      """<div style="color:#111"><p>Hi</p></div><div style="color:#fff"><p>Hey</p></div>"""
+
+  test "macro call with kebab-case named args":
+    let samplecode = """
+macro box(background-color: string = "#fff") =
+  div style="background-color:" & $background-color
+    @statement
+@box($background-color="#123"):
+  p: "in box"
+"""
+    assert toHtml("named3", samplecode) ==
+      """<div style="background-color:#123"><p>in box</p></div>"""
+
+  test "single trailing element stays a statement":
+    let samplecode = """
+macro wrap2*() =
+  div class="wrap"
+    @statement
+@wrap2():
+  p: "only child"
+"""
+    assert toHtml("named4", samplecode) ==
+      """<div class="wrap"><p>only child</p></div>"""

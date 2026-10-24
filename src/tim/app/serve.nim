@@ -197,7 +197,7 @@ proc serveCommand*(configPathArg: string, sync: bool) =
     wsServer: wsServer
   )
 
-  let manager = sharedManager()
+  let manager = sharedTimManager()
 
   webapp.watcher = newWatchout(@[
     timEngine.config.compilation.layoutsPath,

@@ -529,6 +529,84 @@ proc parserCallback(astProgram: var Ast, path: string, resolver: FileResolver) =
     content = readFile(path)
   parser.parseScript(astProgram, content, path)
 
+proc timPackagesRoot*(): string =
+  ## Local tim package home (`~/.tim`), mirroring datpkgr's root layout.
+  getHomeDir() / ".tim"
+
+proc resolveTimPackageDir*(name: string, root = ""): string =
+  ## Resolve an installed package to its source directory. An editable
+  ## install (`tim develop`, `<root>/develop/<name>`) wins; otherwise the
+  ## highest installed semver under `<root>/packages/<name>/` is used
+  ## (`HEAD` for untagged installs is the last-resort fallback).
+  ## Returns "" when the package is not installed.
+  if name.len == 0:
+    return ""
+  let rootDir = if root.len > 0: root else: timPackagesRoot()
+  let devLink = rootDir / "develop" / name
+  if dirExists(devLink):
+    return devLink
+  let pkgDir = rootDir / "packages" / name
+  if not dirExists(pkgDir):
+    return ""
+  var best = ""
+  var bestVer: Version
+  var haveBest = false
+  for kind, path in walkDir(pkgDir):
+    if kind != pcDir:
+      continue
+    var tag = path.extractFilename()
+    if tag.startsWith("v") and tag.len > 1:
+      tag = tag[1..^1]
+    try:
+      let ver = parseVersion(tag)
+      if not haveBest or bestVer < ver:
+        haveBest = true
+        bestVer = ver
+        best = path
+    except CatchableError:
+      discard
+  if haveBest:
+    return best
+  let headDir = pkgDir / "HEAD"
+  if dirExists(headDir):
+    return headDir
+  return ""
+
+proc resolvePkgImport*(pkgImport: string, root = ""): Option[string] =
+  ## Resolve a `pkg/` import to an absolute `.timl` path.
+  ## `pkg/mail` hits the main entry (`src/mail.timl`); deeper paths
+  ## map under `src/` (`pkg/mail/grid` → `src/grid.timl`). A non-`src`
+  ## layout (`<pkgdir>/<name>.timl`) is accepted as fallback.
+  var rest = pkgImport
+  if rest.startsWith("pkg/"):
+    rest = rest[4..^1]
+  let parts = rest.split("/")
+  if parts.len == 0 or parts[0].len == 0:
+    return none(string)
+  let pkgDir = resolveTimPackageDir(parts[0], root)
+  if pkgDir.len == 0:
+    return none(string)
+  var rel = if parts.len == 1: parts[0] else: parts[1..^1].join("/")
+  if not rel.endsWith(".timl"):
+    rel.add(".timl")
+  let fromSrc = normalizedPath(pkgDir / "src" / rel)
+  if fileExists(fromSrc):
+    return some(fromSrc)
+  let fromRoot = normalizedPath(pkgDir / rel)
+  if fileExists(fromRoot):
+    return some(fromRoot)
+  return none(string)
+
+proc sharedTimManager*(): ModuleManager =
+  ## The shared module manager with the `pkg/` resolver installed, so
+  ## `@import "pkg/<name>"` resolves against `~/.tim` installs.
+  result = sharedManager()
+  if result != nil and result.pkgResolver.isNone:
+    let resolvePkg: proc (pkgImport: string): Option[string] {.closure.} =
+      proc (pkgImport: string): Option[string] {.closure.} =
+        resolvePkgImport(pkgImport)
+    result.pkgResolver = some(resolvePkg)
+
 proc partialsPathFor(engine: TimEngine, tpl: TimTemplate): string =
   ## Resolve the partials directory for a template, preferring the owning
   ## theme's `partials` dir when themes are enabled. Falls back to the
@@ -957,7 +1035,7 @@ proc precompile*(engine: TimEngine,
     raise newException(TimEngineError, "Source type is not set to embedded. Cannot precompile embedded templates.")
   
   # init the package manager and load the local packages
-  let manager = sharedManager()
+  let manager = sharedTimManager()
 
   # Build a complete VFS with all templates so @include/@import directives
   # can resolve across views, layouts, and partials
@@ -1039,7 +1117,7 @@ proc precompile*(engine: TimEngine,
   if engine.fallbackThemeName.len > 0 and engine.fallbackThemeName notin themes:
     raise newException(TimEngineError,
       "Fallback theme not found: " & engine.fallbackThemeName)
-  let manager = sharedManager()
+  let manager = sharedTimManager()
   for name, bundle in themes:
     # compile the active theme and the fallback theme only;
     # other bundles stay undiscovered to keep the binary lean
@@ -1056,7 +1134,7 @@ proc precompile*(engine: TimEngine) =
   ## for hot reloading.
 
   # init the package manager and load the local packages
-  let manager = sharedManager()
+  let manager = sharedTimManager()
   
   if engine.enableThemes:
     # when themes are enabled, will discover themes available in the `themes` directory

@@ -1084,6 +1084,16 @@ prefixHandle parseMacroCall:
 
     # parse arguments separated by comma
     while true:
+      if p.curr.kind in {tkIdentifier, tkIdentVar} and p.next.kind == tkAssign:
+        # parse a named argument (`name=value`, also kebab-case like
+        # `background-color="..."` — identifiers include `-`)
+        let name = ast.newIdent(p.curr.value)
+        walk p # name
+        walk p # tkAssign
+        let value = p.parseExpression()
+        caseNotNil value:
+          result.add(ast.newTree(nkColon, name, value))
+        do: return
       case p.curr.kind
       of tkComma:
         walk p # skip to next argument
@@ -1113,7 +1123,14 @@ prefixHandle parseMacroCall:
                 collected.add(extra)
               do: break
           if collected.len == 1:
-            result.add(collected[0])
+            # A single trailing node is statement content, never a
+            # positional argument — wrap it so codegen cannot misbind a
+            # bare literal (e.g. `@text(): "hi"`) as a macro parameter.
+            var blk = ast.newNode(nkBlock)
+            blk.ln = collected[0].ln
+            blk.col = collected[0].col
+            blk.add(collected[0])
+            result.add(blk)
           else:
             result.add(ast.newTree(nkBlock, collected))
           break
@@ -1149,7 +1166,13 @@ prefixHandle parseMacroCall:
         if p.curr.col <= tokenAt.col: break
         if p.curr.col != fc: break
       if collected2.len == 1:
-        result.add(collected2[0])
+        # Wrap single trailing nodes too: a bare literal here is statement
+        # content, never a positional argument.
+        var blk2 = ast.newNode(nkBlock)
+        blk2.ln = collected2[0].ln
+        blk2.col = collected2[0].col
+        blk2.add(collected2[0])
+        result.add(blk2)
       elif collected2.len > 1:
         result.add(ast.newTree(nkBlock, collected2))
 
@@ -1169,10 +1192,11 @@ prefixHandle parseCall:
     discard # colon block will be handled after
   elif p.curr isnot tkRP:
     while true:
-      if p.curr.kind == tkIdentVar and p.next.kind == tkAssign:
-        # parse a named argument
+      if p.curr.kind in {tkIdentifier, tkIdentVar} and p.next.kind == tkAssign:
+        # parse a named argument (`name=value`, also `$name=value` and
+        # kebab-case like `background-color="..."`)
         let name = ast.newIdent(p.curr.value)
-        walk p # tkIdentifier
+        walk p # name
         walk p # tkAssign
         let value = p.parseExpression()
         let namedArg = ast.newTree(nkColon, name, value)
@@ -1214,8 +1238,16 @@ prefixHandle parseCall:
           caseNotNil extra:
             peers.add(extra)
           do: break
-      if peers.len > 0:
-        result.add(peers[^1])
+      if peers.len == 1:
+        # A single trailing node is statement content, never a positional
+        # argument — wrap it so codegen cannot misbind a bare literal.
+        var blk3 = ast.newNode(nkBlock)
+        blk3.ln = peers[0].ln
+        blk3.col = peers[0].col
+        blk3.add(peers[0])
+        result.add(blk3)
+      elif peers.len > 1:
+        result.add(ast.newTree(nkBlock, peers))
     do: discard
     
 prefixHandle parseArray:

@@ -554,8 +554,18 @@ block extendvancodeAstAndCodeGen:
     const procCallOverwrite = true
     proc procCall*(node: Node, procSym: Sym): Sym {.codegen.} =
       var argTypes: seq[Sym]
+      # A trailing block is always wrapped in nkBlock by the parser, so a
+      # bare literal there is statement content, never a positional arg.
+      # The other kinds cover `@a() > @b()` / `@a() > div` inline nesting,
+      # which the parser appends unwrapped.
       let hasTrailingStmt = node.len > 1 and (node[^1].kind in {nkBlock, nkHtmlElement, nkIf, nkFor, nkWhile, nkCall, nkRawHtml, nkViewLoader})
       let isMacroSym = procSym.kind == skProc and procSym.procType == ProcType.procTypeMacro
+      var hasNamed = false
+      if node.len > 1:
+        for a in node[1..^1]:
+          if namedArgName(a).len > 0:
+            hasNamed = true
+            break
 
       proc bindStatementBody(macroImpl: Node, injectedStmt: Node) =
         if macroImpl == nil or macroImpl.len < 4: return
@@ -573,23 +583,52 @@ block extendvancodeAstAndCodeGen:
             child[3] = blk
             return
 
-      if isMacroSym and hasTrailingStmt:
-        let injectedBlock = node[^1]
-        let keyHash = hash(procSym).int64 xor int64(injectedBlock.hash())
+      if isMacroSym and (hasTrailingStmt or hasNamed):
+        var orderedArgs: seq[Node]
+        var targetSym = procSym
+        if hasNamed:
+          # Partition the non-trailing args into positional and named, then
+          # reorder by declaration. The synthetic `body` param is reserved
+          # for the trailing block and cannot be filled by name.
+          var posCount = 0
+          var names: seq[string]
+          let lastIdx = if hasTrailingStmt: node.len - 2 else: node.len - 1
+          if lastIdx >= 1:
+            for a in node[1..lastIdx]:
+              let nm = namedArgName(a)
+              if nm.len > 0:
+                if nm == "body" or lowerName(nm) == "body":
+                  node.error("`body` is reserved for the trailing block; pass other parameters by name")
+                names.add(nm)
+              else:
+                inc posCount
+          targetSym = matchNamedOverload(procSym, posCount, names, node)
+          if targetSym == nil:
+            node.error("no overload matches the given named arguments")
+            return gen.module.sym"void"
+          var reorderSrc = ast.newCall(node[0])
+          if lastIdx >= 1:
+            for a in node[1..lastIdx]:
+              reorderSrc.add(a)
+          orderedArgs = reorderNamedArgs(reorderSrc, targetSym, node)
+        let injectedBlock = if hasTrailingStmt: node[^1] else: nil
+        let keyHash = hash(targetSym).int64 xor
+          (if injectedBlock != nil: int64(injectedBlock.hash()) else: 0)
           # if gen.instantiationCache.hasKey(keyHash):
           #   result = gen.instantiationCache[keyHash]
           # else:
-        let macroImpl = procSym.impl
+        let macroImpl = targetSym.impl
         if macroImpl == nil: 
           node.error("macro implementation missing")
 
         var clonedImpl = deepCopy(macroImpl)
         # unique name for cloned instantiation
-        let uniqueName = procSym.name.ident & "$inst$" & $(gen.count())
+        let uniqueName = targetSym.name.ident & "$inst$" & $(gen.count())
         clonedImpl[0] = newIdent(uniqueName)
 
-        # move trailing stmt into inner @statement macro body
-        bindStatementBody(clonedImpl, injectedBlock)
+        if injectedBlock != nil:
+          # move trailing stmt into inner @statement macro body
+          bindStatementBody(clonedImpl, injectedBlock)
 
         # remove synthetic `body` param from clone; statement is now baked in
         clonedImpl[2].children.delete(clonedImpl[2].len - 1)
@@ -600,12 +639,37 @@ block extendvancodeAstAndCodeGen:
         # gen.instantiationCache[keyHash] = instSym
         result = instSym
 
-        if node.len > 2:
+        if hasNamed:
+          for arg in orderedArgs:
+            let argSym: Sym = gen.genExpr(arg)
+            assert argSym != nil, "Expression must return a symbol"
+            argTypes.add(argSym)
+        elif node.len > 2:
           for arg in node[1..^2]:
             let argSym: Sym = gen.genExpr(arg)
             assert argSym != nil, "Expression must return a symbol"
             argTypes.add(argSym)
         return gen.callProc(result, argTypes, errorNode = node)
+      elif hasNamed:
+        # Plain procedure call with named arguments: reorder by declaration
+        # (no instantiation involved, unlike macros).
+        var posCount = 0
+        var names: seq[string]
+        for a in node[1..^1]:
+          let nm = namedArgName(a)
+          if nm.len > 0:
+            names.add(nm)
+          else:
+            inc posCount
+        let targetSym = matchNamedOverload(procSym, posCount, names, node)
+        if targetSym == nil:
+          node.error("no overload matches the given named arguments")
+          return gen.module.sym"void"
+        for arg in reorderNamedArgs(node, targetSym, node):
+          let argSym: Sym = gen.genExpr(arg)
+          assert argSym != nil, "Expression must return a symbol"
+          argTypes.add(argSym)
+        return gen.callProc(targetSym, argTypes, errorNode = node)
       else:
         if node.len > 1:
           for arg in node[1..^1]:

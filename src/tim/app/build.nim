@@ -20,7 +20,8 @@ import ../engine/stdlib/[libsystem, libstrings, libarrays, libjson, libobjects]
 import ../engine/transpilers/[jsgen, pygen, rbgen, phpgen, luagen, nimgen]
 import ../meta/config
 from ../meta/initializer import TimEngine, TimEngineError, newTim, precompile,
-  precompileTemplate, registerTemplate, getView, getLayout, interpret
+  precompileTemplate, registerTemplate, getView, getLayout, interpret,
+  sharedTimManager
 
 proc parserCallback(astProgram: var Ast, path: string, resolver: FileResolver) =
   parser.parseScript(astProgram, readFile(path), path)
@@ -42,7 +43,7 @@ proc srcCommand*(timlPath, extArg, outPathArg, dataArg: string,
     displayError("File not found: " & timlPath, quitProcess = true)
   let srcFilePath = srcPath
 
-  let manager = sharedManager()
+  let manager = sharedTimManager()
 
   let
     ext = extArg
@@ -297,7 +298,7 @@ proc precompileLazy(timEngine: TimEngine, viewKey, layoutName: string) =
   ## dependencies (partials). A single page needs a handful of templates,
   ## not the whole project — full `precompile()` dominates `build <view>`
   ## wall time (bench: 1.28s single vs 1.31s all-views on zaiku preview).
-  let manager = sharedManager()
+  let manager = sharedTimManager()
   let
     viewsPath = timEngine.config.compilation.viewsPath
     layoutsPath = timEngine.config.compilation.layoutsPath
