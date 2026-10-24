@@ -1,15 +1,118 @@
 name: release
+# Manual releases only: the NAPI addon does not include every module
+# available at Nim level, so publishing to npm must be a deliberate
+# manual step — never automatic on tag push. Dispatch this workflow by
+# hand and enter the version to publish (e.g. `0.2.10`).
+#
+# The run builds the NAPI addons for macOS (arm64/x64) and Linux
+# (x64), attaches them to the GitHub Release, and publishes
+# `@openpeeps/tim` to npm with all binaries included.
+#
+# aarch64 Linux is not built: clue (which resolves the `cli` feature
+# deps the addon needs) ships no Linux ARM64 binary, so dependency
+# installation cannot run there. aarch is covered via macOS arm64;
+# `addons/tim_napi` already supports a `linux-arm64` slot for later.
+#
+# NB: never compile `src/tim.nim` directly (`nim c` / `clue build`
+# won't resolve the feature deps for a bare invocation). The build
+# always goes through the custom denim command below, which defines
+# `-d:napibuild` while `src/tim.nims` mirrors the `cli` feature paths
+# from `clue.lock` (see the comment there for why a define alone
+# cannot enable feature deps under denim).
 on:
-  push:
-    tags: ['*.*.*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release and publish to npm (e.g. 0.2.10)'
+        required: true
+        type: string
 jobs:
-  release:
-    permissions:
-      contents: write
+  napi:
+    name: napi addons
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
-      nim-version: '2.2.10'
-      app-name: tim
-      target-matrix: '[{"os":"ubuntu-latest"},{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"}]'
+      app-name: node_addon
+      nim-version: '2.2.x'
+      package-manager: clue
       homebrew-nim: true
+      test: false
+      pre-build-command: >-
+        nimble install -y https://github.com/openpeeps/denim &&
+        (npm install -g cmake-js ||
+        (npm install --prefix "$HOME/.cmake-js" cmake-js &&
+        echo "$HOME/.cmake-js/bin" >> "$GITHUB_PATH"))
+      build-command: denim build src/tim.nim --cmake -y && node addons/tim_napi/scripts/place-binary.js && npm test --prefix addons/tim_napi
+      binary: bin/tim.node
+      target-matrix: '[{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"}]'
+      create-release: true
+      release-tag: v${{ inputs.version }}
+
+  npm-publish:
+    name: npm publish
+    runs-on: ubuntu-latest
+    needs: napi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: artifact-*
+          path: dist
+          merge-multiple: true
+
+      - name: Assemble per-arch binaries
+        shell: bash
+        run: |
+          set -eu
+          pkg=addons/tim_napi
+          # Map each release archive to its npm package slot.
+          # Archive names come from release_clue as <app>_<runner-os>-<arch>
+          # (lowercased), e.g. node_addon_macos-arm64.tar.gz.
+          declare -A slots=(
+            [node_addon_macos-arm64.tar.gz]=darwin-arm64
+            [node_addon_macos-x86_64.tar.gz]=darwin-x64
+            [node_addon_linux-x86_64.tar.gz]=linux-x64
+          )
+          for archive in "${!slots[@]}"; do
+            [[ -f "dist/${archive}" ]] || { echo "ERROR: missing ${archive}"; exit 1; }
+            work="$(mktemp -d)"
+            tar xzf "dist/${archive}" -C "${work}"
+            node_bin="$(find "${work}" -name 'tim.node' | head -n 1)"
+            [[ -n "${node_bin}" ]] || { echo "ERROR: no tim.node in ${archive}"; exit 1; }
+            dest="${pkg}/bin/${slots[${archive}]}"
+            mkdir -p "${dest}"
+            cp "${node_bin}" "${dest}/tim.node"
+            rm -rf "${work}"
+          done
+          find "${pkg}/bin" -name '*.node' | sort
+
+      - name: Sync version from input
+        working-directory: addons/tim_napi
+        shell: bash
+        run: |
+          set -eu
+          version="${VERSION#v}"
+          echo "Syncing npm version to ${version}"
+          npm pkg set version="${version}"
+          node -p "require('./package.json').version"
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Smoke test assembled package
+        shell: bash
+        run: npm test --prefix addons/tim_napi
+
+      - name: Publish to npm
+        working-directory: addons/tim_napi
+        shell: bash
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

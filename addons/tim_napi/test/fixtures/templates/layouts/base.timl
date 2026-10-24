@@ -1,0 +1,5 @@
+html
+  head
+    title: "tim-napi fixture"
+  body
+    @view

@@ -1,0 +1,50 @@
+{
+  "name": "@openpeeps/tim",
+  "version": "0.2.10",
+  "description": "Node.js native bindings for Tim Engine — a super fast template engine written in Nim",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "scripts/place-binary.js",
+    "bin/"
+  ],
+  "scripts": {
+    "build": "cd ../.. && denim build src/tim.nim --cmake -y && node addons/tim_napi/scripts/place-binary.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "template-engine",
+    "markup-language",
+    "template",
+    "engine",
+    "napi",
+    "tim-language",
+    "bindings",
+    "frontend",
+    "nim-language",
+    "nim"
+  ],
+  "author": "OpenPeeps",
+  "license": "LGPL-3.0-or-later",
+  "homepage": "https://openpeeps.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openpeeps/tim.git"
+  },
+  "bugs": {
+    "url": "https://github.com/openpeeps/tim/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "arm64",
+    "x64"
+  ]
+}

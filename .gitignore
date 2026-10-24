@@ -10,10 +10,11 @@ tests/*
 /tests/app/storage/*
 /examples/storage/ast/*
 /examples/storage/html/*
-/bindings/tim/src/bin/*
 /init.sh
 /CMakeLists.txt
 denim_build/
+/addons/tim_napi/bin/
+/addons/tim_napi/test/fixtures/output/
 /press
 src/tim/loaders/
 tests/snippets
@@ -22,3 +23,6 @@ bindings
 !examples/templates
 /build
 /benchmarks
+nimble.develop
+nimble.paths
+nimbledeps

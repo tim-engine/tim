@@ -1,4 +1,4 @@
-import strutils
+import std/[strutils, json, os]
 
 --mm:arc
 --threads:on
@@ -8,6 +8,25 @@ import strutils
 
 when defined napibuild:
   --define:release
+
+# Search paths for the `cli` feature deps (boogie, bag, supranim, ...).
+#
+# `denim build` shells out to raw `nim c`, bypassing clue/nimble
+# resolution entirely — and denim's `--defines` flag is only forwarded
+# to the C build (cmake-js), never to `nim c`, so a define like
+# `-d:features.tim.cli` alone can never make `pkg/boogie/...` resolve
+# (the NAPI entry pulls `meta/cache` -> boogie via `libsystem`).
+# Instead, mirror the feature-resolved paths from `clue.lock` here;
+# `clue.lock` itself is produced with the `cli` feature enabled.
+const clueLock = currentSourcePath().parentDir() / ".." / "clue.lock"
+if fileExists(clueLock):
+  let lock = parseJson(readFile(clueLock))
+  if lock.hasKey("packages"):
+    for pkg in lock["packages"]:
+      if pkg.hasKey("path"):
+        let p = pkg["path"].getStr()
+        if p.len > 0 and dirExists(p):
+          switch("path", p)
 
 # when defined php_build:
 #   --app:lib

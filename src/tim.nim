@@ -6,36 +6,13 @@
 
 include ./tim/engine/transformers
 
-when defined napi_build:
-  # Building Tim Engine as a NAPI module
-  # This allows Tim Engine to be used in Node.js/Bun.js applications
-
-  import std/[strutils, json]
-  import pkg/[denim, openparser/json, watchout]
-  
-  import ./tim/meta/initializer
-  
-  var timjs: TimEngine
-  init proc(module: Module) =
-    proc init(src: string, output: string, basepath: string) {.export_napi.} =
-      ## Initialize Tim Engine
-      timjs = newTim(
-        args.get("src").getStr,
-        args.get("output").getStr,
-        args.get("basepath").getStr
-      )
-      timjs.precompile()
-
-    proc render(view: string, layout: string = "base"): string {.export_napi.} =
-      ## Render a Tim Engine template based on the view and layout paths
-      let
-        layoutPath = args.get("layout").getStr
-        layout = timjs.getLayout(layoutPath)
-        
-        viewPath = args.get("view").getStr
-        view = timjs.getView(viewPath)
-      let ret = compileCode(view, layout, nil, nil)
-      return nodeapi.`%*`(ret.stringVal[])
+when defined(napibuild):
+  # Node.js native addon entry point. Built separately via
+  # `denim build src/tim.nim --cmake -y` so the library itself
+  # gains no denim dependency and zero overhead.
+  import denim
+  include ./tim/private/napi_convert
+  include ./tim/private/napi_bridge
 
 elif defined php_build:
   import pkg/openparser/json
