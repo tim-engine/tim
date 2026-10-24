@@ -1,5 +1,5 @@
 nimTitle	build	tim/app/build.html	module tim/app/build		0
-nim	srcCommand	tim/app/build.html#srcCommand,Values	proc srcCommand(v: Values)		36
-nim	astCommand	tim/app/build.html#astCommand,Values	proc astCommand(v: Values)		160
-nim	htCommand	tim/app/build.html#htCommand,Values	proc htCommand(v: Values)		173
-nim	buildCommand	tim/app/build.html#buildCommand,Values	proc buildCommand(v: Values)		325
+nim	srcCommand	tim/app/build.html#srcCommand,string,string,string,string,bool	proc srcCommand(timlPath, extArg, outPathArg, dataArg: string; bench: bool)		35
+nim	astCommand	tim/app/build.html#astCommand,string	proc astCommand(timlPath: string)		163
+nim	htCommand	tim/app/build.html#htCommand,string,string	proc htCommand(inputPathArg, outPathArg: string)		184
+nim	buildCommand	tim/app/build.html#buildCommand,string,string,string	proc buildCommand(viewArg, layoutArg, outArg: string)		334

@@ -1,0 +1,15 @@
+nimTitle	cliutils	tim/meta/cliutils.html	module tim/meta/cliutils		0
+nim	timVersion	tim/meta/cliutils.html#timVersion	const timVersion		52
+nim	useColor	tim/meta/cliutils.html#useColor	proc useColor(): bool		71
+nim	label	tim/meta/cliutils.html#label,string	proc label(s: string): string		80
+nim	grey	tim/meta/cliutils.html#grey,string	proc grey(s: string): string		83
+nim	cyan	tim/meta/cliutils.html#cyan,string	proc cyan(s: string): string		86
+nim	errPrefix	tim/meta/cliutils.html#errPrefix	proc errPrefix(): string		89
+nim	display	tim/meta/cliutils.html#display,string	proc display(s: string)		96
+nim	displayInfo	tim/meta/cliutils.html#displayInfo,string	proc displayInfo(x: string)		99
+nim	displaySuccess	tim/meta/cliutils.html#displaySuccess,string	proc displaySuccess(x: string)		102
+nim	displayWarning	tim/meta/cliutils.html#displayWarning,string	proc displayWarning(x: string)		105
+nim	displayError	tim/meta/cliutils.html#displayError,string	proc displayError(x: string; quitProcess = false)		108
+nim	prompt	tim/meta/cliutils.html#prompt,string,string	proc prompt(label: string; default = ""): string		117
+nim	promptConfirm	tim/meta/cliutils.html#promptConfirm,string	proc promptConfirm(label: string): bool		133
+nim	promptInteractive	tim/meta/cliutils.html#promptInteractive,string,openArray[string],Positive,string	proc promptInteractive(question: string; answers: openArray[string];\n                  width: Positive = 80; activeIcon = " "): int		155

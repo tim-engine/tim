@@ -86,7 +86,7 @@
     <summary><a class="reference reference-toplevel" href="#12" id="62">Procs</a></summary>
     <ul class="simple simple-toc-section">
       <ul class="simple nested-toc-section">serveCommand
-  <li><a class="reference" href="#serveCommand%2CValues" title="serveCommand(v: Values)">serveCommand(v: Values)</a></li>
+  <li><a class="reference" href="#serveCommand%2Cstring%2Cbool" title="serveCommand(configPathArg: string; sync: bool)">serveCommand(configPathArg: string; sync: bool)</a></li>
 
 </ul>
 
@@ -105,7 +105,7 @@
     <div class="section" id="6">
   <h1><a class="toc-backref" href="#6">Imports</a></h1>
   <dl class="item">
-    <a class="reference external" href="../meta/initializer.html">../meta/initializer</a>, <a class="reference external" href="../meta/config.html">../meta/config</a>, <a class="reference external" href="../meta/websocket.html">../meta/websocket</a>, <a class="reference external" href="../meta/cache.html">../meta/cache</a>
+    <a class="reference external" href="../meta/cliutils.html">../meta/cliutils</a>, <a class="reference external" href="../meta/initializer.html">../meta/initializer</a>, <a class="reference external" href="../meta/config.html">../meta/config</a>, <a class="reference external" href="../meta/websocket.html">../meta/websocket</a>, <a class="reference external" href="../meta/cache.html">../meta/cache</a>
   </dl>
 </div>
 <div class="section" id="7">
@@ -146,18 +146,14 @@
   <h1><a class="toc-backref" href="#12">Procs</a></h1>
   <dl class="item">
     <div id="serveCommand-procs-all">
-  <div id="serveCommand,Values">
-  <dt><pre><span class="Keyword">proc</span> <a href="#serveCommand%2CValues"><span class="Identifier">serveCommand</span></a><span class="Other">(</span><span class="Identifier">v</span><span class="Other">:</span> <span class="Identifier">Values</span><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span>
-                                        <span class="Identifier">OpenParserYamlError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span>
-                                        <span class="Identifier">KvStoreError</span><span class="Other">,</span> <span class="Identifier">FileLockError</span><span class="Other">,</span>
-                                        <span class="Identifier">FileLockBusyError</span><span class="Other">,</span> <span class="Identifier">WalError</span><span class="Other">,</span>
-                                        <span class="Identifier">SignalError</span><span class="Other">,</span> <span class="Identifier">ResourceExhaustedError</span><span class="Other">,</span>
-                                        <span class="Identifier">StorageError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span>
-                                        <span class="Identifier">OpenParserJsonError</span><span class="Other">,</span> <span class="Identifier">TimEngineError</span><span class="Other">,</span>
-                                        <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span>
-                                        <span class="Identifier">CatchableError</span><span class="Other">,</span> <span class="Identifier">NetError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
-    <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span>
-    <span class="Identifier">TimeEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <div id="serveCommand,string,bool">
+  <dt><pre><span class="Keyword">proc</span> <a href="#serveCommand%2Cstring%2Cbool"><span class="Identifier">serveCommand</span></a><span class="Other">(</span><span class="Identifier">configPathArg</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">sync</span><span class="Other">:</span> <span class="Identifier">bool</span><span class="Other">)</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span>
+    <span class="Identifier">OpenParserYamlError</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">KvStoreError</span><span class="Other">,</span>
+    <span class="Identifier">FileLockError</span><span class="Other">,</span> <span class="Identifier">FileLockBusyError</span><span class="Other">,</span> <span class="Identifier">WalError</span><span class="Other">,</span> <span class="Identifier">SignalError</span><span class="Other">,</span>
+    <span class="Identifier">ResourceExhaustedError</span><span class="Other">,</span> <span class="Identifier">StorageError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span> <span class="Identifier">OpenParserJsonError</span><span class="Other">,</span>
+    <span class="Identifier">TimEngineError</span><span class="Other">,</span> <span class="Identifier">TimLexerError</span><span class="Other">,</span> <span class="Identifier">CodeGenError</span><span class="Other">,</span> <span class="Identifier">CatchableError</span><span class="Other">,</span> <span class="Identifier">NetError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span>
+    <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadEnvEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span>
+    <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     
@@ -176,7 +172,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-21 12:55:47 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-24 19:55:30 UTC</small>
       </div>
     </div>
   </div>
