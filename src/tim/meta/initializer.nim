@@ -5,7 +5,7 @@ import pkg/vancode/interpreter/[ast, codegen, chunk, sym,
                         vm, value, resolver, manager, policy]
 
 import pkg/vancode/manager/configurator # shim for ConfigType/CompilationSettings
-import pkg/kapsis/interactive/prompts
+import ./cliutils
 
 import pkg/[watchout, semver, checksums/sha1]
 import pkg/openparser/yaml

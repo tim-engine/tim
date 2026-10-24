@@ -13,8 +13,7 @@
 
 import std/[os, osproc, strutils, strtabs, tempfiles, times, terminal]
 import pkg/openparser/json
-import pkg/kapsis/runtime
-import pkg/kapsis/interactive/prompts
+import ../meta/cliutils
 
 import ../pkgmanager/configs as timConfigs
 import ../pkgmanager/secrets
@@ -324,11 +323,10 @@ proc pushBranch*(workdir, remoteUrl, branch, token: string): bool =
      "TIM_PUBLISH_TOKEN": token})
 
 proc promptHidden*(label: string): string =
-  ## Print `label` and read one masked line. Unlike kapsis `promptSecret`
-  ## (which appends std's hardcoded `password: ` prompt), this prints nothing
-  ## extra — so a token prompt never reads as a password prompt and vice
-  ## versa. There is no GitHub password anywhere here: the token is pasted
-  ## manually, and the password only encrypts the local secret file.
+  ## Print `label` and read one masked line via `std/terminal`. Prints
+  ## nothing extra — so a token prompt never reads as a password prompt
+  ## and vice versa. There is no GitHub password anywhere here: the token
+  ## is pasted manually, and the password only encrypts the local file.
   stdout.write(label & ": ")
   stdout.flushFile()
   result = readPasswordFromStdin("")
@@ -378,16 +376,13 @@ proc unlockToken*(homeRoot: string, reset: bool): string =
 # CLI command `publish`
 # ----------------------------------------------------------------------
 
-proc publishCommand*(v: Values) =
-  let dryRun = v.has("--dry-run")
-  let yesMode = v.has("--yes")
-  let directMode = v.has("--direct")
-  let resetToken = v.has("--reset-token")
+proc publishCommand*(pathArg, tagsArg, webArg, messageArg: string,
+    dryRun, yesMode, directMode, resetToken: bool) =
   let cfg = timConfigs.getTimCfg()
 
   var dir = getCurrentDir()
-  if v.has("--path"):
-    dir = absolutePath(v.get("--path").getStr.strip())
+  if pathArg.len > 0:
+    dir = absolutePath(pathArg.strip())
   if not dirExists(dir):
     displayError("Package directory not found: " & dir, quitProcess = true)
     return
@@ -454,8 +449,8 @@ proc publishCommand*(v: Values) =
       return
 
   var tags: seq[string]
-  if v.has("--tags"):
-    tags = splitPublishTags(v.get("--tags").getStr)
+  if tagsArg.len > 0:
+    tags = splitPublishTags(tagsArg)
   else:
     if not isatty(stdout):
       displayError("No `--tags` given and no interactive terminal. " &
@@ -468,8 +463,8 @@ proc publishCommand*(v: Values) =
     return
 
   var web = url
-  if v.has("--web"):
-    web = v.get("--web").getStr.strip()
+  if webArg.len > 0:
+    web = webArg.strip()
   if web.len == 0:
     displayError("Empty `--web` URL.", quitProcess = true)
     return
@@ -490,8 +485,8 @@ proc publishCommand*(v: Values) =
   let entry = publishEntry(pkgName, url, pkgDesc, pkgLicense, web, tags)
   let branchName = publishBranchName(pkgName)
   var extraMsg = ""
-  if v.has("--message"):
-    extraMsg = v.get("--message").getStr.strip()
+  if messageArg.len > 0:
+    extraMsg = messageArg.strip()
 
   if dryRun:
     displayInfo("Dry run — no network, git, or secret changes made.")

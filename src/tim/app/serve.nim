@@ -5,7 +5,7 @@
 #          https://github.com/openpeeps/tim
 
 import std/[tables, httpcore, net, os, strutils, options, locks]
-import pkg/kapsis/runtime
+import ../meta/cliutils
 import pkg/openparser/[yaml, json]
 import pkg/watchout
 import pkg/vancode/interpreter/[manager, codegen, resolver]
@@ -76,8 +76,10 @@ proc onRequest(req: var Request) {.gcsafe.} =
       else:
         req.send(404, "Not Found")
 
-proc serveCommand*(v: Values) =
-  let configPath = $(v.get("config").getPath)
+proc serveCommand*(configPathArg: string, sync: bool) =
+  let configPath = configPathArg
+  if not fileExists(configPath):
+    displayError("File not found: " & configPathArg, quitProcess = true)
   let yamlFile = readFile(configPath)
   let config: TimConfig = parseYaml(yamlFile, TimConfig)
   let baseDir = absolutePath(configPath.parentDir())
@@ -101,7 +103,7 @@ proc serveCommand*(v: Values) =
 
   # `--sync` exposes `$app["enableBrowserSync"]` to templates and
   # triggers automatic live-reload script injection at render time
-  timEngine.globalData["enableBrowserSync"] = %v.has("--sync")
+  timEngine.globalData["enableBrowserSync"] = %sync
 
   timEngine.userScript.addProc("getPath", @[paramDef("obj", ttyJson)], ttyString,
     proc (args: StackView; argc: int): value.Value =

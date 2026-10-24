@@ -7,8 +7,7 @@
 import std/[os, osproc, strutils, strformat, sequtils, uri, httpclient]
 
 import pkg/openparser/yaml
-import pkg/kapsis/runtime
-import pkg/kapsis/interactive/[prompts, widgets]
+import ../meta/cliutils
 
 import pkg/vancode/interpreter/policy
 import std/options
@@ -34,15 +33,15 @@ html
 const baseView = """
 h1: "Thanks for trying Tim Engine!
 """
-proc initCommand*(v: Values) =
+proc initCommand*(pkgNameArg: string) =
   ## Initializes a new Tim Engine package at the current working directory
 
   let currDirPath = getCurrentDir()
   let currDir = currDirPath.extractFilename()
   var pkgName =
-    if v.has"pkg":
-      v.get("pkg").getStr
-    else:  
+    if pkgNameArg.len > 0:
+      pkgNameArg
+    else:
       # if no name provided, will prompt user for a package name
       prompt("Package name: ", default = currDir).toLowerAscii()
 
@@ -111,9 +110,9 @@ browser_sync:
   delay: 200
   """)
 
-proc watchCommand*(v: Values) =
+proc watchCommand*() =
   ## Watches for file changes and rebuilds the project.
-  ## 
+  ##
   ## This command is used for development purposes for
   ## transpiling Tim code to target source on the fly.
   let timConfigPath = getCurrentDir() / "tim.config.yml"
@@ -128,9 +127,9 @@ proc isGitUrl(s: string): bool =
   s.startsWith("https://") or s.startsWith("http://") or
   s.startsWith("git@") or s.startsWith("git+") or s.startsWith("ssh://")
 
-proc installCommand*(v: Values) =
+proc installCommand*(pkgArg: string) =
   let cfg = timConfigs.getTimCfg()
-  let raw = if v.has("pkg"): v.get("pkg").getStr.strip() else: ""
+  let raw = pkgArg.strip()
   if raw.len == 0:
     displayError("Missing package name. Usage: tim install <pkg>[@ref] or <git-url>[#ref]", quitProcess = true)
     return
@@ -183,9 +182,12 @@ proc installCommand*(v: Values) =
 #
 # CLI Command `remove` — via datpkgr
 #
-proc removeCommand*(v: Values) =
+proc removeCommand*(pkgArg: string) =
   let cfg = timConfigs.getTimCfg()
-  let raw = v.get("pkg").getStr.strip()
+  let raw = pkgArg.strip()
+  if raw.len == 0:
+    displayError("Missing package name. Usage: tim remove <pkg>[@version]", quitProcess = true)
+    return
   let parts = raw.split("@")
   let pkgName = parts[0].strip()
   let pkgVersion = if parts.len > 1: parts[1].strip() else: ""
@@ -196,14 +198,14 @@ proc removeCommand*(v: Values) =
 #
 # CLI Command `develop` — via datpkgr
 #
-proc developCommand*(v: Values) =
+proc developCommand*(pkgArg: string) =
   let cfg = timConfigs.getTimCfg()
   # `tim develop <pkg>` historically took pkg arg, but for datpkgr develop
   # we symlink current directory (like `clue develop`). If an explicit path/name
   # is given and it's a directory, use it; otherwise use cwd.
   var dir = getCurrentDir()
-  if v.has("pkg"):
-    let arg = v.get("pkg").getStr.strip()
+  if pkgArg.len > 0:
+    let arg = pkgArg.strip()
     if arg.len > 0 and dirExists(arg):
       dir = absolutePath(arg)
     elif arg.len > 0 and fileExists(arg):

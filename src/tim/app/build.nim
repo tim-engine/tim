@@ -6,8 +6,7 @@
 
 import std/[os, monotimes, times, strutils, json, options, ropes, tables]
 
-import pkg/kapsis/runtime
-import pkg/kapsis/interactive/prompts
+import ../meta/cliutils
 
 import pkg/vancode/interpreter/[ast, codegen, chunk, sym, vm, value, resolver, manager, policy]
 import pkg/vancode/interpreter/cache/fbe as fbeCache
@@ -33,33 +32,37 @@ proc declareGlobals(compiler: codegen.CodeGen) =
   compiler.declareVar(appStorage, skConst, compiler.module.sym"json", isMagic = true)
   compiler.declareVar(thisStorage, skConst, compiler.module.sym"json", isMagic = true)
 
-proc srcCommand*(v: Values) =
+proc srcCommand*(timlPath, extArg, outPathArg, dataArg: string,
+    bench: bool) =
   ## Transpiles `timl` code to a target source
-  # parse the script
-  var srcPath = $(v.get("timl").getPath)
-  
-  let manager = sharedManager()
-
-  let 
-    ext =
-      if v.has("--ext"): v.get("--ext").getStr
-      else: "html" # default target is HTML
-    flagPrettyPrint = v.has("--pretty")
-    flagNoCache = v.has("--nocache")
-    flagRecache = v.has("--recache")
-    hasJsonFlag = v.has("--json-errors")
-    outputPath = if v.has("-o"): v.get("-o").getStr else: ""
-    flagBencmarks = v.has("--bench")
-
+  var srcPath = timlPath
   if not srcPath.isAbsolute:
     srcPath = getCurrentDir() / srcPath
-  var srcFilePath = srcPath
+  if not fileExists(srcPath):
+    displayError("File not found: " & timlPath, quitProcess = true)
+  let srcFilePath = srcPath
+
+  let manager = sharedManager()
+
   let
+    ext = extArg
+    outputPath = outPathArg
+
+  var timlCode: string
+  try:
     timlCode = readFile(srcPath)
+  except OSError as e:
+    displayError("Cannot read file " & timlPath & ": " & e.msg,
+      quitProcess = true)
+  let
     t = getMonotime()
     data =
-      if v.has("--data"):
-        v.get("--data").getJson
+      if dataArg.len > 0:
+        try:
+          parseJson(dataArg)
+        except JsonParsingError as e:
+          displayError("Invalid JSON in --data: " & e.msg, quitProcess = true)
+          newJObject()
       else:
         newJObject()
     globalData =
@@ -151,17 +154,25 @@ proc srcCommand*(v: Values) =
     echo output
 
   # display the time taken for compilation
-  if flagBencmarks:
+  if bench:
     displayInfo("Done in " & $(getMonotime() - t))
 
 #
 # AST 
 #
-proc astCommand*(v: Values) =
+proc astCommand*(timlPath: string) =
   ## Generate the AST representation of a `timl` script
-  let
-    srcPath = getCurrentDir() / $(v.get("timl").getPath)
+  var srcPath = timlPath
+  if not srcPath.isAbsolute:
+    srcPath = getCurrentDir() / srcPath
+  if not fileExists(srcPath):
+    displayError("File not found: " & timlPath, quitProcess = true)
+  var timlCode: string
+  try:
     timlCode = readFile(srcPath)
+  except OSError as e:
+    displayError("Cannot read file " & timlPath & ": " & e.msg,
+      quitProcess = true)
   
   var program: Ast # the AST representation of the script
   parser.parseScript(program, timlCode, srcPath)
@@ -170,17 +181,15 @@ proc astCommand*(v: Values) =
 #
 # HTML to TIML
 #
-proc htCommand*(v: Values) =
-  ## Convert static HTML to TIML (`tim h2t`: Kapsis derives `htCommand`
-  ## from `h2t` by dropping digits). Writes to `--out`/`-o` when present,
+proc htCommand*(inputPathArg, outPathArg: string) =
+  ## Convert static HTML to TIML. Writes to `outPathArg` when present,
   ## otherwise prints the generated TIML to stdout.
-  var inputPath = $(v.get("input").getPath)
+  var inputPath = inputPathArg
   if not inputPath.isAbsolute:
     inputPath = getCurrentDir() / inputPath
-  let outputPath =
-    if v.has("--out"): v.get("--out").getStr
-    elif v.has("-o"): v.get("-o").getStr
-    else: ""
+  if not fileExists(inputPath):
+    displayError("File not found: " & inputPathArg, quitProcess = true)
+  let outputPath = outPathArg
   var timl: string
   try:
     timl = parseHtmlFileToTiml(inputPath)
@@ -322,11 +331,11 @@ proc precompileLazy(timEngine: TimEngine, viewKey, layoutName: string) =
     except TimEngineError as e:
       displayWarning("Skipping template " & src & ": " & e.msg)
 
-proc buildCommand*(v: Values) =
+proc buildCommand*(viewArg, layoutArg, outArg: string) =
   ## Build the Tim project in the current directory to static HTML.
-  ## With a `view` renders a single page (`--layout`, default `base`;
-  ## `--out` file or directory, default `CWD/<unixtime>.html`).
-  ## Without a `view` renders every view into `--out` (default `CWD/dist`).
+  ## With a `view` renders a single page (`layoutArg`, default `base`;
+  ## `outArg` file or directory, default `CWD/<unixtime>.html`).
+  ## Without a `view` renders every view into `outArg` (default `CWD/dist`).
   let timConfigPath = getCurrentDir() / "tim.config.yml"
   if not fileExists(timConfigPath):
     displayError("tim.config.yml not found in the current directory", quitProcess = true)
@@ -343,16 +352,14 @@ proc buildCommand*(v: Values) =
   # stays unset so `interpret` renders plain HTML (see `serve --sync`).
 
   let layoutName =
-    if v.has("--layout"): v.get("--layout").getStr
+    if layoutArg.len > 0: layoutArg
     else: "base"
-  let outArg =
-    if v.has("--out"): v.get("--out").getStr
-    else: ""
+  let outPath = outArg
 
-  if v.has("view"):
-    let viewKey = normalizeViewKey(v.get("view").getStr)
+  if viewArg.len > 0:
+    let viewKey = normalizeViewKey(viewArg)
     timEngine.precompileLazy(viewKey, layoutName)
-    buildSingleView(timEngine, viewKey, layoutName, outArg)
+    buildSingleView(timEngine, viewKey, layoutName, outPath)
   else:
     timEngine.precompile()
-    buildAllViews(timEngine, layoutName, outArg)
+    buildAllViews(timEngine, layoutName, outPath)

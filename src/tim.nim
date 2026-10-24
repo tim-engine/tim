@@ -128,72 +128,214 @@ elif defined lua_build:
       return 1
 
 elif isMainModule:
-  # Building Tim Engine as a CLI application
-  import pkg/kapsis
-  import pkg/kapsis/runtime
-  import pkg/kapsis/interactive/prompts
+  # Building Tim Engine as a CLI application (stdlib `parseopt`, no deps)
+  import std/[os, parseopt, strutils]
   import ./tim/app/[build, dev, serve, publish]
+  import ./tim/meta/cliutils
 
-  initKapsis do:
-    defaultCommand: "src"
-    commands:
-      #
-      # Source to Source commands
-      # Used to transpile `timl` code to a specific target source
-      # Planning to support: HTML, Nim, JS, PHP, Python, Ruby and more
-      #
-      -- "Source to Source"
-      src path(timl),
-        ?string("--ext"),      # choose a target (default target `html`)
-        ?string("-o"),        # save output to file
-        ?json("--data"),      # pass data to global/local scope
-        ?bool("--nocache"),   # tells Tim to import modules and rebuild cache
-        ?bool("--bench"),     # benchmark operations
-        ?bool("--sync"):      # enable sync and reload for development
-          ## Transpile `timl` to specific target source
+  proc printTimHelp() =
+    echo grey("tim " & timVersion & " - a super fast template engine") & "\n"
+    echo grey("LGPL-3.0-or-later | Made by Humans from OpenPeeps\n  https://github.com/openpeeps/tim")
+    echo ""
+    echo "usage: tim <command> [args] [options]"
+    echo ""
+    echo label("Source to Source:")
+    echo "  src <timl>            " & grey("transpile timl to a target source (default html)")
+    echo "    --ext:<fmt>         " & grey("target source: html, js, py, rb, php, lua, nim (default: html)")
+    echo "    -o:<file>           " & grey("save output to file (default: stdout)")
+    echo "    --data:<json>       " & grey("pass data to global/local scope")
+    echo "    --nocache           " & grey("tell Tim to import modules and rebuild cache")
+    echo "    --bench             " & grey("benchmark operations")
+    echo "    --sync              " & grey("enable sync and reload for development")
+    echo "  ast <timl>            " & grey("transpile timl code to AST representation")
+    echo "  h2t <input>           " & grey("convert HTML to TIML")
+    echo "    --out:<file>, -o    " & grey("save TIML output to file (default: stdout)")
+    echo ""
+    echo label("Development:")
+    echo "  init <pkg>            " & grey("init a new package")
+    echo "  install <pkg>         " & grey("install a package from remote source")
+    echo "  develop <pkg>         " & grey("create a symlink to a package in local source")
+    echo "  remove <pkg>          " & grey("remove a package from local source")
+    echo "  publish               " & grey("publish the current package to the tim-engine/pkgs registry")
+    echo "    --path:<dir>        " & grey("package directory (default: cwd)")
+    echo "    --tags:<list>       " & grey("comma or space separated tags")
+    echo "    --web:<url>         " & grey("package website URL")
+    echo "    --message:<msg>     " & grey("extra message for the pull request body")
+    echo "    --dry-run           " & grey("no network, git, or secret changes")
+    echo "    --direct            " & grey("push a branch to tim-engine/pkgs directly")
+    echo "    --reset-token       " & grey("delete the stored token and run first-time setup")
+    echo "    --yes               " & grey("skip confirmation prompts")
+    echo ""
+    echo label("Server:")
+    echo "  serve <config>        " & grey("run a built-in server with VM capabilities")
+    echo "    --sync              " & grey("enable browser live-reload")
+    echo "  build <view>          " & grey("build the project to static HTML")
+    echo "    --layout:<name>     " & grey("layout to wrap the view (default: base)")
+    echo "    --out:<file|dir>    " & grey("output file or directory")
+    echo ""
+    echo label("options:")
+    echo "  -h, --help            " & grey("show this help")
+    echo "  -v, --version         " & grey("show version")
 
-      ast path(timl):
-        ## Transpile timl code to AST representation
+  proc toFlag(val: string): bool =
+    ## Presence means true; an explicit false-ish value opts out.
+    case val.toLowerAscii()
+    of "", "true", "1", "yes", "y", "on": true
+    of "false", "0", "no", "n", "off": false
+    else: true
 
-      h2t path(input),
-        ?string("--out"),   # save TIML output to file
-        ?string("-o"):      # short output option
-          ## Convert HTML to TIML
+  proc main(): int =
+    var positionals: seq[string] = @[]
+    var showHelp = false
+    var showVersion = false
+    var extArg = "html"
+    var outArg = ""
+    var dataArg = ""
+    var layoutArg = "base"
+    var pathArg = ""
+    var tagsArg = ""
+    var webArg = ""
+    var messageArg = ""
+    var bench, syncFlag: bool
+    var dryRun, direct, resetToken, yes: bool
+    var p = initOptParser(commandLineParams(),
+      shortNoVal = {'h', 'v'},
+      longNoVal = @["help", "version", "nocache", "bench", "sync",
+        "dry-run", "direct", "reset-token", "yes"],
+      mode = LaxMode)
+    for kind, key, val in p.getopt():
+      case kind
+      of cmdArgument:
+        positionals.add(key)
+      of cmdLongOption, cmdShortOption:
+        case key
+        of "help", "h":
+          showHelp = true
+        of "version", "v":
+          showVersion = true
+        of "ext":
+          extArg = val
+        of "o", "out":
+          outArg = val
+        of "data":
+          dataArg = val
+        of "layout":
+          layoutArg = val
+        of "path":
+          pathArg = val
+        of "tags":
+          tagsArg = val
+        of "web":
+          webArg = val
+        of "message":
+          messageArg = val
+        of "nocache":
+          discard # accepted for compat; cache handling is automatic
+        of "bench":
+          bench = toFlag(val)
+        of "sync":
+          syncFlag = toFlag(val)
+        of "dry-run":
+          dryRun = toFlag(val)
+        of "direct":
+          direct = toFlag(val)
+        of "reset-token":
+          resetToken = toFlag(val)
+        of "yes":
+          yes = toFlag(val)
+        else:
+          echo errPrefix() & " unknown option --" & key
+          printTimHelp()
+          return 1
+      of cmdEnd:
+        discard
+    if showVersion:
+      echo timVersion
+      return 0
+    if showHelp:
+      printTimHelp()
+      return 0
+    if positionals.len == 0:
+      printTimHelp()
+      echo "\n" & errPrefix() & " a command is required"
+      return 1
+    var cmd = positionals[0].toLowerAscii
+    var args: seq[string]
+    if cmd in ["help", "--help", "-h"]:
+      printTimHelp()
+      return 0
+    if cmd in ["version", "--version", "-v"]:
+      echo timVersion
+      return 0
+    if cmd notin ["src", "ast", "h2t", "init", "install", "develop",
+        "remove", "publish", "serve", "build"]:
+      # `defaultCommand "src"`: a bare `tim file.timl` transpiles it
+      cmd = "src"
+      args = positionals
+    else:
+      args = positionals[1 .. ^1]
 
-      #
-      # Development commands
-      # Used to manage Tim Engine packages locally
-      #
-      -- "Development"
-      init ?string(pkg):
-        ## Init a new package
-      install string(pkg):
-        ## Install a package from remote source
-      develop ?string(pkg):
-        ## Create a symlink to a package in local source
-      remove string(pkg):
-        ## Remove a package from local source
-      publish ?string("--path"),
-        ?string("--tags"),
-        ?string("--web"),
-        ?string("--message"),
-        ?bool("--dry-run"),
-        ?bool("--direct"),
-        ?bool("--reset-token"),
-        ?bool("--yes"):
-        ## Publish the current package to the tim-engine/pkgs registry
+    proc need(n: int, what: string): bool =
+      if args.len < n:
+        echo errPrefix() & " " & cmd & " needs " & what
+        printTimHelp()
+        return false
+      true
+    proc rejectExtra(maxn: int): bool =
+      if args.len > maxn:
+        echo errPrefix() & " unexpected positional argument: " & args[^1]
+        return false
+      true
 
-      #
-      # Server commands
-      #
-      -- "Server"
-      serve path(config),
-        ?bool("--sync"):        # enable browser live-reload
-        ## Run a built-in server with VM capabilities
-      build ?string(view),
-        ?string("--layout"),   # layout to wrap the view (default `base`)
-        ?string("--out"):      # output file or directory
-          ## Build the project to static HTML
+    case cmd
+    of "src":
+      if not need(1, "a timl file"): return 1
+      if not rejectExtra(1): return 1
+      if extArg.len == 0:
+        echo errPrefix() & " --ext requires a value"
+        return 1
+      srcCommand(args[0], extArg, outArg, dataArg, bench)
+    of "ast":
+      if not need(1, "a timl file"): return 1
+      if not rejectExtra(1): return 1
+      astCommand(args[0])
+    of "h2t":
+      if not need(1, "an input file"): return 1
+      if not rejectExtra(1): return 1
+      htCommand(args[0], outArg)
+    of "init":
+      if not rejectExtra(1): return 1
+      initCommand(if args.len > 0: args[0] else: "")
+    of "install":
+      if not need(1, "a package name"): return 1
+      if not rejectExtra(1): return 1
+      installCommand(args[0])
+    of "develop":
+      if not rejectExtra(1): return 1
+      developCommand(if args.len > 0: args[0] else: "")
+    of "remove":
+      if not need(1, "a package name"): return 1
+      if not rejectExtra(1): return 1
+      removeCommand(args[0])
+    of "publish":
+      if not rejectExtra(0): return 1
+      publishCommand(pathArg, tagsArg, webArg, messageArg,
+        dryRun, yes, direct, resetToken)
+    of "serve":
+      if not need(1, "a config file"): return 1
+      if not rejectExtra(1): return 1
+      serveCommand(args[0], syncFlag)
+    of "build":
+      if not rejectExtra(1): return 1
+      buildCommand(if args.len > 0: args[0] else: "",
+        layoutArg, outArg)
+    else:
+      echo errPrefix() & " unknown command: " & cmd
+      printTimHelp()
+      return 1
+    0
+
+  quit(main())
 else:
   # Importing Tim Engine as a Nimble library
   # so it can be used in other Nim projects
