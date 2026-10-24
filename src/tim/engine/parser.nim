@@ -551,6 +551,11 @@ prefixHandle parseElement:
           return result
       of tkAt:
         walk p
+        # Join the chain head's indent level (see parseMacroCall): the
+        # macro's same-line column is inflated, so normalize it for
+        # trailing-block purposes. `tk` may itself be normalized when this
+        # element was nested via `>` — the head column propagates.
+        p.curr.col = tk.col
         let blockNode: Node = p.parseMacroCall()
         caseNotNil blockNode:
           result.childElements.add(blockNode)
@@ -1139,8 +1144,16 @@ prefixHandle parseMacroCall:
 
     # Inline nest support: @container() > @container() / @container() > div
     # Only treat '>' as nesting if followed by an element or another macro.
+    # The nested node joins the chain head's indent level (its column is
+    # normalized to ours): same-line nesting inflates its column, which
+    # would otherwise make following indented lines read as dedented so the
+    # deepest node could never claim its trailing block. Same trick as
+    # `p.curr.col = p.lvl` for element chains below. Children parsed later
+    # keep their real columns, so leaf nodes stay non-greedy toward
+    # same-indent siblings.
     while p.curr is tkGT and (p.next.kind in {tkIdentifier, tkAt}):
       walk p # consume '>'
+      p.curr.col = tokenAt.col
       case p.curr.kind
       of tkIdentifier:
         let elNode = p.parseElement()

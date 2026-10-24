@@ -165,3 +165,107 @@ macro wrap2*() =
 """
     assert toHtml("named4", samplecode) ==
       """<div class="wrap"><p>only child</p></div>"""
+
+suite "Inline nesting with >":
+  test "macro chain claims trailing block like nested form":
+    let defs = """
+macro wrap() =
+  div class="w"
+    @statement
+macro inner() =
+  div class="i"
+    @statement
+"""
+    let nested = defs & """
+@wrap():
+  @inner():
+    p: "hi"
+"""
+    let chained = defs & """
+@wrap > @inner
+  p: "hi"
+"""
+    assert toHtml("gt-nested", nested) ==
+      """<div class="w"><div class="i"><p>hi</p></div></div>"""
+    assert toHtml("gt-chained", chained) == toHtml("gt-nested", nested)
+
+  test "chained macros with args and named args":
+    let samplecode = """
+macro wrap(cls: string = "w") =
+  div class=$cls
+    @statement
+macro inner() =
+  div class="i"
+    @statement
+@wrap($cls="w") > @inner()
+  p: "one"
+  p: "two"
+"""
+    assert toHtml("gt-args", samplecode) ==
+      """<div class="w"><div class="i"><p>one</p><p>two</p></div></div>"""
+
+  test "triple chain nests to the deepest node":
+    let samplecode = """
+macro a() =
+  div class="a"
+    @statement
+macro b() =
+  div class="b"
+    @statement
+macro c() =
+  div class="c"
+    @statement
+@a > @b > @c
+  p: "deep"
+"""
+    assert toHtml("gt-triple", samplecode) ==
+      """<div class="a"><div class="b"><div class="c"><p>deep</p></div></div></div>"""
+
+  test "sibling after a chain stays a sibling":
+    let samplecode = """
+macro wrap() =
+  div class="w"
+    @statement
+macro inner() =
+  div class="i"
+    @statement
+@wrap > @inner
+  p: "kid"
+p: "sibling"
+"""
+    assert toHtml("gt-sibling", samplecode) ==
+      """<div class="w"><div class="i"><p>kid</p></div></div><p>sibling</p>"""
+
+  test "mixed macro and element chains":
+    let samplecode = """
+macro wrap() =
+  div class="w"
+    @statement
+macro leaf(content: string = "") =
+  span: $content
+  @statement
+@wrap > div.mid
+  p: "in-mid"
+div.out > @leaf("mixed")
+  p: "after-mixed"
+"""
+    assert toHtml("gt-mixed", samplecode) ==
+      """<div class="w"><div class="mid"><p>in-mid</p></div></div>""" &
+      """<div class="out"><span>mixed</span><p>after-mixed</p></div>"""
+
+  test "leaf children of a chain stay siblings":
+    let samplecode = """
+macro wrap() =
+  div class="w"
+    @statement
+macro inner() =
+  div class="i"
+    @statement
+macro leaf(content: string = "") =
+  span: $content
+@wrap > @inner
+  @leaf("one")
+  @leaf("two")
+"""
+    assert toHtml("gt-leaves", samplecode) ==
+      """<div class="w"><div class="i"><span>one</span><span>two</span></div></div>"""
