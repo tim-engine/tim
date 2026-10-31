@@ -16,11 +16,11 @@ binDir        = "bin"
 requires "nim >= 2.2.10"
 
 requires "datpkgr >= 0.1.5"
-requires "vancode >= 0.2.9"
+requires "vancode >= 0.3.2"
 requires "checksums >= 0.2.2"
 requires "voodoo >= 0.2.1"
 requires "watchout >= 0.3.2"
-requires "openparser >= 0.2.0"
+requires "openparser >= 0.4.2"
 requires "semver >= 1.2.3"
 requires "nimcypher >= 0.2.5"
 
