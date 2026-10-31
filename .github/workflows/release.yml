@@ -1,25 +1,30 @@
 name: release
-# Manual releases only: the NAPI addon does not include every module
-# available at Nim level, so publishing to npm must be a deliberate
-# manual step — never automatic on tag push. Dispatch this workflow by
-# hand and enter the version to publish (e.g. `0.2.10`).
+# Tag-driven releases: pushing a tag like `v0.2.10` (or dispatching by
+# hand with a version input) builds the `tim` CLI binaries and the NAPI
+# addons, attaches everything to the GitHub Release, and publishes
+# `@openpeeps/tim` to npm with the addon binaries included.
 #
-# The run builds the NAPI addons for macOS (arm64/x64) and Linux
-# (x64), attaches them to the GitHub Release, and publishes
-# `@openpeeps/tim` to npm with all binaries included.
+# The run builds the CLI for Linux (x64) and macOS (arm64), plus the
+# NAPI addons for macOS (arm64/x64) and Linux (x64).
 #
 # aarch64 Linux is not built: clue (which resolves the `cli` feature
 # deps the addon needs) ships no Linux ARM64 binary, so dependency
 # installation cannot run there. aarch is covered via macOS arm64;
 # `addons/tim_napi` already supports a `linux-arm64` slot for later.
 #
+# Windows CLI is not built yet: no Windows CI coverage exists for the
+# Nim CLI target. Add it once a Windows test job lands.
+#
 # NB: never compile `src/tim.nim` directly (`nim c` / `clue build`
-# won't resolve the feature deps for a bare invocation). The build
+# won't resolve the feature deps for a bare invocation). The NAPI build
 # always goes through the custom denim command below, which defines
 # `-d:napibuild` while `src/tim.nims` mirrors the `cli` feature paths
 # from `clue.lock` (see the comment there for why a define alone
 # cannot enable feature deps under denim).
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -27,14 +32,45 @@ on:
         required: true
         type: string
 jobs:
+  prep:
+    name: resolve tag and version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          set -eu
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            tag="v${{ inputs.version }}"
+          else
+            tag="${{ github.ref_name }}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  cli:
+    name: CLI binaries
+    needs: prep
+    uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
+    with:
+      app-name: tim
+      test: false
+      create-release: false
+      # Pinned runners whose `artifact-<os>-<arch>` names cannot collide
+      # with the napi job's (macos-14, macos-15-intel, ubuntu-24.04).
+      # ubuntu-22.04 doubles as the oldest glibc baseline, so the Linux
+      # binary also runs on newer distros.
+      target-matrix: '[{"os":"ubuntu-22.04","arch":"x86_64"},{"os":"macos-15","arch":"arm64"}]'
+
   napi:
     name: napi addons
+    needs: prep
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
       app-name: node_addon
-      nim-version: '2.2.x'
-      package-manager: clue
-      homebrew-nim: true
       test: false
       pre-build-command: >-
         nimble install -y https://github.com/openpeeps/denim &&
@@ -45,7 +81,33 @@ jobs:
       binary: bin/tim.node
       target-matrix: '[{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"}]'
       create-release: true
-      release-tag: v${{ inputs.version }}
+      release-tag: ${{ needs.prep.outputs.tag }}
+
+  attach-cli:
+    name: attach CLI binaries to release
+    runs-on: ubuntu-latest
+    needs: [cli, napi]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: artifact-*
+          path: dist
+          merge-multiple: true
+
+      - name: Upload CLI archives to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          shopt -s nullglob
+          tag="${{ needs.prep.outputs.tag }}"
+          assets=(dist/tim_*.tar.gz dist/tim_*.zip)
+          (( ${#assets[@]} > 0 )) || { echo "ERROR: no tim archives in dist/"; exit 1; }
+          printf '%s\n' "${assets[@]}"
+          gh release upload "${tag}" "${assets[@]}" --clobber
 
   npm-publish:
     name: npm publish
@@ -99,7 +161,7 @@ jobs:
           npm pkg set version="${version}"
           node -p "require('./package.json').version"
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.prep.outputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
