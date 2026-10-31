@@ -23,9 +23,7 @@ name: release
 # cannot enable feature deps under denim).
 on:
   push:
-    tags:
-      - 'v*'
-      - '[0-9]*'
+    tags: ['*.*.*']
   workflow_dispatch:
     inputs:
       version:
