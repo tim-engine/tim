@@ -53,6 +53,8 @@ jobs:
   cli:
     name: CLI binaries
     needs: prep
+    permissions:
+      contents: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
       app-name: tim
@@ -67,6 +69,8 @@ jobs:
   napi:
     name: napi addons
     needs: prep
+    permissions:
+      contents: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
       app-name: node_addon
