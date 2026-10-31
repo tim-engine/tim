@@ -14,6 +14,7 @@ import std/options
 
 import pkg/semver
 import pkg/datpkgr/operations as datpkgrOps
+import pkg/datpkgr/store as datpkgrStore
 import pkg/datpkgr/config as datpkgrConfig
 import ../pkgmanager/configs as timConfigs
 import ../pkgmanager/timparser
@@ -140,7 +141,7 @@ proc installCommand*(pkgArg: string) =
     if hashPos >= 0:
       urlRef = url[hashPos+1..^1]
       url = url[0..<hashPos]
-    let name = datpkgrOps.pkgNameFromUrl(url)
+    let name = datpkgrStore.pkgNameFromUrl(url)
     if name.len == 0:
       displayError("Could not derive package name from: " & raw, quitProcess = true)
       return
@@ -164,7 +165,7 @@ proc installCommand*(pkgArg: string) =
   try:
     let dep = timparser.parseRequiresArg(raw)
     if dep.url.len > 0:
-      let name = if dep.name.len > 0: dep.name else: datpkgrOps.pkgNameFromUrl(dep.url)
+      let name = if dep.name.len > 0: dep.name else: datpkgrStore.pkgNameFromUrl(dep.url)
       let ok = datpkgrOps.installPackage(cfg, name, dep.tag, url = dep.url, constraint = dep.constraint)
       if not ok: quit(1)
       return
