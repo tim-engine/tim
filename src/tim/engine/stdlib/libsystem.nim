@@ -527,6 +527,7 @@ proc loadLibrary*(script: Script): Module =
     of JFloat: result = $j.getFloat()
     of JBool: result = $j.getBool()
     of JNull: result = ""
+    of JObject, JArray: result = toJson(j)
     else: result = ""
 
   script.addProc(result, "&", @[paramDef("x", ttyJson), paramDef("y", ttyString)], ttyString,
@@ -537,6 +538,10 @@ proc loadLibrary*(script: Script): Module =
     proc (args: StackView, argc: int): Value =
       if likely(args[1].jsonVal != nil):
         result = initValue(args[0].stringVal[] & jsonToStr(args[1].jsonVal)))
+
+  script.addProc(result, "&", @[paramDef("x", ttyJson), paramDef("y", ttyJson)], ttyString,
+    proc (args: StackView, argc: int): Value =
+      result = initValue(jsonToStr(args[0].jsonVal) & jsonToStr(args[1].jsonVal)))
 
   script.addProc(result, "hasKey", @[paramDef("obj", ttyJson), paramDef("key", ttyString)], ttyBool,
     proc (args: StackView, argc: int): Value =
