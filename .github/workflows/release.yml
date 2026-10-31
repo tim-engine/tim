@@ -55,6 +55,7 @@ jobs:
     needs: prep
     permissions:
       contents: write
+      actions: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
       app-name: tim
@@ -71,6 +72,7 @@ jobs:
     needs: prep
     permissions:
       contents: write
+      actions: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
       app-name: node_addon
@@ -92,6 +94,7 @@ jobs:
     needs: [cli, napi]
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -118,6 +121,7 @@ jobs:
     needs: napi
     permissions:
       contents: read
+      actions: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
