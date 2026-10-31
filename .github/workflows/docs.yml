@@ -1,45 +1,10 @@
 name: docs
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - LICENSE
-      - README.*
-      - examples
-  pull_request:
-    paths-ignore:
-      - LICENSE
-      - README.*
-      - examples
-env:
-  nim-version: '2.2.10'
-  nim-src: src/${{ github.event.repository.name }}.nim
-  deploy-dir: .gh-pages
+    tags: ['*.*.*']
+  workflow_dispatch:
 jobs:
-  docs:
-    runs-on: ubuntu-latest
+  release:
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@v3
-      - uses: jiro4989/setup-nim-action@v1
-        with:
-          nim-version: ${{ env.nim-version }}
-      - run: nimble install -Y
-      - run: nim doc --index:on --project --path:. --out:${{ env.deploy-dir }} ${{ env.nim-src }}
-      
-      - name: "Rename to index.html"
-        run: mv ${{ env.deploy-dir }}/${{ github.event.repository.name }}.html ${{ env.deploy-dir }}/index.html 
-      
-      - name: "Find and replace (index.html)"
-        run: sed -i 's/${{ github.event.repository.name }}.html/index.html/g' ${{ env.deploy-dir }}/index.html
-
-      - name: "Find and replace (theindex.html)"
-        run: sed -i 's/${{ github.event.repository.name }}.html/index.html/g' ${{ env.deploy-dir }}/theindex.html
-        
-      - name: Deploy documents
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.deploy-dir }}
+    uses: nimbase/setup-nim-action/.github/workflows/docs.yml@main
