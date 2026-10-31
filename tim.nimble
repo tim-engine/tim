@@ -15,7 +15,7 @@ binDir        = "bin"
 
 requires "nim >= 2.2.10"
 
-requires "datpkgr >= 0.1.5"
+requires "datpkgr >= 0.1.12"
 requires "vancode >= 0.3.2"
 requires "checksums >= 0.2.2"
 requires "voodoo >= 0.2.1"
