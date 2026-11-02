@@ -58,6 +58,9 @@ jobs:
       actions: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
+      # Pinned to 2.2.x: Nim 2.4.0 ICEs intermittently under --mm:arc
+      # (injectdestructors `not containsManagedMemory`, upstream issue).
+      nim-version: '2.2.x'
       app-name: tim
       test: false
       create-release: false
@@ -75,6 +78,8 @@ jobs:
       actions: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
+      # Same 2.2.x pin as the CLI job (denim builds also honor --mm:arc).
+      nim-version: '2.2.x'
       app-name: node_addon
       test: false
       pre-build-command: >-

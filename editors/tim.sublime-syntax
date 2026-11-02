@@ -46,7 +46,7 @@ contexts:
 
     - match: '\b(var|const)\b'
       captures:
-        1: keyword.control.bro
+        1: keyword.control.bowdy
       push: varIdent
 
     - match: (\$)([a-zA-Z_][a-zA-Z0-9_]*)\b

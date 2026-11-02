@@ -1,13 +1,49 @@
-import std/[strutils, json, os]
+import std/[strutils, os]
+--mm:orc
 
---mm:arc
---threads:on
---deepcopy:on
---define:ssl
---define:nimPreviewHashRef
-
-when defined napibuild:
+when defined(wasm):
+  static:
+    when (NimMajor, NimMinor) != (2, 2):
+      {.error: "The wasm build requires Nim 2.2.x (2.4.x fails with an injectdestructors assertion on this codebase). Use `choosenim 2.2.10`.".}
+  # Browser playground: wasm32 via the WASI SDK clang (no Emscripten).
+  # `--os:linux` (not standalone) so the full system — notably exception
+  # handling — is available; all OS imports resolve against wasi-libc and
+  # are satisfied by the JS WASI shim at instantiation. The engine itself
+  # never touches the filesystem, network or clocks on this path
+  # (see the `when not defined(wasm)` guards).
+  # Set $WASI_SDK to override the default SDK location.
+  switch("cpu", "wasm32")
+  switch("os", "linux")
+  switch("cc", "clang")
+  const wasiSdk = getEnv("WASI_SDK",
+    expandTilde("~/.local/share/wasi-sdk/wasi-sdk-34.0-x86_64-macos"))
+  const wasiSysroot = wasiSdk / "share/wasi-sysroot"
+  switch("clang.exe", wasiSdk / "bin/clang")
+  switch("clang.linkerexe", wasiSdk / "bin/clang")
+  switch("passC", "--sysroot=" & wasiSysroot &
+    " -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL")
+  switch("passL", "--sysroot=" & wasiSysroot &
+    " -lwasi-emulated-mman -lwasi-emulated-signal" &
+    " -nostartfiles -Wl,--no-entry -Wl,--gc-sections" &
+    " -Wl,--export=NimMain -Wl,--export=__wasm_call_ctors" &
+    " -Wl,--export=timAlloc -Wl,--export=timFree" &
+    " -Wl,--export=timResultPtr -Wl,--export=timResultLen" &
+    " -Wl,--export=timRender -Wl,--export=timRenderView" &
+    " -Wl,--export=timTranspile -Wl,--export=timVersionInfo" &
+    " -Wl,--export=timDebugTag")
+  switch("define", "openparserNoMmap")
+  --threads:off
+  --deepcopy:on
+  --define:useMalloc
   --define:release
+else:
+  --threads:on
+  --deepcopy:on
+  --define:ssl
+  --define:nimPreviewHashRef
+
+  when defined napibuild:
+    --define:release
 
 # Search paths for the `cli` feature deps (boogie, bag, supranim, ...).
 #
@@ -20,13 +56,27 @@ when defined napibuild:
 # `clue.lock` itself is produced with the `cli` feature enabled.
 const clueLock = currentSourcePath().parentDir() / ".." / "clue.lock"
 if fileExists(clueLock):
-  let lock = parseJson(readFile(clueLock))
-  if lock.hasKey("packages"):
-    for pkg in lock["packages"]:
-      if pkg.hasKey("path"):
-        let p = pkg["path"].getStr()
-        if p.len > 0 and dirExists(p):
-          switch("path", p)
+  # NOTE: do NOT use std/json parseJson here. Nim 2.4.0 crashes in
+  # injectdestructors when compiling a parseJson call inside a .nims
+  # (NimScript/VM path, both --mm:arc and --mm:orc). Manual scan instead.
+  let content = readFile(clueLock)
+  var i = 0
+  while true:
+    let k = content.find("\"path\"", i)
+    if k < 0: break
+    var c = k + 6
+    while c < content.len and (content[c] == ' ' or content[c] == ':' or
+        content[c] == '\t' or content[c] == '\r' or content[c] == '\n'):
+      inc c
+    if c < content.len and content[c] == '"':
+      var e = c + 1
+      while e < content.len and content[e] != '"': inc e
+      let p = content[c + 1 ..< e]
+      if p.len > 0 and dirExists(p):
+        switch("path", p)
+      i = e + 1
+    else:
+      i = c + 1
 
 # when defined php_build:
 #   --app:lib

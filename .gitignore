@@ -22,6 +22,8 @@ src/tim/experiments
 bindings
 !examples/templates
 /build
+/examples/wasm/tim.wasm
+/examples/wasm/tim.js
 /benchmarks
 nimble.develop
 nimble.paths

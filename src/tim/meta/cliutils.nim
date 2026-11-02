@@ -8,7 +8,10 @@
 # (`std/terminal`, `std/parseopt` style) helpers, mirroring the
 # approach used by SweetSyntax.
 
-import std/[os, terminal, strutils]
+import std/[os, strutils]
+when not defined(wasm):
+  # Terminal interaction is unavailable in wasm32-standalone browser builds.
+  import std/terminal
 
 # ----------------------------------------------------------------------
 # Version (read from `tim.nimble` at compile time)
@@ -69,7 +72,11 @@ const
   ansiRed = "\e[31m"
 
 proc useColor*(): bool =
-  getEnv("NO_COLOR") == "" and getEnv("TERM") != "dumb"
+  when defined(wasm):
+    # No terminal in the browser playground: never emit ANSI codes.
+    false
+  else:
+    getEnv("NO_COLOR") == "" and getEnv("TERM") != "dumb"
 
 proc paint(s, code: string): string =
   if useColor():
@@ -93,20 +100,31 @@ proc errPrefix*(): string =
 # Display helpers (stdout, kapsis-compatible signatures)
 # ----------------------------------------------------------------------
 
+var logHook*: proc(msg: string) = nil
+  ## Optional embedder hook receiving every display* line (without the
+  ## trailing newline). Used by the wasm playground to surface compile
+  ## diagnostics that would otherwise go to stdout. Nil by default.
+
+proc emitLine(s: string) =
+  if logHook != nil:
+    logHook(s)
+  else:
+    echo s
+
 proc display*(s: string) =
-  echo s
+  emitLine(s)
 
 proc displayInfo*(x: string) =
-  echo paint("Info:", ansiCyan) & " " & x
+  emitLine(paint("Info:", ansiCyan) & " " & x)
 
 proc displaySuccess*(x: string) =
-  echo paint("Success:", ansiGreen) & " " & x
+  emitLine(paint("Success:", ansiGreen) & " " & x)
 
 proc displayWarning*(x: string) =
-  echo paint("Warning:", ansiYellow) & " " & x
+  emitLine(paint("Warning:", ansiYellow) & " " & x)
 
 proc displayError*(x: string, quitProcess = false) =
-  echo paint("Error:", ansiRed) & " " & x
+  emitLine(paint("Error:", ansiRed) & " " & x)
   if quitProcess:
     quit(1)
 
@@ -143,74 +161,75 @@ proc promptConfirm*(label: string): bool =
     else:
       discard
 
-proc eraseSelection(answersLen: int) =
-  ## Erases the rendered selection lines and restores the cursor.
-  for i in 0 ..< answersLen:
-    eraseLine(stdout)
-    cursorDown(stdout)
-  cursorUp(stdout, answersLen + 1)
-  eraseLine(stdout)
-  showCursor(stdout)
-
-proc promptInteractive*(question: string, answers: openArray[string],
-    width: Positive = 80, activeIcon = " "): int =
-  ## Terminal prompt that asks a `question` and returns the index of the
-  ## chosen answer (arrow keys / Tab to move, Space or Enter to confirm,
-  ## Ctrl-C aborts and returns -1).
-  assert question.len > 0, "Question must not be empty"
-  assert answers.len > 0, "There must be at least one possible answer"
-  stdout.styledWriteLine(styleBright, question)
-  var
-    current = 0
-    selected = false
-  # Incase the cursor is at the bottom of the terminal
-  for arg in answers:
-    stdout.write "\n"
-  # Reset the cursor to the start of the selection prompt
-  cursorUp(stdout, answers.len)
-  hideCursor(stdout)
-
-  # The selection loop
-  while not selected:
-    when defined(windows):
-      setForegroundColor(fgWhite)
-    else:
-      setForegroundColor(fgDefault)
-    # Loop through the options
-    for i, arg in answers:
-      # Check if the option is the current
-      if i == current:
-        stdout.styledWrite(activeIcon & " " & arg, {styleBright, styleUnderscore})
-      else:
-        stdout.styledWrite("   " & arg, {styleDim})
-      # Move the cursor back to the start
-      cursorBackward(stdout, arg.len + 4)
-      # Move down for the next item
+when not defined(wasm):
+  proc eraseSelection(answersLen: int) =
+    ## Erases the rendered selection lines and restores the cursor.
+    for i in 0 ..< answersLen:
+      eraseLine(stdout)
       cursorDown(stdout)
-    # Move the cursor back up to the start of the selection prompt
+    cursorUp(stdout, answersLen + 1)
+    eraseLine(stdout)
+    showCursor(stdout)
+
+  proc promptInteractive*(question: string, answers: openArray[string],
+      width: Positive = 80, activeIcon = " "): int =
+    ## Terminal prompt that asks a `question` and returns the index of the
+    ## chosen answer (arrow keys / Tab to move, Space or Enter to confirm,
+    ## Ctrl-C aborts and returns -1).
+    assert question.len > 0, "Question must not be empty"
+    assert answers.len > 0, "There must be at least one possible answer"
+    stdout.styledWriteLine(styleBright, question)
+    var
+      current = 0
+      selected = false
+    # Incase the cursor is at the bottom of the terminal
+    for arg in answers:
+      stdout.write "\n"
+    # Reset the cursor to the start of the selection prompt
     cursorUp(stdout, answers.len)
-    resetAttributes(stdout)
+    hideCursor(stdout)
 
-    # Ensure that the screen is updated before input
-    flushFile(stdout)
-    # Begin key input
-    while true:
-      case getch():
-      of '\t', '\x1B':
-        current = (current + 1) mod answers.len
-        break
-      of '\r', ' ':
-        selected = true
-        break
-      of '\3':
-        for i in 0 ..< answers.len:
-          eraseLine(stdout)
-        cursorUp(stdout) # move back to question line
-        eraseLine(stdout) # erase the question line
-        showCursor(stdout)
-        return -1
-      else: discard
+    # The selection loop
+    while not selected:
+      when defined(windows):
+        setForegroundColor(fgWhite)
+      else:
+        setForegroundColor(fgDefault)
+      # Loop through the options
+      for i, arg in answers:
+        # Check if the option is the current
+        if i == current:
+          stdout.styledWrite(activeIcon & " " & arg, {styleBright, styleUnderscore})
+        else:
+          stdout.styledWrite("   " & arg, {styleDim})
+        # Move the cursor back to the start
+        cursorBackward(stdout, arg.len + 4)
+        # Move down for the next item
+        cursorDown(stdout)
+      # Move the cursor back up to the start of the selection prompt
+      cursorUp(stdout, answers.len)
+      resetAttributes(stdout)
 
-  # Erase all lines of the selection
-  eraseSelection(answers.len)
-  result = current
+      # Ensure that the screen is updated before input
+      flushFile(stdout)
+      # Begin key input
+      while true:
+        case getch():
+        of '\t', '\x1B':
+          current = (current + 1) mod answers.len
+          break
+        of '\r', ' ':
+          selected = true
+          break
+        of '\3':
+          for i in 0 ..< answers.len:
+            eraseLine(stdout)
+          cursorUp(stdout) # move back to question line
+          eraseLine(stdout) # erase the question line
+          showCursor(stdout)
+          return -1
+        else: discard
+
+    # Erase all lines of the selection
+    eraseSelection(answers.len)
+    result = current

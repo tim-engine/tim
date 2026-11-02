@@ -14,6 +14,12 @@ when defined(napibuild):
   include ./tim/private/napi_convert
   include ./tim/private/napi_bridge
 
+elif defined wasm:
+  # Browser playground (wasm32-standalone): string-in/string-out API
+  # with no filesystem, network or clocks. See `src/tim/wasm.nim`.
+  import ./tim/wasm
+  export wasm
+
 elif defined php_build:
   import pkg/openparser/json
   import pkg/nimbase/kits/phpkit

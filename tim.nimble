@@ -52,6 +52,9 @@ task python, "build Python extension":
 task lua, "build Lua extension":
   exec "clue build -d:lua_build -d:release -o:build/tim.so src/tim.nim"
 
+task wasm, "build Tim for browsers (wasm32-standalone, no backend needed)":
+  exec "clue build -d:wasm -o:build/tim.wasm src/tim.nim && cp build/tim.wasm examples/wasm/tim.wasm && cp bindings/wasm/tim.js examples/wasm/tim.js"
+
 import std/os
 task build_examples, "build examples":
   for e in walkDir(currentSourcePath().parentDir / "example"):

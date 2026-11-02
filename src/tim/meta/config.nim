@@ -7,12 +7,14 @@ import std/tables
 import pkg/[openparser/yaml, semver]
 import pkg/vancode/manager/configurator
 
-from std/net import Port, `$`
+when not defined(wasm):
+  from std/net import Port, `$`
 
 when not defined napibuild:
   import pkg/openparser/json
 
-export `$`
+when not defined(wasm):
+  export `$`
 
 type
   TargetSource* = enum
@@ -24,12 +26,15 @@ type
     tsRuby   = "rb"
     tsPython = "py"
 
-  BrowserSync* = ref object
-    ## Configuration for browser synchronization during development,
-    ## allowing for live-reloading of templates in the browser when changes are detected
-    port*: Port
-    delay*: uint # ms todo use jsony hooks + std/times
+when not defined(wasm):
+  type
+    BrowserSync* = ref object
+      ## Configuration for browser synchronization during development,
+      ## allowing for live-reloading of templates in the browser when changes are detected
+      port*: Port
+      delay*: uint # ms todo use jsony hooks + std/times
 
+type
   # ConfigType* = enum
   #   ## The type of configuration being defined, which determines
   #   ## the structure of the TimConfig
@@ -43,11 +48,14 @@ type
     ## An alias for a simple in-memory template store, used when loading templates
     ## from embedded resources instead of the filesystem.
 
-  WebServerConfig* = object
-    port*: Port
-    threads*: uint
-    routes*: Table[string, string]
+when not defined(wasm):
+  type
+    WebServerConfig* = object
+      port*: Port
+      threads*: uint
+      routes*: Table[string, string]
 
+type
   CacheConfig* = ref object
     ## Configuration for the `fetch` response caching layer used
     ## by the `tim serve` development server
@@ -80,8 +88,9 @@ type
     case `type`*: ConfigType
     of ConfigType.typeProject:
       compilation*: CompilationSettings
-      browser_sync*: BrowserSync
-      server*: WebServerConfig
+      when not defined(wasm):
+        browser_sync*: BrowserSync
+        server*: WebServerConfig
       cache*: CacheConfig
     else: discard
 

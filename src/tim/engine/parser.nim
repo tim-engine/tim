@@ -4,7 +4,11 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim | https://openpeeps.dev/packages/tim
 
-import std/[macros, tables, strutils, critbits, options, memfiles]
+import std/[macros, tables, strutils, critbits, options]
+when not defined(wasm):
+  # Unused by the parser itself; excluded where mmap is unavailable
+  # (wasm32-standalone browser builds).
+  import std/memfiles
 import pkg/vancode/interpreter/[errors, ast]
 import pkg/openparser/html
 

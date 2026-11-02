@@ -301,8 +301,21 @@ proc quoteTiml(value, sourcePath, nodePath, field: string): string =
     result.add('"')
     return
   if "\"\"\"" in value:
-    failConversion(sourcePath, nodePath,
-      "text in " & field & " cannot be represented in TIML")
+    # Triple-quoted strings are raw: they cannot contain `"""`.
+    # Fall back to a single-line literal with explicit escapes
+    # (the lexer supports \\, \", \n, \r, \t and \0 there).
+    result = "\""
+    for c in value:
+      case c
+      of '\\': result.add("\\\\")
+      of '"': result.add("\\\"")
+      of '\n': result.add("\\n")
+      of '\r': result.add("\\r")
+      of '\t': result.add("\\t")
+      of '\0': result.add("\\0")
+      else: result.add(c)
+    result.add('"')
+    return
   result = "\"\"\"" & value & "\"\"\""
 
 proc appendLine(buf: var string, indent: int, line: string) =

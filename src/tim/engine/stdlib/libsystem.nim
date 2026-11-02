@@ -7,8 +7,13 @@
 #          Made by Humans from OpenPeeps
 #          https://github.com/openpeeps/tim | https://openpeeps.dev/packages/tim
 
-import std/[strutils, options, os, sequtils, times,
-        httpclient, httpcore, random, hashes, math]
+import std/[strutils, options, sequtils,
+        random, hashes, math]
+when not defined(wasm):
+  # os (readFile/writeFile/sleep), httpclient (remoteJSON/fetch) and times
+  # (epochTime) are unavailable in wasm32-standalone browser builds, and
+  # filesystem/network access is disabled there for security.
+  import std/[os, times, httpclient, httpcore]
 
 import pkg/openparser/json
 import pkg/vancode/interpreter/[chunk, ast, sym, value]
@@ -148,7 +153,7 @@ proc loadLibrary*(script: Script): Module =
       of JInt:
         result = initValue(args[0].jsonVal.getInt() == args[1].intVal)
       of JFloat:
-        result = initValue(args[0].jsonVal.getFloat() == toFloat(args[1].intVal))
+        result = initValue(args[0].jsonVal.getFloat() == float(args[1].intVal))
       else:
         raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind))
 
@@ -158,7 +163,7 @@ proc loadLibrary*(script: Script): Module =
       of JFloat:
         result = initValue(args[0].jsonVal.getFloat() == args[1].floatVal)
       of JInt:
-        result = initValue(toFloat(args[0].jsonVal.getInt()) == args[1].floatVal)
+        result = initValue(float(args[0].jsonVal.getInt()) == args[1].floatVal)
       else:
         raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind))
 
@@ -167,18 +172,18 @@ proc loadLibrary*(script: Script): Module =
   #
   proc jsonNumToFloat(j: JsonNode): float =
     case j.kind
-    of JInt: j.getInt().toFloat
+    of JInt: j.getInt().float
     of JFloat: j.getFloat()
     else: raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $j.kind)
 
   proc jsonArithCb(tyA, tyB: TypeKind, forceFloat: bool, op: string): ForeignProc =
     result = proc (args: StackView, argc: int): Value =
       let a =
-        if tyA == ttyInt: args[0].intVal.toFloat
+        if tyA == ttyInt: args[0].intVal.float
         elif tyA == ttyFloat: args[0].floatVal
         else: jsonNumToFloat(args[0].jsonVal)
       let b =
-        if tyB == ttyInt: args[1].intVal.toFloat
+        if tyB == ttyInt: args[1].intVal.float
         elif tyB == ttyFloat: args[1].floatVal
         else: jsonNumToFloat(args[1].jsonVal)
       let useFloat = forceFloat or a != trunc(a) or b != trunc(b)
@@ -247,12 +252,12 @@ proc loadLibrary*(script: Script): Module =
   script.addProc(result, "toFloat", @[paramDef("i", ttyInt)], ttyFloat,
     proc (args: StackView, argc: int): Value =
       ## Convert an int to a float
-      result = initValue(toFloat(args[0].intVal)))
+      result = initValue(float(args[0].intVal)))
 
   script.addProc(result, "toFloat", @[paramDef("i", ttyJson)], ttyFloat,
     proc (args: StackView, argc: int): Value =
       if likely(args[0].jsonVal.kind == JInt):
-        result = initValue(toFloat(args[0].jsonVal.getInt()))
+        result = initValue(float(args[0].jsonVal.getInt()))
       elif likely(args[0].jsonVal.kind == JFloat):
         result = initValue(args[0].jsonVal.getFloat())
       else:
@@ -278,21 +283,21 @@ proc loadLibrary*(script: Script): Module =
       else:
         return $a == $b
     else:
-      if a.typeId==tyInt and b.typeId==tyFloat: return toFloat(a.intVal) == b.floatVal
-      if a.typeId==tyFloat and b.typeId==tyInt: return a.floatVal == toFloat(b.intVal)
+      if a.typeId==tyInt and b.typeId==tyFloat: return float(a.intVal) == b.floatVal
+      if a.typeId==tyFloat and b.typeId==tyInt: return a.floatVal == float(b.intVal)
       if a.typeId==tyJsonStorage:
         case b.typeId
         of tyString: return a.jsonVal.kind==JString and a.jsonVal.getStr() == b.stringVal[]
-        of tyInt: return (a.jsonVal.kind==JInt and a.jsonVal.getInt()==b.intVal) or (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==toFloat(b.intVal))
-        of tyFloat: return (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==b.floatVal) or (a.jsonVal.kind==JInt and toFloat(a.jsonVal.getInt())==b.floatVal)
+        of tyInt: return (a.jsonVal.kind==JInt and a.jsonVal.getInt()==b.intVal) or (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==float(b.intVal))
+        of tyFloat: return (a.jsonVal.kind==JFloat and a.jsonVal.getFloat()==b.floatVal) or (a.jsonVal.kind==JInt and float(a.jsonVal.getInt())==b.floatVal)
         of tyBool: return a.jsonVal.kind==JBool and a.jsonVal.getBool()==b.boolVal
         of tyNil: return a.jsonVal.kind==JNull
         else: return false
       if b.typeId==tyJsonStorage:
         case a.typeId
         of tyString: return b.jsonVal.kind==JString and b.jsonVal.getStr()==a.stringVal[]
-        of tyInt: return (b.jsonVal.kind==JInt and b.jsonVal.getInt()==a.intVal) or (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==toFloat(a.intVal))
-        of tyFloat: return (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==a.floatVal) or (b.jsonVal.kind==JInt and toFloat(b.jsonVal.getInt())==a.floatVal)
+        of tyInt: return (b.jsonVal.kind==JInt and b.jsonVal.getInt()==a.intVal) or (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==float(a.intVal))
+        of tyFloat: return (b.jsonVal.kind==JFloat and b.jsonVal.getFloat()==a.floatVal) or (b.jsonVal.kind==JInt and float(b.jsonVal.getInt())==a.floatVal)
         of tyBool: return b.jsonVal.kind==JBool and b.jsonVal.getBool()==a.boolVal
         of tyNil: return b.jsonVal.kind==JNull
         else: return false
@@ -553,7 +558,11 @@ proc loadLibrary*(script: Script): Module =
   #
   # Random Utils
   #
-  randomize()
+  when defined(wasm):
+    # No OS entropy in the browser playground: deterministic seed.
+    randomize(0xC0FFEE)
+  else:
+    randomize()
   script.addProc(result, "shuffle", @[paramDef("arr", ttyArray)], ttyArray,
     proc (args: StackView, argc: int): Value =
       var arr = initArray(args[0].objectVal.fields.len)
@@ -602,22 +611,23 @@ proc loadLibrary*(script: Script): Module =
       result = initValue(len(args[0].objectVal.fields)))
 
 
-  #
-  # Built-in OS Operations
-  # std/os
-  #
-  script.addProc(result, "readFile", @[paramDef("path", ttyString)], ttyString,
-    proc (args: StackView, argc: int): Value =
-      initValue(readFile(args[0].stringVal[])))
+  when not defined(wasm):
+    #
+    # Built-in OS Operations
+    # std/os (disabled in the browser playground: no filesystem)
+    #
+    script.addProc(result, "readFile", @[paramDef("path", ttyString)], ttyString,
+      proc (args: StackView, argc: int): Value =
+        initValue(readFile(args[0].stringVal[])))
 
-  script.addProc(result, "writeFile",
-    @[paramDef("path", ttyString), paramDef("content", ttyString)], ttyVoid,
-    proc (args: StackView, argc: int): Value =
-      writeFile(args[0].stringVal[], args[1].stringVal[]))
+    script.addProc(result, "writeFile",
+      @[paramDef("path", ttyString), paramDef("content", ttyString)], ttyVoid,
+      proc (args: StackView, argc: int): Value =
+        writeFile(args[0].stringVal[], args[1].stringVal[]))
 
-  script.addProc(result, "sleep", @[paramDef("ms", ttyInt)], ttyVoid,
-    proc (args: StackView, argc: int): Value =
-      sleep(args[0].intVal))
+    script.addProc(result, "sleep", @[paramDef("ms", ttyInt)], ttyVoid,
+      proc (args: StackView, argc: int): Value =
+        sleep(args[0].intVal))
 
   #
   # Builtin JSON/YAML support
@@ -627,114 +637,119 @@ proc loadLibrary*(script: Script): Module =
       result = initValue(fromJson(args[0].stringVal[]))
     )
 
-  script.addProc(result, "loadJSON", @[paramDef("path", ttyString)], ttyJson,
-    proc (args: StackView, argc: int): Value =
-      let jsonContent = readFile(args[0].stringVal[])
-      result = initValue(fromJson(jsonContent))
-    )
-  
-  script.addProc(result, "remoteJSON", @[paramDef("url", ttyString)], ttyJson,
-    proc (args: StackView, argc: int): Value =
-      ## Fetch a remote JSON file from the given URL.
-      var client = newHttpClient()
+  when not defined(wasm):
+    script.addProc(result, "loadJSON", @[paramDef("path", ttyString)], ttyJson,
+      proc (args: StackView, argc: int): Value =
+        let jsonContent = readFile(args[0].stringVal[])
+        result = initValue(fromJson(jsonContent))
+      )
+
+    script.addProc(result, "remoteJSON", @[paramDef("url", ttyString)], ttyJson,
+      proc (args: StackView, argc: int): Value =
+        ## Fetch a remote JSON file from the given URL.
+        ## Disabled in the browser playground (no sockets).
+        var client = newHttpClient()
+        try:
+          let res = client.get(args[0].stringVal[])
+          var resp = %*{
+            "status": res.status,
+            "headers": toJson(res.headers.table).fromJson(),
+            "content": fromJson(res.body)
+          }
+          result = initValue(resp)
+        except:
+          let err = getCurrentExceptionMsg()
+          var resp = %*{
+            "status": 0,
+            "headers": %*{},
+            "content": %*{"error": err}
+          }
+          result = initValue(resp)
+        finally:
+          client.close()
+      )
+
+  when not defined(wasm):
+    # `fetch` needs sockets + wall-clock time: disabled in the browser
+    # playground for security. The cache layer stays available (in-memory).
+    proc doFetch(url: string, optsJson: JsonNode): Value =
+      let
+        httpMethod = block:
+          if optsJson != nil and optsJson.hasKey("method"):
+            try: parseEnum[HttpMethod](optsJson["method"].getStr())
+            except: HttpGet
+          else: HttpGet
+        reqHeaders = block:
+          if optsJson != nil and optsJson.hasKey("headers"):
+            var h = newHttpHeaders()
+            for key, val in optsJson["headers"]:
+              h[key] = val.getStr()
+            h
+          else: newHttpHeaders()
+        body = block:
+          if optsJson != nil and optsJson.hasKey("body"):
+            optsJson["body"].getStr()
+          else: ""
+        timeout = block:
+          if optsJson != nil and optsJson.hasKey("timeout"):
+            optsJson["timeout"].getInt()
+          else: -1
+        ttl = block:
+          if optsJson != nil and optsJson.hasKey("ttl"):
+            optsJson["ttl"].getInt()
+          else: cacheDefaultTTL
+        refresh = optsJson != nil and optsJson.hasKey("refresh") and
+            optsJson["refresh"].getBool()
+        noCache = optsJson != nil and optsJson.hasKey("noCache") and
+            optsJson["noCache"].getBool()
+      let cacheKey = fetchCacheKey($httpMethod, url, body)
+      if not refresh and not noCache:
+        let cached = fetchCacheHit(cacheKey, int(epochTime()))
+        if cached.isSome:
+          result = initValue(cached.get())
+          return
+      var client = newHttpClient(timeout = timeout)
+      client.headers = reqHeaders
       try:
-        let res = client.get(args[0].stringVal[])
+        let res = client.request(url, httpMethod, body)
+        let httpCode = int(res.code())
         var resp = %*{
-          "status": res.status,
-          "headers": toJson(res.headers.table).fromJson(),
-          "content": fromJson(res.body)
+          "ok": httpCode >= 200 and httpCode < 300,
+          "status": httpCode,
+          "statusText": res.status,
+          "headers": %*{}
         }
+        for k, v in res.headers:
+          resp["headers"][k] = %*v
+        resp["body"] = %*res.body
+        try:
+          resp["json"] = fromJson(res.body)
+        except:
+          resp["json"] = newJNull()
+        if resp["ok"].getBool() and not noCache:
+          fetchCacheStore(cacheKey, resp, ttl, int(epochTime()))
         result = initValue(resp)
       except:
         let err = getCurrentExceptionMsg()
-        var resp = %*{
+        result = initValue(%*{
+          "ok": false,
           "status": 0,
+          "statusText": "Error",
           "headers": %*{},
-          "content": %*{"error": err}
-        }
-        result = initValue(resp)
+          "body": "",
+          "json": newJNull(),
+          "error": err
+        })
       finally:
         client.close()
-    )
 
-  proc doFetch(url: string, optsJson: JsonNode): Value =
-    let
-      httpMethod = block:
-        if optsJson != nil and optsJson.hasKey("method"):
-          try: parseEnum[HttpMethod](optsJson["method"].getStr())
-          except: HttpGet
-        else: HttpGet
-      reqHeaders = block:
-        if optsJson != nil and optsJson.hasKey("headers"):
-          var h = newHttpHeaders()
-          for key, val in optsJson["headers"]:
-            h[key] = val.getStr()
-          h
-        else: newHttpHeaders()
-      body = block:
-        if optsJson != nil and optsJson.hasKey("body"):
-          optsJson["body"].getStr()
-        else: ""
-      timeout = block:
-        if optsJson != nil and optsJson.hasKey("timeout"):
-          optsJson["timeout"].getInt()
-        else: -1
-      ttl = block:
-        if optsJson != nil and optsJson.hasKey("ttl"):
-          optsJson["ttl"].getInt()
-        else: cacheDefaultTTL
-      refresh = optsJson != nil and optsJson.hasKey("refresh") and
-          optsJson["refresh"].getBool()
-      noCache = optsJson != nil and optsJson.hasKey("noCache") and
-          optsJson["noCache"].getBool()
-    let cacheKey = fetchCacheKey($httpMethod, url, body)
-    if not refresh and not noCache:
-      let cached = fetchCacheHit(cacheKey, int(epochTime()))
-      if cached.isSome:
-        result = initValue(cached.get())
-        return
-    var client = newHttpClient(timeout = timeout)
-    client.headers = reqHeaders
-    try:
-      let res = client.request(url, httpMethod, body)
-      let httpCode = int(res.code())
-      var resp = %*{
-        "ok": httpCode >= 200 and httpCode < 300,
-        "status": httpCode,
-        "statusText": res.status,
-        "headers": %*{}
-      }
-      for k, v in res.headers:
-        resp["headers"][k] = %*v
-      resp["body"] = %*res.body
-      try:
-        resp["json"] = fromJson(res.body)
-      except:
-        resp["json"] = newJNull()
-      if resp["ok"].getBool() and not noCache:
-        fetchCacheStore(cacheKey, resp, ttl, int(epochTime()))
-      result = initValue(resp)
-    except:
-      let err = getCurrentExceptionMsg()
-      result = initValue(%*{
-        "ok": false,
-        "status": 0,
-        "statusText": "Error",
-        "headers": %*{},
-        "body": "",
-        "json": newJNull(),
-        "error": err
-      })
-    finally:
-      client.close()
+    script.addProc(result, "fetch", @[paramDef("url", ttyString), paramDef("options", ttyJson)], ttyJson,
+      proc (args: StackView, argc: int): Value =
+        doFetch(args[0].stringVal[], args[1].jsonVal))
 
-  script.addProc(result, "fetch", @[paramDef("url", ttyString), paramDef("options", ttyJson)], ttyJson,
-    proc (args: StackView, argc: int): Value =
-      doFetch(args[0].stringVal[], args[1].jsonVal))
-
-  script.addProc(result, "fetch", @[paramDef("url", ttyString)], ttyJson,
-    proc (args: StackView, argc: int): Value =
-      doFetch(args[0].stringVal[], nil))
+    script.addProc(result, "fetch", @[paramDef("url", ttyString)], ttyJson,
+      proc (args: StackView, argc: int): Value =
+        doFetch(args[0].stringVal[], nil))
 
   for someTy in [ttyBool, ttyInt, ttyFloat, ttyString, ttyJson, ttyNil]:
     script.addProc(result, "==", @[paramDef("a", ttyJson), paramDef("b", someTy)], ttyBool,
@@ -747,7 +762,7 @@ proc loadLibrary*(script: Script): Module =
           of JInt:
             result = initValue(args[0].jsonVal.getInt() == args[1].intVal)
           of JFloat:
-            result = initValue(args[0].jsonVal.getFloat() == toFloat(args[1].intVal))
+            result = initValue(args[0].jsonVal.getFloat() == float(args[1].intVal))
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind)
         of tyFloat:
@@ -755,7 +770,7 @@ proc loadLibrary*(script: Script): Module =
           of JFloat:
             result = initValue(args[0].jsonVal.getFloat() == args[1].floatVal)
           of JInt:
-            result = initValue(toFloat(args[0].jsonVal.getInt()) == args[1].floatVal)
+            result = initValue(float(args[0].jsonVal.getInt()) == args[1].floatVal)
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind)
         of tyString:
@@ -781,7 +796,7 @@ proc loadLibrary*(script: Script): Module =
           of JInt:
             result = initValue(args[0].intVal == args[1].jsonVal.getInt())
           of JFloat:
-            result = initValue(toFloat(args[0].intVal) == args[1].jsonVal.getFloat())
+            result = initValue(float(args[0].intVal) == args[1].jsonVal.getFloat())
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[1].jsonVal.kind)
         of tyFloat:
@@ -789,7 +804,7 @@ proc loadLibrary*(script: Script): Module =
           of JFloat:
             result = initValue(args[0].floatVal == args[1].jsonVal.getFloat())
           of JInt:
-            result = initValue(args[0].floatVal == toFloat(args[1].jsonVal.getInt()))
+            result = initValue(args[0].floatVal == float(args[1].jsonVal.getInt()))
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[1].jsonVal.kind)
         of tyString:
@@ -817,7 +832,7 @@ proc loadLibrary*(script: Script): Module =
           of JInt:
             result = initValue(args[0].jsonVal.getInt() != args[1].intVal)
           of JFloat:
-            result = initValue(args[0].jsonVal.getFloat() != toFloat(args[1].intVal))
+            result = initValue(args[0].jsonVal.getFloat() != float(args[1].intVal))
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind)
         of tyFloat:
@@ -825,7 +840,7 @@ proc loadLibrary*(script: Script): Module =
           of JFloat:
             result = initValue(args[0].jsonVal.getFloat() != args[1].floatVal)
           of JInt:
-            result = initValue(toFloat(args[0].jsonVal.getInt()) != args[1].floatVal)
+            result = initValue(float(args[0].jsonVal.getInt()) != args[1].floatVal)
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[0].jsonVal.kind)
         of tyString:
@@ -852,7 +867,7 @@ proc loadLibrary*(script: Script): Module =
           of JInt:
             result = initValue(args[0].intVal != args[1].jsonVal.getInt())
           of JFloat:
-            result = initValue(toFloat(args[0].intVal) != args[1].jsonVal.getFloat())
+            result = initValue(float(args[0].intVal) != args[1].jsonVal.getFloat())
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[1].jsonVal.kind)
         of tyFloat:
@@ -860,7 +875,7 @@ proc loadLibrary*(script: Script): Module =
           of JFloat:
             result = initValue(args[0].floatVal != args[1].jsonVal.getFloat())
           of JInt:
-            result = initValue(args[0].floatVal != toFloat(args[1].jsonVal.getInt()))
+            result = initValue(args[0].floatVal != float(args[1].jsonVal.getInt()))
           else:
             raise newException(TimRuntime, "Type mismatch: expected JSON number, got " & $args[1].jsonVal.kind)
         of tyString:
