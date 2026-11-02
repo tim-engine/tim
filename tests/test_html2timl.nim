@@ -144,14 +144,23 @@ suite "HTML to TIML":
       "svg.html")) ==
       """<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"></path></svg>"""
 
-  test "multiline text containing triple quotes":
-    # Triple-quoted TIML strings are raw, so text containing `"""`
-    # falls back to a fully-escaped single-line literal.
+  test "script bodies always use triple quotes":
+    check parseHtmlToTiml("<script>alert(1);</script>", "script.html") ==
+      "script\n  \"\"\"alert(1);\"\"\""
+
+  test "multiline script containing triple quotes":
+    # `"""` runs are split out as escaped single-line separators;
+    # sibling text lines concatenate on render, so nothing is lost.
     let timl = parseHtmlToTiml(
       "<script>\nlet data = parseJson(\"\"\"{\"a\": 1}\"\"\")\necho data\n</script>",
       "triple-quotes.html")
     check timl ==
-      "script: \"\\nlet data = parseJson(\\\"\\\"\\\"{\\\"a\\\": 1}\\\"\\\"\\\")\\necho data\\n\""
+      "script\n" &
+      "  \"\"\"\nlet data = parseJson(\"\"\"\n" &
+      "  \"\\\"\\\"\\\"\"\n" &
+      "  \"\"\"{\"a\": 1}\"\"\"\n" &
+      "  \"\\\"\\\"\\\"\"\n" &
+      "  \"\"\")\necho data\n\"\"\""
     # `script` bodies are minified at render time, so only check survival.
     let rendered = renderTiml(timl)
     check "parseJson" in rendered

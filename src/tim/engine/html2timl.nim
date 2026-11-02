@@ -325,6 +325,21 @@ proc appendLine(buf: var string, indent: int, line: string) =
     buf.add(TimlIndent)
   buf.add(line)
 
+proc appendScriptText(buf: var string, indent: int, value, sourcePath, nodePath: string) =
+  ## Script bodies always use triple-quoted strings. `"""` runs inside
+  ## are split out as escaped single-line separators; sibling text
+  ## lines concatenate on render, so the round-trip stays exact.
+  assertNoTemplateSyntax(value, sourcePath, nodePath, "text")
+  var i = 0
+  while true:
+    let k = value.find("\"\"\"", i)
+    let chunkEnd = if k < 0: value.len else: k
+    if chunkEnd > i:
+      appendLine(buf, indent, "\"\"\"" & value[i ..< chunkEnd] & "\"\"\"")
+    if k < 0: break
+    appendLine(buf, indent, "\"\\\"\\\"\\\"\"")
+    i = k + 3
+
 proc appendText(buf: var string, indent: int, value, sourcePath, nodePath: string) =
   assertNoTemplateSyntax(value, sourcePath, nodePath, "text")
   appendLine(buf, indent, quoteTiml(value, sourcePath, nodePath, "text"))
@@ -404,6 +419,24 @@ proc appendElement(buf: var string, node: H2tNode, indent, depth: int,
   var attrs = ""
   appendAttributes(attrs, node, sourcePath, nodePath)
   line.add(attrs)
+
+  if node.tag.toLowerAscii() == "script":
+    # Script bodies always use triple-quoted block form. Whitespace-only
+    # nodes are dropped; anything else falls through to the generic path.
+    var texts: seq[H2tNode] = @[]
+    var other = false
+    for ch in node.children:
+      if ch.kind == h2tText:
+        if ch.text.strip().len > 0:
+          texts.add(ch)
+      else:
+        other = true
+        break
+    if not other and texts.len > 0:
+      appendLine(buf, indent, line)
+      for t in texts:
+        appendScriptText(buf, indent + 1, t.text, sourcePath, nodePath)
+      return
 
   if node.children.len == 1 and node.children[0] != nil and
       node.children[0].kind == h2tText:
