@@ -2,9 +2,6 @@ import std/[strutils, os]
 --mm:orc
 
 when defined(wasm):
-  static:
-    when (NimMajor, NimMinor) != (2, 2):
-      {.error: "The wasm build requires Nim 2.2.x (2.4.x fails with an injectdestructors assertion on this codebase). Use `choosenim 2.2.10`.".}
   # Browser playground: wasm32 via the WASI SDK clang (no Emscripten).
   # `--os:linux` (not standalone) so the full system — notably exception
   # handling — is available; all OS imports resolve against wasi-libc and

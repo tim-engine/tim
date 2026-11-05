@@ -117,7 +117,7 @@ elif isMainModule:
   import ./tim/meta/cliutils
 
   proc printTimHelp() =
-    echo grey("tim " & timVersion & " - a super fast template engine") & "\n"
+    echo grey("tim " & timVersion & " - a super fast front-end engine for cool kids!") & "\n"
     echo grey("LGPL-3.0-or-later | Made by Humans from OpenPeeps\n  https://github.com/openpeeps/tim")
     echo ""
     echo "usage: tim <command> [args] [options]"
