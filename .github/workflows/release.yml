@@ -69,6 +69,7 @@ jobs:
       # ubuntu-22.04 doubles as the oldest glibc baseline, so the Linux
       # binary also runs on newer distros.
       target-matrix: '[{"os":"ubuntu-22.04","arch":"x86_64"},{"os":"macos-15","arch":"arm64"}]'
+      build-command: clue build -d:release --features:cli
 
   napi:
     name: napi addons
