@@ -38,7 +38,7 @@ else:
   --deepcopy:on
   --define:ssl
   --define:nimPreviewHashRef
-
+  --define:boogieNoCrashHandlers
   when defined napibuild:
     --define:release
 
