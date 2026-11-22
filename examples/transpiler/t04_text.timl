@@ -1,0 +1,10 @@
+var userName = "Ada"
+h1: "Hello World!"
+p.lead: "This is a lead paragraph."
+div.container
+  "Bare string on its own line"
+p: "Hello, " & $userName & "!"
+p: $userName
+script: """
+function hello() { return "world"; }
+"""

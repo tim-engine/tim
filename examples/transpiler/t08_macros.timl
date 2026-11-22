@@ -1,0 +1,14 @@
+macro PrimaryButton(label: string, url: string) =
+  a.btn.btn-primary title=$label href=$url: $label
+macro Card(title: string, content: string) {
+  div.card
+    div.card-header: $title
+    div.card-body: $content
+}
+macro col(width: int) =
+  div.col-lg class=$width:
+    @statement
+@PrimaryButton("Click Me", "https://example.com")
+@Card("Hi", "Body text")
+@col(6):
+  p: "Content inside the column."

@@ -1,0 +1,14 @@
+h1: $this["title"]
+p: $app["siteName"]
+p: $this["count"]
+p: $this["published"]
+ul
+  for $tag in $this["tags"]:
+    li: $tag
+if $this["published"] == true:
+  p: "Published!"
+else:
+  p: "Draft."
+if $app["showFooter"] == true:
+  footer: $app["footerText"]
+p: "By " & $this["author"] & "!"

@@ -1,0 +1,10 @@
+// This is a single-line comment
+div.container // inline comment
+  h1: "Title"
+/*
+  Documentation comment
+  Transpiled to HTML comment
+*/
+<!-- This appears in output -->
+@doc This is a doc comment
+p: "After comments"

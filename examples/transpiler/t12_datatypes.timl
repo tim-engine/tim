@@ -1,0 +1,23 @@
+var s1 = "double"
+var s2 = 'single'
+var tpl = "hello"
+var raw = """raw text, no escaping needed"""
+var i = 42
+var neg = -5
+var f = 3.14
+var flag = true
+var nothing = nil
+var nums = [1, 2, 3]
+var user = {name: "Alice", age: 30}
+div
+  p: $s1
+  p: $s2
+  p: $tpl
+  p: $raw
+  p: $i
+  p: $neg
+  p: $f
+  p: $flag
+  p: $nothing
+  p: $nums
+  p: $user

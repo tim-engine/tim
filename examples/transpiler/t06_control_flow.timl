@@ -1,0 +1,30 @@
+var isLoggedIn = true
+var isAdmin = false
+if $isLoggedIn == true:
+  p: "Welcome back!"
+elif $isAdmin == true:
+  p: "Welcome admin!"
+else:
+  p: "Please log in."
+var items = ["a", "b", "c"]
+ul
+  for $item in $items:
+    li: $item
+ul
+  for $i in 0..2:
+    li: "Item " & $i
+var person = {name: "Ada", role: "admin"}
+ul
+  for $key, $value in $person:
+    li: $key & ": " & $value
+var count = 0
+while $count < 3:
+  p: "Count is " & $count
+  $count = $count + 1
+ul
+  for $i in 0..10:
+    if $i == 5:
+      break
+    if $i == 2:
+      continue
+    li: $i

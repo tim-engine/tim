@@ -1,0 +1,11 @@
+@import "std/strings"
+@import "std/arrays"
+@import "std/json"
+@import { "std/objects" }
+var greeting = "  hello tim  "
+p: $greeting.strip().toUpper()
+var nums = [3, 1, 2]
+p: $nums.join(", ")
+var payload = parseJson("""{"name": "Ada"}""")
+p: $payload["name"]
+p: $payload.pretty()

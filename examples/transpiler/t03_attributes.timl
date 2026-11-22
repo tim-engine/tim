@@ -1,0 +1,11 @@
+var linkUrl = "https://example.com"
+var btnClass = "is-active"
+a href="https://example.com" target="_blank": "Link"
+img src="logo.png" alt="Logo"
+input disabled
+hr noshade
+a href=$linkUrl: "Dynamic href"
+div class=$btnClass
+a.btn.btn-primary.px-4.rounded-3
+  href="https://example.com": "Get Started"
+div.container class="extra-merged": "Merged"

@@ -1,0 +1,9 @@
+div.container > div.row > div.col-12
+div.container
+  h1: "Title"
+  p: "Paragraph"
+div.outer
+  div.inner > span: "Deep"
+  ul
+    li: "One"
+    li: "Two"

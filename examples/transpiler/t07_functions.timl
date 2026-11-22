@@ -1,0 +1,7 @@
+fn greet(name: string): string =
+  return "Hello, " & $name & "!"
+func farewell(name: string): string {
+  return "Bye, " & $name & "!"
+}
+p: greet(name="Ada")
+p: farewell("Grace")

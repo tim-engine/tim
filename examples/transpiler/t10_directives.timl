@@ -1,0 +1,19 @@
+div.page
+  @javascript
+  console.log("Hello from inline JS")
+  const x = 1 + 2
+  @end
+  @css
+  body { color: red; }
+  .page { margin: 0; }
+  @end
+  @html
+  <custom>raw html here</custom>
+  @end
+@client
+  p: "client block content"
+@end
+static if true:
+  p: "Static conditionally included"
+static for $i in 0..2:
+  p: "Static item"

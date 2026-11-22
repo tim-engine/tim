@@ -1,0 +1,10 @@
+var title = "Welcome"
+var count: int = 42
+var firstName: string
+var lastName: string
+const version = "1.0.0"
+const pi = 3.14159
+var publicVar* = "Public"
+h1: $title
+p: "Count is " & $count
+p: $version

@@ -1,0 +1,20 @@
+macro PrimaryButton(label: string, url: string) =
+  a.btn.btn-primary href=$url: $label
+var userName = "Ada"
+var showCta = true
+div.row.align-items-center.vh-100 > div.col-lg-10.mx-auto
+  h3.h6.text-uppercase href="/" class="text-decoration-none": "The Lord of All Space-mud!"
+  h1.display-4.fw-bold: "A super fast engine for cool kids!"
+  p.mb-3.fw-light.lead: "Hello, " & $userName & "!"
+  if $showCta == true:
+    div.d-grid.gap-4.d-md-flex
+      @PrimaryButton("Check docs", "https://tim.openpeeps.dev")
+      @PrimaryButton("GitHub", "https://github.com/openpeeps/tim")
+  else:
+    p: "No CTA today."
+  @javascript
+  console.log("page ready")
+  @end
+  @css
+  .hero { font-weight: 700; }
+  @end

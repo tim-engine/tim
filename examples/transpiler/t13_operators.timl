@@ -1,0 +1,30 @@
+var a = 10
+var b = 3
+p: $a + $b
+p: $a - $b
+p: $a * $b
+p: $a / $b
+p: "x" & "y"
+if $a == 10:
+  p: "eq"
+if $a != $b:
+  p: "neq"
+if $a > $b:
+  p: "gt"
+if $a < 20:
+  p: "lt"
+if $a >= 10:
+  p: "gte"
+if $b <= 3:
+  p: "lte"
+var t = true
+var f = false
+if $t and $f == false:
+  p: "and works"
+if $t or $f:
+  p: "or works"
+if $f == false:
+  p: "not works"
+ul
+  for $i in 0..2:
+    li: $i

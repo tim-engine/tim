@@ -1,0 +1,10 @@
+div
+h1
+br
+div.container
+a.btn.btn-primary.btn-lg
+div#main
+a#my-link.btn
+img src="logo.png" alt="Logo"
+input type="text"
+my-component
