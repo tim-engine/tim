@@ -751,13 +751,21 @@ prefixHandle parseStaticStmt:
     let varName = itemVar.ident
     if iterExpr.kind == nkArray:
       for child in iterExpr.children:
-        if child.kind == nkString:
-          let substituted = substituteStaticVar(bodyStr, varName,
-            child.stringVal, "\"" & child.stringVal & "\"")
-          var innerAst: Ast
-          parseScript(innerAst, substituted, "")
-          for n in innerAst.nodes:
-            result.add(n)
+        var bareVal, exprVal: string
+        case child.kind
+        of nkString:
+          bareVal = child.stringVal
+          exprVal = "\"" & child.stringVal & "\""
+        of nkInt:
+          bareVal = $child.intVal
+          exprVal = $child.intVal
+        else: continue
+        let substituted = substituteStaticVar(bodyStr, varName,
+          bareVal, exprVal)
+        var innerAst: Ast
+        parseScript(innerAst, substituted, "")
+        for n in innerAst.nodes:
+          result.add(n)
     elif iterExpr.kind == nkCall and iterExpr[0].ident == "..":
       if iterExpr[1].kind == nkInt and iterExpr[2].kind == nkInt:
         let rangeStart = iterExpr[1].intVal
@@ -1114,7 +1122,7 @@ prefixHandle parseMacroCall:
           if p.curr.col > tokenAt.col:
             continue
         break
-      of Assignables + {tkIdentVar}:
+      of Assignables + {tkIdentVar, tkLB, tkLC}:
         if not expectRP and p.curr.col <= tokenAt.col: break
         elif p.curr.line > tokenAt.line and p.curr.col > tokenAt.col: break
         let arg = p.parseExpression()
