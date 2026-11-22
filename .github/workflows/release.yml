@@ -5,7 +5,7 @@ name: release
 # `@openpeeps/tim` to npm with the addon binaries included.
 #
 # The run builds the CLI for Linux (x64/arm64) and macOS (arm64/x64),
-# plus the NAPI addons for macOS (arm64/x64) and Linux (x64), plus the
+# plus the NAPI addons for macOS (arm64/x64) and Linux (x64/arm64), plus the
 # browser playground (`tim.wasm` + `tim.js` glue, no backend needed).
 #
 # The CLI macOS builds run on the macos-26 labels: the macos-15 labels
@@ -16,7 +16,9 @@ name: release
 # ships a linux-arm64 binary, so dependency installation works there.
 # The wasm build cross-compiles on ubuntu-22.04 (wasi-sdk 34) with the
 # `wasm32` arch label, which is only used for artifact/archive names.
-# `addons/tim_napi` already supports a `linux-arm64` slot for later.
+# The napi Linux arm64 addon builds on ubuntu-24.04-arm (same image
+# family as the x64 addon); the npm package already ships that slot
+# (`bin/linux-arm64`, wired in `place-binary.js`/`index.js`).
 #
 # Windows CLI is not built yet: no Windows CI coverage exists for the
 # Nim CLI target. Add it once a Windows test job lands.
@@ -93,7 +95,7 @@ jobs:
         echo "$HOME/.cmake-js/bin" >> "$GITHUB_PATH"))
       build-command: denim build src/tim.nim --cmake -y && node addons/tim_napi/scripts/place-binary.js && npm test --prefix addons/tim_napi
       binary: bin/tim.node
-      target-matrix: '[{"os":"macos-15","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"}]'
+      target-matrix: '[{"os":"macos-15","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"},{"os":"ubuntu-24.04-arm","arch":"arm64"}]'
       create-release: true
       release-tag: ${{ needs.prep.outputs.tag }}
 
@@ -182,6 +184,7 @@ jobs:
             [node_addon_macos-arm64.tar.gz]=darwin-arm64
             [node_addon_macos-x86_64.tar.gz]=darwin-x64
             [node_addon_linux-x86_64.tar.gz]=linux-x64
+            [node_addon_linux-arm64.tar.gz]=linux-arm64
           )
           for archive in "${!slots[@]}"; do
             [[ -f "dist/${archive}" ]] || { echo "ERROR: missing ${archive}"; exit 1; }
