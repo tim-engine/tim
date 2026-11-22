@@ -4,12 +4,18 @@ name: release
 # addons, attaches everything to the GitHub Release, and publishes
 # `@openpeeps/tim` to npm with the addon binaries included.
 #
-# The run builds the CLI for Linux (x64) and macOS (arm64), plus the
-# NAPI addons for macOS (arm64/x64) and Linux (x64).
+# The run builds the CLI for Linux (x64/arm64) and macOS (arm64/x64),
+# plus the NAPI addons for macOS (arm64/x64) and Linux (x64), plus the
+# browser playground (`tim.wasm` + `tim.js` glue, no backend needed).
 #
-# aarch64 Linux is not built: clue (which resolves the `cli` feature
-# deps the addon needs) ships no Linux ARM64 binary, so dependency
-# installation cannot run there. aarch is covered via macOS arm64;
+# The CLI macOS builds run on the macos-26 labels: the macos-15 labels
+# are taken by the napi job below, and release_clue names artifacts
+# `artifact-<os>-<arch>`, so sharing a label would lose one job's
+# archives (as happened in the 0.2.10 run). macOS 26 is therefore the
+# CLI's minimum version. Linux arm64 builds on ubuntu-22.04-arm; clue
+# ships a linux-arm64 binary, so dependency installation works there.
+# The wasm build cross-compiles on ubuntu-22.04 (wasi-sdk 34) with the
+# `wasm32` arch label, which is only used for artifact/archive names.
 # `addons/tim_napi` already supports a `linux-arm64` slot for later.
 #
 # Windows CLI is not built yet: no Windows CI coverage exists for the
@@ -62,10 +68,12 @@ jobs:
       test: false
       create-release: false
       # Pinned runners whose `artifact-<os>-<arch>` names cannot collide
-      # with the napi job's (macos-15, macos-15-intel, ubuntu-24.04).
+      # with the napi job's (macos-15, macos-15-intel, ubuntu-24.04)
+      # or the wasm job's (ubuntu-22.04/wasm32).
       # ubuntu-22.04 doubles as the oldest glibc baseline, so the Linux
-      # binary also runs on newer distros.
-      target-matrix: '[{"os":"ubuntu-22.04","arch":"x86_64"},{"os":"macos-15","arch":"arm64"}]'
+      # binaries also run on newer distros. macOS builds run on the
+      # macos-26 labels (see header comment); Intel via macos-26-intel.
+      target-matrix: '[{"os":"ubuntu-22.04","arch":"x86_64"},{"os":"ubuntu-22.04-arm","arch":"arm64"},{"os":"macos-26","arch":"arm64"},{"os":"macos-26-intel","arch":"x86_64"}]'
       build-command: clue build -d:release --features:cli
 
   napi:
@@ -89,14 +97,43 @@ jobs:
       create-release: true
       release-tag: ${{ needs.prep.outputs.tag }}
 
+  wasm:
+    name: wasm playground
+    needs: prep
+    permissions:
+      contents: write
+      actions: write
+    uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
+    with:
+      app-name: tim-wasm
+      test: false
+      create-release: false
+      # Pinned to Nim 2.2.x: src/tim.nims rejects 2.4.x by design, and the
+      # wasm32 target is verified against 2.2.10 locally.
+      nim-version: '2.2.10'
+      # `wasm32` is label-only: the build runs on ubuntu-22.04 x64 and
+      # cross-compiles via wasi-sdk. The distinct arch keeps the
+      # `artifact-<os>-<arch>` name clear of the cli/napi jobs.
+      target-matrix: '[{"os":"ubuntu-22.04","arch":"wasm32"}]'
+      pre-build-command: >-
+        curl -fsSL -o /tmp/wasi-sdk.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.tar.gz &&
+        mkdir -p "$HOME/.local/share/wasi-sdk" &&
+        tar xzf /tmp/wasi-sdk.tar.gz -C "$HOME/.local/share/wasi-sdk" &&
+        echo "WASI_SDK=$HOME/.local/share/wasi-sdk/wasi-sdk-34.0-x86_64-linux" >> "$GITHUB_ENV"
+      build-command: clue build -d:wasm -o:build/tim.wasm src/tim.nim
+      binary: build/tim.wasm
+      extra-files: 'LICENSE README.md bindings/wasm/tim.js'
+
   attach-cli:
-    name: attach CLI binaries to release
+    name: attach CLI and wasm binaries to release
     runs-on: ubuntu-latest
-    needs: [cli, napi]
+    needs: [prep, cli, napi, wasm]
     permissions:
       contents: write
       actions: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           pattern: artifact-*
@@ -111,7 +148,7 @@ jobs:
           set -eu
           shopt -s nullglob
           tag="${{ needs.prep.outputs.tag }}"
-          assets=(dist/tim_*.tar.gz dist/tim_*.zip)
+          assets=(dist/tim_*.tar.gz dist/tim_*.zip dist/tim-wasm_*.tar.gz)
           (( ${#assets[@]} > 0 )) || { echo "ERROR: no tim archives in dist/"; exit 1; }
           printf '%s\n' "${assets[@]}"
           gh release upload "${tag}" "${assets[@]}" --clobber
@@ -119,7 +156,7 @@ jobs:
   npm-publish:
     name: npm publish
     runs-on: ubuntu-latest
-    needs: napi
+    needs: [prep, napi]
     permissions:
       contents: read
       actions: read
