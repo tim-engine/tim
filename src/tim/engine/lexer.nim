@@ -577,6 +577,8 @@ proc nextToken*(lex: var Lexer): TokenTuple =
         result = initToken(lex, tkReturnCmd, move lex.strbuf, line, col, pos, wsno)
       of "discard":
         result = initToken(lex, tkDiscardCmd, move lex.strbuf, line, col, pos, wsno)
+      of "static":
+        result = initToken(lex, tkStatic, move lex.strbuf, line, col, pos, wsno)
       of "continue":
         result = initToken(lex, tkContinueCmd, move lex.strbuf, line, col, pos, wsno)
       of "echo":

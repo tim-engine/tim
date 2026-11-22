@@ -300,9 +300,11 @@ prefixHandle parseImportStmt:
       ast.newTree(nkImport)
     else:
       ast.newTree(nkInclude)
-  if p.next is tkLB:
+  if p.next.kind in {tkLB, tkLC}:
+    # multi-import: `@import ["a", "b"]` or `@import {"a", "b"}`
+    let closing = if p.next.kind == tkLB: tkRB else: tkRC
     walk p, 2
-    while p.curr isnot tkRB:
+    while p.curr.kind != closing and p.curr.kind != tkEOF:
       # case p.curr.kind
       # of tkEOF: break # todo error
       # of tkComma: walk p # skip comma
@@ -311,6 +313,8 @@ prefixHandle parseImportStmt:
         result.add(path)
         if result.kind == nkInclude:
           p.otherPaths.add(path.stringVal)
+    if p.curr.kind == closing:
+      walk p # closing bracket
   else:
     walk p # tkImport
     let path = p.parseExpression()
@@ -414,19 +418,17 @@ proc parseAttributes(p: var Parser, attrs: var seq[Node], el: TokenTuple) =
 
 proc wrapMultiply(el: Node, multiplier: Node): Node =
   if multiplier == nil: return el
+  let count = multiplier.intVal
+  if count <= 0:
+    # `*0` renders nothing
+    return ast.newNode(nkBlock)
+  # Desugar to a range loop: backends (including Nim, where a repeated
+  # `var i` would collide) and the VM all handle `nkFor` uniformly.
+  # `*N` runs N times with an implicit 0-based `$i`.
   let i = ast.newIdent("i")
-  let zero = ast.newIntLit(0)
-  let lt = ast.newIdent("<")
-  let varDecl = ast.newNode(nkVar)
-  let identDefs = ast.newNode(nkIdentDefs)
-  identDefs.add(ast.newTree(nkAssign, i, ast.newEmpty(), zero))
-  varDecl.add(identDefs)
-  let body = ast.newNode(nkBlock)
-  body.add(el)
-  body.add(ast.newCall(ast.newIdent("inc"), i))
-  let whileLoop = ast.newTree(nkWhile,
-    ast.newInfix(lt, i, multiplier), body)
-  result = ast.newTree(nkBlock, varDecl, whileLoop)
+  let rng = ast.newCall(ast.newIdent(".."),
+    ast.newIntLit(0), ast.newIntLit(count - 1))
+  result = ast.newTree(nkFor, i, rng, ast.newNode(nkBlock).add(el))
 
 prefixHandle parseElement:
   # parse an HTML element
@@ -1290,6 +1292,12 @@ prefixHandle parseBreak:
   walk p # tkBreakCmd
   p.walkOpt(tkSColon)
 
+prefixHandle parseContinue:
+  # parse a continue command
+  result = ast.newTree(nkContinue)
+  walk p # tkContinueCmd
+  p.walkOpt(tkSColon)
+
 prefixHandle parseReturn:
   # parse a return statement
   result = ast.newTree(nkReturn)
@@ -1409,9 +1417,10 @@ prefixHandle parseViewPlaceholder:
 
 prefixHandle parseClientBlock:
   ## Parse a client block
+  let clientCol = p.curr.col
   result = ast.newNode(nkClientBlock)
   walk p # tkClient
-  let blockNode: Node = p.parseBlock(p.curr.col)
+  let blockNode: Node = p.parseBlock(clientCol)
   caseNotNil blockNode:
     result.add(blockNode)
   if p.curr is tkEnd:
@@ -1543,6 +1552,7 @@ proc getPrefixFn(p: var Parser, minPrec: int): PrefixFunction =
     of tkFor: parseForLoop
     of tkReturnCmd: parseReturn
     of tkBreakCmd: parseBreak
+    of tkContinueCmd: parseContinue
     of tkFunc, tkFn: parseFunction
     of tkIterator: parseIterator
     of tkImport, tkInclude: parseImportStmt
