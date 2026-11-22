@@ -62,7 +62,7 @@ jobs:
       test: false
       create-release: false
       # Pinned runners whose `artifact-<os>-<arch>` names cannot collide
-      # with the napi job's (macos-14, macos-15-intel, ubuntu-24.04).
+      # with the napi job's (macos-15, macos-15-intel, ubuntu-24.04).
       # ubuntu-22.04 doubles as the oldest glibc baseline, so the Linux
       # binary also runs on newer distros.
       target-matrix: '[{"os":"ubuntu-22.04","arch":"x86_64"},{"os":"macos-15","arch":"arm64"}]'
@@ -85,7 +85,7 @@ jobs:
         echo "$HOME/.cmake-js/bin" >> "$GITHUB_PATH"))
       build-command: denim build src/tim.nim --cmake -y && node addons/tim_napi/scripts/place-binary.js && npm test --prefix addons/tim_napi
       binary: bin/tim.node
-      target-matrix: '[{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"}]'
+      target-matrix: '[{"os":"macos-15","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"},{"os":"ubuntu-24.04","arch":"x86_64"}]'
       create-release: true
       release-tag: ${{ needs.prep.outputs.tag }}
 
