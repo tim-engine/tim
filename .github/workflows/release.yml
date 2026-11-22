@@ -76,8 +76,6 @@ jobs:
       actions: write
     uses: nimbase/setup-nim-action/.github/workflows/release_clue.yml@main
     with:
-      # Same 2.2.x pin as the CLI job (denim builds also honor --mm:arc).
-      nim-version: '2.2.x'
       app-name: node_addon
       test: false
       pre-build-command: >-
