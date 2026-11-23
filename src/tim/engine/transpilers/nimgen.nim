@@ -326,6 +326,8 @@ proc exprToString(node: Node): string =
     var args: seq[string] = @[]
     for i in 1 ..< node.len:
       let a = node[i]
+      if a.kind == nkHtmlAttribute:
+        continue # caller HTML attrs are VM-only; transpilers ignore them
       if a.kind == nkBlock:
         continue # trailing macro body is handled at statement level
       elif a.kind == nkColon and a.len >= 2:
@@ -410,6 +412,8 @@ proc macroCallArgs(node: Node): tuple[callee: string, args: seq[string], body: N
   result.body = nil
   for i in 1 ..< node.len:
     let a = node[i]
+    if a.kind == nkHtmlAttribute:
+      continue # caller HTML attrs are VM-only; transpilers ignore them
     if a.kind == nkBlock:
       result.body = a
     elif a.kind == nkColon and a.len >= 2:
@@ -612,9 +616,9 @@ proc genStmt(node: Node, indent: int = 0): Rope {.codegen.} =
     else:
       let callee = rawCallee
       if callee == "echo":
-        result.add(ind & "echo " & node[1..^1].mapIt(exprToString(it)).join(", ") & "\n")
+        result.add(ind & "echo " & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(exprToString(it)).join(", ") & "\n")
       else:
-        result.add(ind & callee & "(" & node[1..^1].mapIt(exprToString(it)).join(", ") & ")\n")
+        result.add(ind & callee & "(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(exprToString(it)).join(", ") & ")\n")
   of nkAssign:
     let lhs = if node[0].kind == nkIdent: nimIdent(node[0].ident) elif node[0].kind == nkPrefix and node[0][1].kind == nkIdent: nimIdent(node[0][1].ident) else: exprToString(node[0])
     result.add(ind & lhs & " = " & exprToString(node[1]) & "\n")

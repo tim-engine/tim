@@ -284,3 +284,101 @@ p: getNumber(2) > getNumber(1)
 """
     assert toHtml("gt-cmp", samplecode) ==
       """<p>false</p><p>true</p><p>true</p>"""
+
+suite "Macro call-site attributes":
+  test "caller class, id and custom attrs merge into first element":
+    let samplecode = """
+macro container() =
+  div.container
+    @statement
+@container#someId.d-none attr="ok":
+  p: "hi"
+"""
+    assert toHtml("csa-basic", samplecode) ==
+      """<div id="someId" attr="ok" class="container d-none"><p>hi</p></div>"""
+
+  test "caller id wins over macro id":
+    let samplecode = """
+macro container() =
+  div.container#macroId
+    @statement
+@container#callerId:
+  p: "hi"
+"""
+    assert toHtml("csa-id", samplecode) ==
+      """<div id="callerId" class="container"><p>hi</p></div>"""
+
+  test "caller custom attr overrides, new keys append":
+    let samplecode = """
+macro container() =
+  div.container role="main" data-x="1"
+    @statement
+@container role="dialog" title="t":
+  p: "hi"
+"""
+    assert toHtml("csa-custom", samplecode) ==
+      """<div role="dialog" data-x="1" title="t" class="container"><p>hi</p></div>"""
+
+  test "attrs combine with macro args":
+    let samplecode = """
+macro box(title: string = "T") =
+  div.box#mid
+    h1: $title
+@box#extra.hi($title="Hey"):
+  p: "x"
+"""
+    assert toHtml("csa-args", samplecode) ==
+      """<div id="extra" class="box hi"><h1>Hey</h1></div>"""
+
+  test "bare call with only attrs":
+    let samplecode = """
+macro container() =
+  div.container
+    @statement
+@container#someId.d-none
+"""
+    assert toHtml("csa-bare", samplecode) ==
+      """<div id="someId" class="container d-none"></div>"""
+
+  test "dynamic caller class value":
+    # Static and dynamic class parts merge into a single attribute in
+    # source order, exactly as if written directly on the element.
+    let viaCaller = """
+macro container() =
+  div.container
+    @statement
+var extra = "d-none"
+@container class=$extra:
+  p: "hi"
+"""
+    let direct = """
+var extra = "d-none"
+div.container class=$extra:
+  p: "hi"
+"""
+    assert toHtml("csa-dyn", viaCaller) ==
+      """<div class="container d-none"><p>hi</p></div>"""
+    assert toHtml("csa-dyn", viaCaller) == toHtml("csa-dyn-direct", direct)
+
+  test "no root element silently ignores attrs":
+    let samplecode = """
+macro passthrough() =
+  @statement
+@passthrough#ghost.gone:
+  p: "hi"
+"""
+    assert toHtml("csa-noelem", samplecode) == """<p>hi</p>"""
+
+  test "chained macros each merge onto their own root":
+    let samplecode = """
+macro wrap() =
+  div class="w"
+    @statement
+macro inner() =
+  div class="i"
+    @statement
+@wrap#wa.wb > @inner#ia.ib
+  p: "deep"
+"""
+    assert toHtml("csa-chain", samplecode) ==
+      """<div id="wa" class="w wb"><div id="ia" class="i ib"><p>deep</p></div></div>"""

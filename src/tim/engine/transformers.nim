@@ -329,7 +329,7 @@ block extendvancodeAstAndCodeGen:
         "(" & clientExpr(node[1]) & " " & op & " " & clientExpr(node[2]) & ")"
       of nkCall:
         let callee = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: clientExpr(node[0])
-        callee & "(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ")"
+        callee & "(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(clientExpr(it)).join(", ") & ")"
       of nkBracket:
         clientExpr(node[0]) & "[" & clientExpr(node[1]) & "]"
       of nkDot:
@@ -525,9 +525,9 @@ block extendvancodeAstAndCodeGen:
         of nkCall:
           let callee = if node[0].kind == nkIdent: jsIdent(node[0].ident) else: clientExpr(node[0])
           if callee == "echo" or callee == "console.log":
-            result = i & "console.log(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ");\n"
+            result = i & "console.log(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(clientExpr(it)).join(", ") & ");\n"
           else:
-            result = i & callee & "(" & node[1..^1].mapIt(clientExpr(it)).join(", ") & ");\n"
+            result = i & callee & "(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(clientExpr(it)).join(", ") & ");\n"
         of nkInfix, nkPrefix, nkPostfix:
           result = i & clientExpr(node) & ";\n"
         of nkReturn:
@@ -561,9 +561,12 @@ block extendvancodeAstAndCodeGen:
       let hasTrailingStmt = node.len > 1 and (node[^1].kind in {nkBlock, nkHtmlElement, nkIf, nkFor, nkWhile, nkCall, nkRawHtml, nkViewLoader})
       let isMacroSym = procSym.kind == skProc and procSym.procType == ProcType.procTypeMacro
       var hasNamed = false
+      var hasCallerAttrs = false
       if node.len > 1:
         for a in node[1..^1]:
-          if namedArgName(a).len > 0:
+          if a.kind == nkHtmlAttribute:
+            hasCallerAttrs = true
+          elif namedArgName(a).len > 0:
             hasNamed = true
             break
 
@@ -583,18 +586,81 @@ block extendvancodeAstAndCodeGen:
             child[3] = blk
             return
 
-      if isMacroSym and (hasTrailingStmt or hasNamed):
+      proc callerAttrKey(attr: Node): string =
+        ## Static key of a custom HTML attribute (`key="v"` or bare
+        ## `key`); "" when dynamic or absent so it never collides.
+        if attr.kind != nkHtmlAttribute: return ""
+        let n = attr.attrNode
+        if n == nil: return ""
+        if n.kind == nkInfix and n.len >= 3:
+          if n[1] != nil and n[1].kind == nkIdent: return n[1].ident
+          if n[1] != nil and n[1].kind == nkString: return n[1].stringVal
+        elif n.kind == nkString:
+          return n.stringVal
+        return ""
+
+      proc mergeCallerAttrs(macroImpl: Node, callNode: Node) =
+        ## Move caller-supplied HTML attributes (`#id`, `.class`,
+        ## `key="v"` from the macro call head) onto the macro body's
+        ## first element. Classes append, `id` and custom keys are
+        ## caller-wins; dynamic values flow through untouched. No-ops
+        ## when the body has no leading element.
+        var callerAttrs: seq[Node]
+        for i in 1 ..< callNode.len:
+          if callNode[i].kind == nkHtmlAttribute:
+            callerAttrs.add(deepCopy(callNode[i]))
+        if callerAttrs.len == 0: return
+        if macroImpl == nil or macroImpl.len < 4: return
+        let body = macroImpl[3]
+        if body == nil or body.kind != nkBlock: return
+        var first: Node
+        for child in body.children:
+          if child.kind == nkHtmlElement:
+            first = child
+            break
+        if first == nil: return
+        for attr in callerAttrs:
+          case attr.attrType
+          of htmlAttrClass:
+            first.attributes.add(attr)
+          of htmlAttrId:
+            var kept: seq[Node]
+            for existing in first.attributes:
+              if existing.attrType != htmlAttrId:
+                kept.add(existing)
+            kept.add(attr)
+            first.attributes = kept
+          else:
+            let key = callerAttrKey(attr)
+            if key.len == 0:
+              first.attributes.add(attr)
+            else:
+              var replaced = false
+              for existing in first.attributes.mitems:
+                if existing.attrType != htmlAttrClass and
+                   existing.attrType != htmlAttrId and
+                   callerAttrKey(existing) == key:
+                  existing = attr
+                  replaced = true
+                  break
+              if not replaced:
+                first.attributes.add(attr)
+
+      if isMacroSym and (hasTrailingStmt or hasNamed or hasCallerAttrs):
         var orderedArgs: seq[Node]
         var targetSym = procSym
         if hasNamed:
           # Partition the non-trailing args into positional and named, then
           # reorder by declaration. The synthetic `body` param is reserved
           # for the trailing block and cannot be filled by name.
+          # Caller HTML attributes ride along on the call node but are
+          # never arguments.
           var posCount = 0
           var names: seq[string]
           let lastIdx = if hasTrailingStmt: node.len - 2 else: node.len - 1
           if lastIdx >= 1:
             for a in node[1..lastIdx]:
+              if a.kind == nkHtmlAttribute: continue
               let nm = namedArgName(a)
               if nm.len > 0:
                 if nm == "body" or lowerName(nm) == "body":
@@ -609,6 +675,7 @@ block extendvancodeAstAndCodeGen:
           var reorderSrc = ast.newCall(node[0])
           if lastIdx >= 1:
             for a in node[1..lastIdx]:
+              if a.kind == nkHtmlAttribute: continue
               reorderSrc.add(a)
           orderedArgs = reorderNamedArgs(reorderSrc, targetSym, node)
         let injectedBlock = if hasTrailingStmt: node[^1] else: nil
@@ -630,6 +697,11 @@ block extendvancodeAstAndCodeGen:
           # move trailing stmt into inner @statement macro body
           bindStatementBody(clonedImpl, injectedBlock)
 
+        if hasCallerAttrs:
+          # move caller `#id`/`.class`/`key="v"` onto the macro's
+          # first element (caller wins on id/custom keys)
+          mergeCallerAttrs(clonedImpl, node)
+
         # remove synthetic `body` param from clone; statement is now baked in
         clonedImpl[2].children.delete(clonedImpl[2].len - 1)
 
@@ -646,6 +718,7 @@ block extendvancodeAstAndCodeGen:
             argTypes.add(argSym)
         elif node.len > 2:
           for arg in node[1..^2]:
+            if arg.kind == nkHtmlAttribute: continue
             let argSym: Sym = gen.genExpr(arg)
             assert argSym != nil, "Expression must return a symbol"
             argTypes.add(argSym)
@@ -656,6 +729,7 @@ block extendvancodeAstAndCodeGen:
         var posCount = 0
         var names: seq[string]
         for a in node[1..^1]:
+          if a.kind == nkHtmlAttribute: continue
           let nm = namedArgName(a)
           if nm.len > 0:
             names.add(nm)
@@ -665,7 +739,13 @@ block extendvancodeAstAndCodeGen:
         if targetSym == nil:
           node.error("no overload matches the given named arguments")
           return gen.module.sym"void"
-        for arg in reorderNamedArgs(node, targetSym, node):
+        var cleanNode = node
+        if hasCallerAttrs:
+          cleanNode = ast.newCall(node[0])
+          for a in node[1..^1]:
+            if a.kind != nkHtmlAttribute: cleanNode.add(a)
+        for arg in reorderNamedArgs(cleanNode, targetSym, node):
+          if arg.kind == nkHtmlAttribute: continue
           let argSym: Sym = gen.genExpr(arg)
           assert argSym != nil, "Expression must return a symbol"
           argTypes.add(argSym)
@@ -673,6 +753,7 @@ block extendvancodeAstAndCodeGen:
       else:
         if node.len > 1:
           for arg in node[1..^1]:
+            if arg.kind == nkHtmlAttribute: continue
             let argSym: Sym = gen.genExpr(arg)
             assert argSym != nil, "Expression must return a symbol"
             argTypes.add(argSym)
@@ -857,14 +938,16 @@ block extendvancodeAstAndCodeGen:
       if node.attributes.len > 0:
         gen.chunk.emit(opcBeginHtmlWithAttrs)
         gen.chunk.emit(tagPos)
-        var classAttributes: seq[string]
+        # Class parts (static and dynamic alike) accumulate in the VM
+        # buffer in source order and flush as a single `class` attribute
+        # at `opcAttrEnd`, so dynamic values never produce a second one.
         for attr in node.attributes:
           case attr.attrType:
           of htmlAttrClass:
             if attr.attrNode.kind in {nkString, nkInt, nkFloat, nkBool}:
-              classAttributes.add(attr.attrNode.stringVal)
+              gen.chunk.emit(opcAttrClass)
+              gen.chunk.emit(gen.chunk.getString(attr.attrNode.stringVal))
             else:
-              gen.chunk.emit(opcWSpace)
               discard gen.genExpr(attr.attrNode)
               discard gen.pushConst(ast.newStringLit("class"))
               gen.chunk.emit(opcAttr)
@@ -889,13 +972,6 @@ block extendvancodeAstAndCodeGen:
               discard gen.genExpr(attr.attrNode)
               gen.chunk.emit(opcAttrKey)
           else: discard
-        if classAttributes.len > 0:
-          # if there are any classes, we emit them as a stringified value
-          # TODO `--optimize` should enable deduplication of classes
-          classAttributes = classAttributes.deduplicate()
-          gen.chunk.emit(opcWSpace)
-          gen.chunk.emit(opcAttrClass)
-          gen.chunk.emit(gen.chunk.getString(classAttributes.join(" ")))
         gen.chunk.emit(opcAttrEnd)
       else:
         gen.chunk.emit(opcBeginHtml)
@@ -973,38 +1049,61 @@ block extendvancodeAstAndCodeGen:
       var gTestLabel {.inject.}: string
       var gTestMsg {.inject.}: string
       var gTestFailed {.inject.} = false
+      var gPendingClasses {.inject.}: seq[string]
 
     extendCaseStmt "vmInterpretCase":
       case oc:
       # HTML generation
       of opcAttrClass:
-        # special case for class attribute
-        result.stringVal[].add("class=\"" & co.getArg1Str(pcIdx, currentChunk) & "\"")
+        # class parts accumulate in source order and flush as one
+        # attribute at `opcAttrEnd`
+        let classPart = co.getArg1Str(pcIdx, currentChunk)
+        if classPart.len > 0:
+          gPendingClasses.add(classPart)
       of opcAttrId:
         result.stringVal[].add("id=\"" & co.getArg1Str(pcIdx, currentChunk) & "\"")
       of opcWSpace:
         result.stringVal[].add(" ")
       of opcAttrEnd:
+        if gPendingClasses.len > 0:
+          var seen: seq[string] = @[]
+          for p in gPendingClasses:
+            var dup = false
+            for s in seen:
+              if s == p:
+                dup = true
+                break
+            if not dup:
+              seen.add(p)
+          result.stringVal[].add(" class=\"" & seen.join(" ") & "\"")
+          gPendingClasses = @[]
         result.stringVal[].add(">")
       of opcAttr:
         let key = stack.pop().stringVal[]
         let value = stack.pop()
-        result.stringVal[].add(key & "=\"")
+        var part = ""
         case value.typeId
-        of tyString: result.stringVal[].add(value.stringVal[])
-        of tyInt:    result.stringVal[].add($value.intVal)
-        of tyFloat:  result.stringVal[].add($value.floatVal)
-        of tyBool:   result.stringVal[].add($(value.boolVal))
+        of tyString: part = value.stringVal[]
+        of tyInt:    part = $value.intVal
+        of tyFloat:  part = $value.floatVal
+        of tyBool:   part = $(value.boolVal)
         of tyJsonStorage:
-          result.stringVal[].add(value.jsonVal.toString())
+          part = value.jsonVal.toString()
         else: discard
-        result.stringVal[].add("\"")
+        if key == "class":
+          # dynamic class values join the pending buffer instead of
+          # emitting a second `class` attribute
+          if part.len > 0:
+            gPendingClasses.add(part)
+        else:
+          result.stringVal[].add(key & "=\"" & part & "\"")
       of opcAttrKey:
         let attr = stack.pop()
         if attr.stringVal[].len > 0:
           result.stringVal[].add(" ") # leading space
           result.stringVal[].add(attr.stringVal[])
       of opcBeginHtmlWithAttrs:
+        gPendingClasses = @[]
         result.stringVal[].add("<" & co.getArg1Str(pcIdx, currentChunk))
       of opcBeginHtml:
         result.stringVal[].add("<" & co.getArg1Str(pcIdx, currentChunk) & ">")

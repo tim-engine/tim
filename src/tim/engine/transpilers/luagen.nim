@@ -84,7 +84,7 @@ proc exprToString(node: Node): string =
     "(" & exprToString(node[1]) & " " & op & " " & exprToString(node[2]) & ")"
   of nkCall:
     let callee = if node[0].kind == nkIdent: node[0].ident else: exprToString(node[0])
-    callee & "(" & node[1..^1].mapIt(exprToString(it)).join(", ") & ")"
+    callee & "(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(exprToString(it)).join(", ") & ")"
   of nkBracket:
     exprToString(node[0]) & "[" & exprToString(node[1]) & "]"
   of nkDot:
@@ -261,9 +261,9 @@ proc genStmt(node: Node, indent: int = 0): Rope {.codegen.} =
   of nkCall:
     let callee = if node[0].kind == nkIdent: node[0].ident else: exprToString(node[0])
     if callee == "echo":
-      result.add(ind & "print(" & node[1..^1].mapIt(exprToString(it)).join(", ") & ")\n")
+      result.add(ind & "print(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(exprToString(it)).join(", ") & ")\n")
     else:
-      result.add(ind & callee & "(" & node[1..^1].mapIt(exprToString(it)).join(", ") & ")\n")
+      result.add(ind & callee & "(" & node[1..^1].filterIt(it.kind != nkHtmlAttribute).mapIt(exprToString(it)).join(", ") & ")\n")
   of nkInfix, nkPrefix, nkPostfix:
     let op = if node.kind == nkInfix and node[0].kind == nkIdent: node[0].ident
              elif node.kind == nkInfix: node[0].render

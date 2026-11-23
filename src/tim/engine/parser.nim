@@ -1093,6 +1093,12 @@ prefixHandle parseMacroCall:
     
     var attrs: seq[Node]
     p.parseAttributes(attrs, tokenAt)
+    # Caller-supplied HTML attributes (`#id`, `.class`, `key="v"`) ride
+    # on the call node ahead of any arguments. The VM merges them into
+    # the macro's first element at instantiation; every argument
+    # consumer must skip `nkHtmlAttribute` children.
+    for a in attrs:
+      result.add(a)
     
     if p.curr.kind == tkLP:
       # parse function arguments wrapped in parentheses
