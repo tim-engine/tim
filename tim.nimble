@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.2.11"
+version       = "0.2.12"
 author        = "OpenPeeps"
 description   = "A super fast template engine for cool kids!"
 license       = "LGPL-3.0-or-later"
@@ -53,7 +53,7 @@ task lua, "build Lua extension":
   exec "clue build -d:lua_build -d:release -o:build/tim.so src/tim.nim"
 
 task wasm, "build Tim for browsers (wasm32-standalone, no backend needed)":
-  exec "clue build -d:wasm -o:build/tim.wasm src/tim.nim && cp build/tim.wasm examples/wasm/tim.wasm && cp bindings/wasm/tim.js examples/wasm/tim.js"
+  exec "clue build -d:release -d:wasm -o:build/tim.wasm src/tim.nim && cp build/tim.wasm examples/wasm/tim.wasm && cp bindings/wasm/tim.js examples/wasm/tim.js"
 
 import std/os
 task build_examples, "build examples":
